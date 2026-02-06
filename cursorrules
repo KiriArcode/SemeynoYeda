@@ -1,0 +1,182 @@
+# SemeynoYeda — Cursor Project Rules
+
+## Проект
+Семейное PWA-приложение для управления питанием. React + TypeScript + Vite + Tailwind + Dexie.js (IndexedDB). Деплой на GitHub Pages.
+
+## Контекст предметной области
+- Два пользователя: Коля (гастрит, щадящая диета) и Кристина (предпочитает "богатую" еду, соусы)
+- 4 приёма пищи в день: завтрак, обед, полдник, ужин
+- Заготовки в выходные (4 часа), разогрев в будни (15-30 мин)
+- Всё мягкое: котлеты, суфле, пюре + обязательно соус
+- Данные хранятся как JSON в `src/data/` и синхронизируются с IndexedDB
+
+## Кухонное оборудование
+Каждый рецепт и заготовка привязаны к конкретному оборудованию. При создании/обработке рецептов Cursor должен указывать какое оборудование нужно и для каких шагов.
+
+| Оборудование | ID | Типичное использование |
+|---|---|---|
+| Газовая плита | `stove` | Варка пюре, соусов, круп, бульонов |
+| Духовка | `oven` | Запекание суфле, котлет, овощей |
+| Аэрогриль | `air-grill` | Котлеты без масла, овощи-гриль (щадяще для Коли) |
+| Электрогриль | `e-grill` | Мясо, рыба — для Кристины (корочка + "богатый" вкус) |
+| Пароварка | `steamer` | Паровые котлеты, омлет, овощи (база для Коли — гастрит) |
+| Блендер (+ насадка пюре) | `blender` | Все пюре, соусы, крем-супы |
+| Планетарный миксер | `mixer` | Замес фарша (большие объёмы заготовок), тесто |
+| Гриндер | `grinder` | Помол мяса в фарш, специи |
+| Вакууматор | `vacuum` | Порционная заморозка заготовок, маринование |
+| Миски (разные размеры) | `bowls` | Замес, смешивание, подготовка ингредиентов |
+
+### Правила подбора оборудования в рецептах
+- Коля (гастрит): приоритет `steamer` > `oven` > `air-grill` > `stove`. Без `e-grill` (жарка)
+- Кристина: можно всё, приоритет `e-grill` / `oven` для "богатого" вкуса
+- Заготовки: использовать `grinder` → `mixer` → формовка → `vacuum` → морозилка
+- Пюре и соусы: `stove` → `blender`
+- Суфле: `blender` → `oven` / `steamer`
+- Всегда указывать температуру и время для `oven`, `air-grill`, `e-grill`
+- Параллельные процессы в заготовках: пока духовка работает — готовить на плите
+
+## Стек
+- React 18 + TypeScript 5 (strict mode)
+- Vite 5 с vite-plugin-pwa
+- Tailwind CSS 3 с кастомной темой (см. STYLEGUIDE.md)
+- Dexie.js для IndexedDB
+- React Router 6
+- Lucide React для иконок
+- nanoid для генерации ID
+
+## Архитектура файлов
+
+```
+src/
+  app/          — App.tsx, Router.tsx, providers
+  components/
+    ui/         — Button, Card, Modal, Tag, Toast (переиспользуемые)
+    layout/     — Header, BottomNav, PageShell
+    recipe/     — RecipeCard, RecipeForm, RecipeDetail
+    menu/       — WeekView, DayColumn, MealSlot, SwapModal
+    prep/       — PrepChecklist, PrepTimer, FreezerInventory
+    shopping/   — ShoppingList, ShoppingItem
+  data/         — JSON файлы (recipes, menu, inventory) + schema.ts
+  hooks/        — useRecipes, useMenu, useShoppingList, useFreezer, useSync
+  lib/          — db.ts (Dexie), github.ts, export.ts, utils.ts
+  styles/       — globals.css, fonts.css
+```
+
+## Правила кода
+
+### TypeScript
+- Strict mode всегда
+- Все типы данных определены в `src/data/schema.ts`
+- Никаких `any` — использовать union types и generics
+- Интерфейсы для props компонентов: `interface RecipeCardProps { ... }`
+
+### React
+- Только функциональные компоненты
+- Hooks для логики: useState, useEffect, useMemo, useCallback
+- Custom hooks в `src/hooks/` для бизнес-логики
+- Не использовать default export кроме страниц
+- Компоненты: named export `export function RecipeCard()`
+- Props деструктурировать: `function RecipeCard({ recipe, onTap }: RecipeCardProps)`
+
+### Стили (Tailwind)
+- Использовать кастомные цвета из конфига: `bg-void`, `bg-dimension`, `text-portal`, `text-ramen`, `text-text-light`
+- Шрифты: `font-heading` (Chakra Petch) для заголовков, `font-body` (DM Sans) для текста, `font-mono` (JetBrains Mono) для данных
+- Скругления: `rounded-card`, `rounded-button`, `rounded-modal`, `rounded-pill`
+- Тени: `shadow-card`, `shadow-glow`, `shadow-elevate`, `shadow-nav`
+- Mobile-first: без префикса = мобильный, `md:` = планшет, `lg:` = десктоп
+- Никаких inline styles
+
+### Компоненты UI
+- Все базовые компоненты в `src/components/ui/`
+- Каждый компонент принимает `className?` для расширения стилей
+- Кнопки: variant='primary' | 'secondary' | 'ghost'
+- Карточки: всегда `rounded-card shadow-card bg-dimension` с бордером `border-nebula`
+
+### Данные
+- JSON файлы рецептов: `src/data/recipes/*.json`
+- Меню: `src/data/menu/current-week.json`
+- При старте приложения: JSON → IndexedDB (если пусто или обновлено)
+- Все изменения пользователя → IndexedDB
+- Экспорт → JSON файлы для коммита в Git
+
+### Именование
+- Компоненты: PascalCase (`RecipeCard.tsx`)
+- Hooks: camelCase с `use` (`useRecipes.ts`)
+- Утилиты: camelCase (`formatTime.ts`)
+- Типы: PascalCase (`Recipe`, `MealSlot`)
+- CSS переменные: kebab-case (`--accent-primary`)
+- JSON файлы: kebab-case (`current-week.json`)
+- ID: nanoid(10)
+
+### Языки контента
+- UI текст: русский
+- Код, комментарии, переменные, типы: английский
+- Имена рецептов: русский (в данных)
+
+## PWA требования
+- Service Worker через vite-plugin-pwa (Workbox)
+- Offline: всё приложение работает без сети
+- Кэширование: app shell (Cache First), данные (Stale While Revalidate)
+- manifest.json в `public/`
+- Иконки: 192x192 и 512x512
+
+## Обработка рецептов (Cursor Skill)
+
+### Workflow добавления рецепта
+1. Пользователь добавляет "заметку" через форму (произвольный текст)
+2. Заметка сохраняется в `data/inbox/` как `.md` файл
+3. При открытии проекта в Cursor — запускается обработка
+4. Cursor парсит текст заметки и генерирует структурированный JSON по схеме `Recipe`
+5. JSON сохраняется в `src/data/recipes/`
+6. При следующем билде — рецепт появляется в приложении
+
+### Формат заметки (inbox)
+```markdown
+# Название блюда
+
+Тип: основное / соус / гарнир / завтрак / полдник
+Для кого: оба / Коля / Кристина
+
+## Ингредиенты
+- 500г курицы
+- 1 луковица
+- ...
+
+## Как готовить
+1. ...
+2. ...
+
+## Заметки
+Можно заморозить на 2 месяца
+Готовить в пароварке 25 мин
+```
+
+### Правила обработки
+- Определить теги автоматически (если нет острого/жареного/кислого → `gastritis-safe`)
+- Определить время приготовления из шагов
+- Определить хранение из заметок
+- **Определить оборудование** из шагов и ключевых слов:
+  - "пробить блендером", "до гладкости", "пюре" → `blender`
+  - "отварить", "сварить", "на среднем огне" → `stove`
+  - "запечь", "в духовке", "°C" → `oven`
+  - "на пару", "пароварка" → `steamer`
+  - "на гриле", "электрогриль" → `e-grill`
+  - "аэрогриль" → `air-grill`
+  - "прокрутить", "фарш", "гриндер" → `grinder`
+  - "вымесить", "взбить", "миксер" → `mixer`
+  - "вакуумировать", "вакуум" → `vacuum`
+- **Для заготовок (prep-day)**:
+  - Добавить шаг вакуумирования если `freezable`
+  - Добавить `parallel: true` к шагам которые можно делать одновременно
+  - Добавить `tip` с подсказками о параллельных процессах
+  - В `notes` указать способы разогрева для Коли и Кристины отдельно
+- **Температуры и время** всегда указывать конкретно (не "до готовности", а "180°C, 20 мин")
+- Если нет структуры — попросить пользователя уточнить
+
+## Не делать
+- Не использовать localStorage (только IndexedDB через Dexie)
+- Не использовать серверный рендеринг
+- Не добавлять внешние API без согласования
+- Не менять структуру `src/data/schema.ts` без обновления миграций Dexie
+- Не использовать Inter, Roboto, Arial — только Chakra Petch + DM Sans + JetBrains Mono
+- Не делать острые углы (min border-radius: 10px для кнопок, 16px для карточек)

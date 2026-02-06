@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@theme {
+  /* Core — фоны и поверхности */
+  --color-void: #0B0E14;
+  --color-dimension: #141821;
+  --color-rift: #1C2230;
+  --color-nebula: #252D3B;
+
+  /* Portal — акценты и интерактив */
+  --color-portal: #39FF14;
+  --color-portal-dim: #2BD911;
+  --color-portal-glow: rgba(57, 255, 20, 0.15);
+  --color-portal-mist: rgba(57, 255, 20, 0.06);
+
+  /* Food — еда и контент */
+  --color-ramen: #FFB347;
+  --color-miso: #E8985A;
+  --color-matcha: #8DB580;
+  --color-sakura: #FFB7C5;
+  --color-frost: #8DB5E0;
+  --color-plasma: #B197FC;
+
+  /* Text — иерархия */
+  --color-text-light: #F0EDE8;
+  --color-text-mid: #9BA3B2;
+  --color-text-dim: #5A6270;
+  --color-text-ghost: #3A4150;
+
+  /* Family — кто ест */
+  --color-kolya: #39FF14;
+  --color-kristina: #FFB347;
+  --color-both: #B197FC;
+
+  /* Шрифты */
+  --font-heading: 'Chakra Petch', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Пространство */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+
+  /* Скругления */
+  --radius-button: 10px;
+  --radius-card: 16px;
+  --radius-modal: 20px;
+  --radius-pill: 9999px;
+
+  /* Тени */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 4px 16px rgba(57, 255, 20, 0.15);
+  --shadow-elevate: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-nav: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+:root {
+  /* Core — фоны и поверхности */
+  --void: #0B0E14;
+  --dimension: #141821;
+  --rift: #1C2230;
+  --nebula: #252D3B;
+
+  /* Portal — акценты и интерактив */
+  --portal: #39FF14;
+  --portal-dim: #2BD911;
+  --portal-glow: rgba(57, 255, 20, 0.15);
+  --portal-mist: rgba(57, 255, 20, 0.06);
+
+  /* Food — еда и контент */
+  --ramen: #FFB347;
+  --miso: #E8985A;
+  --matcha: #8DB580;
+  --sakura: #FFB7C5;
+  --frost: #8DB5E0;
+  --plasma: #B197FC;
+
+  /* Text — иерархия */
+  --text-light: #F0EDE8;
+  --text-mid: #9BA3B2;
+  --text-dim: #5A6270;
+  --text-ghost: #3A4150;
+
+  /* Family — кто ест */
+  --kolya: #39FF14;
+  --kristina: #FFB347;
+  --both: #B197FC;
+
+  /* Шрифты */
+  --font-heading: 'Chakra Petch', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Пространство */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+
+  /* Скругления */
+  --radius-button: 10px;
+  --radius-card: 16px;
+  --radius-modal: 20px;
+  --radius-pill: 9999px;
+
+  /* Тени */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 4px 16px rgba(57, 255, 20, 0.15);
+  --shadow-elevate: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-nav: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Анимации */
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes portalPulse {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(57, 255, 20, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(57, 255, 20, 0.35);
+  }
+}
+
+/* Базовые стили */
+body {
+  font-family: var(--font-body);
+  color: var(--text-light);
+  background: var(--void);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scroll snap для недельного меню */
+.week-scroll {
+  scroll-snap-type: x mandatory;
+}
+
+.day-column {
+  scroll-snap-align: start;
+}
+
+/* Скроллбар */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nebula);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--portal);
+}
