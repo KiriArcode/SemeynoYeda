@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -21,15 +22,26 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
     };
   }, [isOpen]);
 
+  // Escape key to close
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 bg-void/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-void/80 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{ zIndex: 9999 }}
       onClick={onClose}
     >
       <div
-        className="bg-rift border border-nebula rounded-modal shadow-elevate max-w-md w-full p-6"
+        className="bg-rift border border-nebula rounded-modal shadow-elevate max-w-md w-full p-6 animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -47,4 +59,7 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
       </div>
     </div>
   );
+
+  // Portal — render at document.body level to escape any stacking context
+  return createPortal(modal, document.body);
 }

@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { ChefModeToggle } from './ChefModeToggle';
 import { Breadcrumbs } from './Breadcrumbs';
 import { useChefMode } from '../../contexts/ChefModeContext';
@@ -8,25 +9,78 @@ interface PageShellProps {
   showChefToggle?: boolean;
 }
 
+interface SectionLink {
+  path: string;
+  label: string;
+  icon: string;
+}
+
+const NORMAL_SECTIONS: SectionLink[] = [
+  { path: '/', label: 'Меню недели', icon: '🗓️' },
+  { path: '/recipes', label: 'Рецепты', icon: '📖' },
+  { path: '/freezer', label: 'Морозилка', icon: '🧊' },
+  { path: '/shopping', label: 'Покупки', icon: '🛒' },
+];
+
+const CHEF_SECTIONS: SectionLink[] = [
+  { path: '/', label: 'Меню недели', icon: '🗓️' },
+  { path: '/recipes', label: 'Рецепты', icon: '📖' },
+  { path: '/prep', label: 'Заготовки', icon: '📦' },
+  { path: '/freezer', label: 'Морозилка', icon: '🧊' },
+  { path: '/shopping', label: 'Покупки', icon: '🛒' },
+];
+
 export function PageShell({ children, showChefToggle = true }: PageShellProps) {
   const { enabled } = useChefMode();
+  const location = useLocation();
 
-  console.log('[PageShell] Render, chefMode:', enabled);
+  const sections = enabled ? CHEF_SECTIONS : NORMAL_SECTIONS;
+
+  function isActive(path: string): boolean {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  }
 
   return (
     <div className="min-h-screen bg-void">
+      {/* Top header bar */}
       {showChefToggle && (
         <header className="sticky top-0 z-50 bg-dimension border-b border-nebula shadow-nav">
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <h1 className="font-heading text-xl font-bold text-text-light">
+          <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+            <Link to="/" className="font-heading text-lg font-bold text-text-light hover:text-portal transition-colors">
               SemeynoYeda
-            </h1>
+            </Link>
             <ChefModeToggle />
+          </div>
+
+          {/* Permanent section navigation */}
+          <div className="container mx-auto px-2 pb-1">
+            <div className="flex items-center overflow-x-auto" style={{ gap: '2px' }}>
+              {sections.map((section) => {
+                const active = isActive(section.path);
+                return (
+                  <Link
+                    key={section.path}
+                    to={section.path}
+                    className={`flex items-center whitespace-nowrap px-3 py-1.5 text-xs font-heading font-semibold transition-all border-b-2 ${
+                      active
+                        ? 'text-portal border-portal'
+                        : 'text-text-ghost border-transparent hover:text-text-mid hover:border-nebula'
+                    }`}
+                    style={{ gap: '4px' }}
+                  >
+                    <span className="text-sm">{section.icon}</span>
+                    <span>{section.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </header>
       )}
+
       <main className={`pb-20 ${enabled ? 'chef-mode' : 'normal-mode'}`}>
-        <div className="container mx-auto px-4 pt-4">
+        <div className="container mx-auto px-4 pt-3">
           <Breadcrumbs />
         </div>
         {children}
