@@ -6,9 +6,10 @@ const now = new Date().toISOString();
  * Стабильные ID для seed-рецептов (используются в seed-меню).
  * Все рецепты из документа меню Пн–Вс.
  */
-function seedRecipe(r: Omit<Recipe, 'createdAt' | 'updatedAt'>): Recipe {
+function seedRecipe(r: Omit<Recipe, 'createdAt' | 'updatedAt' | 'version'> & { version?: number }): Recipe {
   return {
     ...r,
+    version: r.version ?? 2,
     createdAt: now,
     updatedAt: now,
   };
@@ -234,6 +235,10 @@ export function getSeedRecipes(): Recipe[] {
       equipment: ['grinder', 'mixer', 'oven', 'vacuum'],
       notes: 'Разогрев: пароварка 10 мин (лучше для Коли) или духовка 170°C 15 мин',
       storage: { fridge: 2, freezer: 3, vacuumSealed: true },
+      reheating: [
+        { forWhom: 'kolya', method: 'Пароварка 25 мин', equipment: 'steamer', duration: 25 },
+        { forWhom: 'kristina', method: 'Духовка 170°C 15 мин', equipment: 'oven', temperature: '170°C', duration: 15 },
+      ],
     }),
     seedRecipe({
       id: SEED_RECIPE_IDS.kurinyeKotlety,
@@ -259,6 +264,10 @@ export function getSeedRecipes(): Recipe[] {
       ],
       equipment: ['grinder', 'stove', 'oven'],
       storage: { fridge: 2, freezer: 3, vacuumSealed: false },
+      reheating: [
+        { forWhom: 'kolya', method: 'Пароварка 20 мин', equipment: 'steamer', duration: 20 },
+        { forWhom: 'kristina', method: 'Электрогриль 180°C 12 мин', equipment: 'e-grill', temperature: '180°C', duration: 12 },
+      ],
     }),
     seedRecipe({
       id: SEED_RECIPE_IDS.frikadelki,
@@ -282,6 +291,10 @@ export function getSeedRecipes(): Recipe[] {
       ],
       equipment: ['bowls'],
       storage: { fridge: 2, freezer: 3, vacuumSealed: false },
+      reheating: [
+        { forWhom: 'kolya', method: 'Пароварка 15 мин', equipment: 'steamer', duration: 15 },
+        { forWhom: 'kristina', method: 'В бульоне 10 мин', equipment: 'stove', duration: 10 },
+      ],
     }),
     seedRecipe({
       id: SEED_RECIPE_IDS.rybnoeSufle,
@@ -597,7 +610,7 @@ export function getSeedRecipes(): Recipe[] {
       slug: 'overnight-ovsjanka',
       title: 'Овернайт-овсянка',
       category: 'breakfast',
-      tags: ['quick'],
+      tags: ['quick', 'overnight', 'packable'],
       suitableFor: 'both',
       prepTime: 2,
       cookTime: 0,
@@ -662,7 +675,7 @@ export function getSeedRecipes(): Recipe[] {
       slug: 'humus-hleb',
       title: 'Хумус с мягким хлебом',
       category: 'snack',
-      tags: ['quick', 'rich-feel'],
+      tags: ['quick', 'rich-feel', 'packable'],
       suitableFor: 'kristina',
       prepTime: 2,
       cookTime: 0,

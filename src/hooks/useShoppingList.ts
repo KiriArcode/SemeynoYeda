@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import type { ShoppingItem, WeekMenu, Recipe } from '../data/schema';
+import type { ShoppingItem, WeekMenu, Recipe, FreezerItem } from '../data/schema';
 
 export function useShoppingList() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
@@ -68,6 +68,35 @@ export function useShoppingList() {
         }
       });
     });
+
+    // Check freezer inventory — subtract frozen components
+    const freezerItems = await db.table('freezer').toArray() as FreezerItem[];
+    const freezerRecipePortions = new Map<string, number>();
+    for (const fi of freezerItems) {
+      if (fi.portionsRemaining > 0 && fi.recipeId) {
+        freezerRecipePortions.set(fi.recipeId, (freezerRecipePortions.get(fi.recipeId) || 0) + fi.portionsRemaining);
+      }
+    }
+
+    // Mark items covered by freezer
+    for (const day of weekMenu.days) {
+      for (const meal of day.meals) {
+        for (const entry of meal.recipes) {
+          if (entry.usesFromFreezer && entry.usesFromFreezer.length > 0) {
+            const recipe = recipesMap.get(entry.recipeId);
+            if (recipe) {
+              recipe.ingredients.forEach(ing => {
+                const key = `${ing.name}_${ing.unit}`;
+                const item = ingredientMap.get(key);
+                if (item) {
+                  item.coveredByFreezer = true;
+                }
+              });
+            }
+          }
+        }
+      }
+    }
 
     // Добавить отсутствующие ингредиенты
     missingIngredients.forEach((ingredientName) => {

@@ -8,26 +8,36 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // PWA plugin временно отключен для деплоя
-    // Раскомментируйте после настройки иконок
-    // VitePWA({
-    //   registerType: 'autoUpdate',
-    //   includeAssets: ['vite.svg'],
-    //   manifest: {
-    //     name: 'SemeynoYeda — Семейная еда',
-    //     short_name: 'СемейноЕда',
-    //     description: 'Планировщик семейного питания',
-    //     theme_color: '#39FF14',
-    //     background_color: '#0B0E14',
-    //     display: 'standalone',
-    //     start_url: '/SemeynoYeda/',
-    //     icons: [
-    //       { src: 'vite.svg', sizes: 'any', type: 'image/svg+xml' },
-    //     ],
-    //   },
-    //   workbox: {
-    //     globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-    //   },
-    // }),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['icons/icon.svg'],
+      manifest: {
+        name: 'SemeynoYeda — Семейная еда',
+        short_name: 'СемейноЕда',
+        description: 'Планировщик семейного питания',
+        theme_color: '#39FF14',
+        background_color: '#0B0E14',
+        display: 'standalone',
+        start_url: '/SemeynoYeda/',
+        icons: [
+          { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 365 * 24 * 60 * 60 } },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'gstatic-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 365 * 24 * 60 * 60 } },
+          },
+        ],
+      },
+    }),
   ],
 });

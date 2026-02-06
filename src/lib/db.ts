@@ -39,7 +39,6 @@ db.version(2)
     chefSettings: 'id',
   })
   .upgrade((tx) => {
-    // Миграция: добавить поле source в существующие ShoppingItem
     return tx
       .table('shopping')
       .toCollection()
@@ -54,15 +53,39 @@ db.version(2)
   });
 
 // Версия 3: добавление индекса createdAt для menus
-db.version(3)
+db.version(3).stores({
+  recipes: 'id, slug, category, *tags, suitableFor',
+  menus: 'id, weekStart, shoppingDay, createdAt',
+  freezer: 'id, recipeId, expiryDate',
+  shopping: 'ingredient, category, checked, markedMissing',
+  prepPlans: 'id, date',
+  cookingSessions: 'id, date, mealType',
+  chefSettings: 'id',
+});
+
+// Версия 4: расширение freezer (portionsRemaining, batchId)
+db.version(4)
   .stores({
     recipes: 'id, slug, category, *tags, suitableFor',
     menus: 'id, weekStart, shoppingDay, createdAt',
-    freezer: 'id, recipeId, expiryDate',
+    freezer: 'id, recipeId, expiryDate, batchId',
     shopping: 'ingredient, category, checked, markedMissing',
     prepPlans: 'id, date',
     cookingSessions: 'id, date, mealType',
     chefSettings: 'id',
+  })
+  .upgrade((tx) => {
+    return tx
+      .table('freezer')
+      .toCollection()
+      .modify((item: FreezerItem) => {
+        if (item.portionsRemaining === undefined) {
+          item.portionsRemaining = item.portions;
+        }
+        if (item.portionsOriginal === undefined) {
+          item.portionsOriginal = item.portions;
+        }
+      });
   });
 
 export { db };

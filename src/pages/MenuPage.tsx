@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../lib/db';
-import type { WeekMenu } from '../data/schema';
+import type { WeekMenu, MealSlot as MealSlotType } from '../data/schema';
 import { getSeedWeekMenu } from '../data/seedMenu';
 import { MealSlot } from '../components/menu/MealSlot';
+import { WeekStats } from '../components/menu/WeekStats';
+import { AlertBanner } from '../components/ui/AlertBanner';
+import { useFreezerAlerts } from '../hooks/useFreezerAlerts';
 import { Calendar, Copy, CheckCircle2 } from 'lucide-react';
 
 export default function MenuPage() {
@@ -11,6 +14,7 @@ export default function MenuPage() {
   const [loading, setLoading] = useState(true);
   const [creatingFromTemplate, setCreatingFromTemplate] = useState(false);
   const [templateSuccess, setTemplateSuccess] = useState(false);
+  const { alerts } = useFreezerAlerts(weekMenu);
 
   useEffect(() => {
     loadWeekMenu();
@@ -52,6 +56,21 @@ export default function MenuPage() {
     } finally {
       setCreatingFromTemplate(false);
     }
+  }
+
+  async function handleMealSlotUpdate(dayDate: string, mealIndex: number, updatedSlot: MealSlotType) {
+    if (!weekMenu) return;
+    console.log(`[MenuPage] Updating slot ${mealIndex} on ${dayDate}`);
+    const updatedDays = weekMenu.days.map(day => {
+      if (day.date !== dayDate) return day;
+      return {
+        ...day,
+        meals: day.meals.map((m, i) => i === mealIndex ? updatedSlot : m),
+      };
+    });
+    const updatedMenu = { ...weekMenu, days: updatedDays };
+    await db.table('menus').put(updatedMenu);
+    setWeekMenu(updatedMenu);
   }
 
   if (loading) {
@@ -110,8 +129,7 @@ export default function MenuPage() {
         <div className="flex items-center gap-2">
           {templateSuccess && (
             <span className="flex items-center gap-1 text-xs text-portal font-body animate-fade-in">
-              <CheckCircle2 className="w-4 h-4" />
-              Готово!
+              <CheckCircle2 className="w-4 h-4" /> Готово!
             </span>
           )}
           <button
@@ -126,6 +144,14 @@ export default function MenuPage() {
         </div>
       </div>
 
+      {/* Diversity stats */}
+      <WeekStats weekMenu={weekMenu} />
+
+      {/* Freezer alerts */}
+      {alerts.map((alert, i) => (
+        <AlertBanner key={i} type={alert.type} message={alert.message} className="mb-3" />
+      ))}
+
       <div className="space-y-4">
         {weekMenu.days.map((day) => (
           <div key={day.date} className="bg-dimension border border-nebula rounded-card p-4 shadow-card animate-card-appear">
@@ -138,7 +164,12 @@ export default function MenuPage() {
 
             <div className="space-y-3">
               {day.meals.map((meal, index) => (
-                <MealSlot key={index} slot={meal} date={day.date} />
+                <MealSlot
+                  key={index}
+                  slot={meal}
+                  date={day.date}
+                  onUpdate={(updated) => handleMealSlotUpdate(day.date, index, updated)}
+                />
               ))}
             </div>
           </div>

@@ -1,8 +1,9 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import type { Recipe, DietTag, FamilyMember, EquipmentId } from '../data/schema';
-import { Clock, Users, Snowflake, Thermometer } from 'lucide-react';
+import { Clock, Users, Snowflake, Thermometer, Pencil, Trash2 } from 'lucide-react';
+import { Modal } from '../components/ui/Modal';
 
 const TAG_LABELS: Record<DietTag, string> = {
   'gastritis-safe': 'Щадящее',
@@ -11,6 +12,9 @@ const TAG_LABELS: Record<DietTag, string> = {
   'freezable': 'Можно заморозить',
   'quick': 'Быстро',
   'prep-day': 'Заготовка',
+  'overnight': 'С вечера',
+  'packable': 'С собой',
+  'low-calorie': 'Низкокалорийное',
 };
 
 const MEMBER_LABELS: Record<FamilyMember, string> = {
@@ -32,10 +36,25 @@ const EQUIPMENT_LABELS: Record<EquipmentId, string> = {
   bowls: 'Миски',
 };
 
+function getTagStyle(tag: DietTag): string {
+  switch (tag) {
+    case 'gastritis-safe': return 'bg-matcha/15 text-matcha border-matcha/40';
+    case 'freezable': return 'bg-frost/15 text-frost border-frost/40';
+    case 'quick': return 'bg-ramen/15 text-ramen border-ramen/40';
+    case 'prep-day': return 'bg-plasma/15 text-plasma border-plasma/40';
+    case 'overnight': return 'bg-plasma/15 text-plasma border-plasma/40';
+    case 'packable': return 'bg-miso/15 text-miso border-miso/40';
+    case 'low-calorie': return 'bg-matcha/15 text-matcha border-matcha/40';
+    default: return 'bg-nebula text-text-dim border-text-ghost';
+  }
+}
+
 export default function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -52,6 +71,13 @@ export default function RecipeDetailPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleDelete() {
+    if (!recipe) return;
+    console.log('[RecipeDetailPage] Deleting recipe:', recipe.title);
+    await db.table('recipes').delete(recipe.id);
+    navigate('/recipes');
   }
 
   if (loading) {
@@ -76,49 +102,59 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
-      <h1 className="font-heading text-3xl font-bold text-text-light mb-2">
-        {recipe.title}
-      </h1>
+      {/* Заголовок + кнопки редактирования */}
+      <div className="flex items-start justify-between mb-2">
+        <h1 className="font-heading text-3xl font-bold text-text-light flex-1">
+          {recipe.title}
+        </h1>
+        <div className="flex items-center" style={{ gap: '8px' }}>
+          <Link
+            to={`/recipe/${recipe.id}/edit`}
+            className="flex items-center px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/40 rounded-button hover:bg-portal/10 transition-colors"
+            style={{ gap: '4px' }}
+          >
+            <Pencil className="w-3.5 h-3.5" /> Изменить
+          </Link>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="flex items-center px-3 py-1.5 text-xs font-heading font-semibold text-ramen border border-ramen/40 rounded-button hover:bg-ramen/10 transition-colors"
+            style={{ gap: '4px' }}
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Удалить
+          </button>
+        </div>
+      </div>
+
       {recipe.subtitle && (
         <p className="text-text-mid font-body mb-4">{recipe.subtitle}</p>
       )}
 
       {/* Для кого и теги */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className={`text-xs px-2.5 py-1 rounded-pill font-heading font-semibold ${
+      <div className="flex flex-wrap items-center mb-4" style={{ gap: '10px' }}>
+        <span className={`text-xs px-3 py-1 font-heading font-semibold border ${
           recipe.suitableFor === 'kolya'
-            ? 'bg-portal/20 text-portal'
+            ? 'bg-portal/15 text-portal border-portal/40'
             : recipe.suitableFor === 'kristina'
-            ? 'bg-ramen/20 text-ramen'
-            : 'bg-plasma/20 text-plasma'
-        }`}>
+            ? 'bg-ramen/15 text-ramen border-ramen/40'
+            : 'bg-plasma/15 text-plasma border-plasma/40'
+        }`} style={{ borderRadius: '9999px' }}>
           {MEMBER_LABELS[recipe.suitableFor]}
         </span>
         {recipe.tags.map((tag) => (
-          <span
-            key={tag}
-            className={`text-xs px-2 py-0.5 rounded-pill font-heading ${
-              tag === 'gastritis-safe' ? 'bg-matcha/20 text-matcha'
-              : tag === 'freezable' ? 'bg-frost/20 text-frost'
-              : tag === 'quick' ? 'bg-ramen/20 text-ramen'
-              : tag === 'prep-day' ? 'bg-plasma/20 text-plasma'
-              : 'bg-nebula text-text-dim'
-            }`}
-          >
-            {TAG_LABELS[tag]}
+          <span key={tag} className={`text-xs px-3 py-1 font-heading border ${getTagStyle(tag)}`}
+            style={{ borderRadius: '9999px' }}>
+            {TAG_LABELS[tag] || tag}
           </span>
         ))}
       </div>
 
-      {/* Мета: время, порции */}
-      <div className="flex items-center gap-4 mb-6 text-sm font-mono text-portal">
-        <span className="flex items-center gap-1">
-          <Clock className="w-4 h-4" />
-          ⏱ {recipe.totalTime} мин
+      {/* Мета */}
+      <div className="flex items-center mb-6 text-sm font-mono text-portal" style={{ gap: '16px' }}>
+        <span className="flex items-center" style={{ gap: '4px' }}>
+          <Clock className="w-4 h-4" /> {recipe.totalTime} мин
         </span>
-        <span className="flex items-center gap-1">
-          <Users className="w-4 h-4" />
-          {recipe.servings} порций
+        <span className="flex items-center" style={{ gap: '4px' }}>
+          <Users className="w-4 h-4" /> {recipe.servings} порций
         </span>
       </div>
 
@@ -127,12 +163,10 @@ export default function RecipeDetailPage() {
         <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">
           {recipe.equipment.length > 0 && (
             <div className="mb-3">
-              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">
-                Оборудование
-              </h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">Оборудование</h3>
+              <div className="flex flex-wrap" style={{ gap: '8px' }}>
                 {recipe.equipment.map((eq) => (
-                  <span key={eq} className="text-xs px-2.5 py-1 bg-rift border border-nebula rounded-pill text-text-mid font-body">
+                  <span key={eq} className="text-xs px-3 py-1 bg-rift border border-nebula text-text-mid font-body" style={{ borderRadius: '9999px' }}>
                     {EQUIPMENT_LABELS[eq]}
                   </span>
                 ))}
@@ -141,20 +175,16 @@ export default function RecipeDetailPage() {
           )}
           {(recipe.storage.fridge || recipe.storage.freezer) && (
             <div className={recipe.equipment.length > 0 ? 'pt-3 border-t border-nebula' : ''}>
-              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">
-                Хранение
-              </h3>
-              <div className="flex flex-wrap gap-3 text-xs font-body text-text-mid">
+              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">Хранение</h3>
+              <div className="flex flex-wrap text-xs font-body text-text-mid" style={{ gap: '12px' }}>
                 {recipe.storage.fridge && (
-                  <span className="flex items-center gap-1">
-                    <Thermometer className="w-3.5 h-3.5 text-ramen" />
-                    Холодильник: {recipe.storage.fridge} дн.
+                  <span className="flex items-center" style={{ gap: '4px' }}>
+                    <Thermometer className="w-3.5 h-3.5 text-ramen" /> Холодильник: {recipe.storage.fridge} дн.
                   </span>
                 )}
                 {recipe.storage.freezer && (
-                  <span className="flex items-center gap-1">
-                    <Snowflake className="w-3.5 h-3.5 text-frost" />
-                    Морозилка: {recipe.storage.freezer} мес.
+                  <span className="flex items-center" style={{ gap: '4px' }}>
+                    <Snowflake className="w-3.5 h-3.5 text-frost" /> Морозилка: {recipe.storage.freezer} мес.
                     {recipe.storage.vacuumSealed && ' (вакуум)'}
                   </span>
                 )}
@@ -164,14 +194,34 @@ export default function RecipeDetailPage() {
         </div>
       )}
 
+      {/* Разогрев */}
+      {recipe.reheating && recipe.reheating.length > 0 && (
+        <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">
+          <h3 className="text-sm font-heading font-semibold text-text-light mb-2">Разогрев из морозилки</h3>
+          <div className="space-y-2">
+            {recipe.reheating.map((rh, i) => (
+              <div key={i} className="flex items-center text-xs font-body text-text-mid" style={{ gap: '8px' }}>
+                <span className={`px-2 py-0.5 font-heading font-semibold border ${
+                  rh.forWhom === 'kolya' ? 'bg-portal/15 text-portal border-portal/40'
+                  : rh.forWhom === 'kristina' ? 'bg-ramen/15 text-ramen border-ramen/40'
+                  : 'bg-plasma/15 text-plasma border-plasma/40'
+                }`} style={{ borderRadius: '9999px' }}>
+                  {MEMBER_LABELS[rh.forWhom]}
+                </span>
+                <span>{rh.method}</span>
+                <span className="font-mono text-portal">{rh.duration} мин</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Ингредиенты */}
       <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">
-        <h2 className="font-heading text-xl font-bold text-text-light mb-4">
-          Ингредиенты
-        </h2>
+        <h2 className="font-heading text-xl font-bold text-text-light mb-4">Ингредиенты</h2>
         <ul className="space-y-2">
           {recipe.ingredients.map((ingredient, index) => (
-            <li key={index} className="flex items-center gap-2 text-text-mid font-body">
+            <li key={index} className="flex items-center text-text-mid font-body" style={{ gap: '8px' }}>
               <span className="text-portal">•</span>
               <span>
                 {ingredient.amount} {ingredient.unit} {ingredient.name}
@@ -182,14 +232,12 @@ export default function RecipeDetailPage() {
         </ul>
       </div>
 
-      {/* Шаги приготовления */}
+      {/* Шаги */}
       <div className="bg-dimension border border-nebula rounded-card p-5 shadow-card">
-        <h2 className="font-heading text-xl font-bold text-text-light mb-4">
-          Приготовление
-        </h2>
+        <h2 className="font-heading text-xl font-bold text-text-light mb-4">Приготовление</h2>
         <ol className="space-y-4">
           {recipe.steps.map((step) => (
-            <li key={step.order} className="flex gap-3">
+            <li key={step.order} className="flex" style={{ gap: '12px' }}>
               <span className="flex-shrink-0 w-8 h-8 rounded-full bg-rift border border-nebula flex items-center justify-center text-sm font-heading font-semibold text-portal">
                 {step.order}
               </span>
@@ -197,20 +245,11 @@ export default function RecipeDetailPage() {
                 <p className="text-text-light font-body mb-1">{step.text}</p>
                 {step.equipment && (
                   <p className="text-sm text-text-dim font-body">
-                    {step.equipment.label}
-                    {step.equipment.settings && ` · ${step.equipment.settings}`}
+                    {step.equipment.label}{step.equipment.settings && ` · ${step.equipment.settings}`}
                   </p>
                 )}
-                {step.duration && (
-                  <p className="text-xs font-mono text-portal mt-1">
-                    ⏱ {step.duration} мин
-                  </p>
-                )}
-                {step.tip && (
-                  <p className="text-xs text-text-dim font-body mt-1 italic">
-                    💡 {step.tip}
-                  </p>
-                )}
+                {step.duration && <p className="text-xs font-mono text-portal mt-1">⏱ {step.duration} мин</p>}
+                {step.tip && <p className="text-xs text-text-dim font-body mt-1 italic">💡 {step.tip}</p>}
               </div>
             </li>
           ))}
@@ -219,12 +258,31 @@ export default function RecipeDetailPage() {
 
       {recipe.notes && (
         <div className="bg-dimension border border-nebula rounded-card p-5 mt-6 shadow-card">
-          <h3 className="font-heading font-semibold text-text-light mb-2">
-            Заметки
-          </h3>
+          <h3 className="font-heading font-semibold text-text-light mb-2">Заметки</h3>
           <p className="text-text-mid font-body">{recipe.notes}</p>
         </div>
       )}
+
+      {/* Delete confirmation modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Удалить рецепт?"
+        footer={
+          <>
+            <button onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2 bg-rift border border-nebula text-text-mid font-heading font-semibold text-sm rounded-button hover:bg-nebula transition-colors">
+              Отмена
+            </button>
+            <button onClick={handleDelete}
+              className="px-4 py-2 bg-ramen text-void font-heading font-semibold text-sm rounded-button hover:bg-ramen/80 transition-colors">
+              Удалить
+            </button>
+          </>
+        }
+      >
+        <p>Рецепт «{recipe.title}» будет удалён без возможности восстановления.</p>
+      </Modal>
     </div>
   );
 }

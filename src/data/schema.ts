@@ -8,7 +8,10 @@ export type DietTag =
   | 'rich-feel'         // ощущение "богатой" еды
   | 'freezable'         // можно заморозить
   | 'quick'             // <15 минут
-  | 'prep-day';         // заготовка выходного дня
+  | 'prep-day'          // заготовка выходного дня
+  | 'overnight'         // можно приготовить с вечера
+  | 'packable'          // можно взять с собой
+  | 'low-calorie';      // низкокалорийное
 
 /** Приём пищи */
 export type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner';
@@ -65,6 +68,15 @@ export interface RecipeStep {
   tip?: string;                 // подсказка ("пока варится — формуйте котлеты")
 }
 
+/** Инструкция разогрева для конкретного члена семьи */
+export interface ReheatingInstruction {
+  forWhom: FamilyMember;
+  method: string;               // "Пароварка 25 мин"
+  equipment: EquipmentId;
+  temperature?: string;         // "180°C"
+  duration: number;             // минуты
+}
+
 /** Рецепт */
 export interface Recipe {
   id: string;                 // nanoid
@@ -87,10 +99,18 @@ export interface Recipe {
     freezer?: number;         // месяцев в морозилке
     vacuumSealed?: boolean;   // упаковано вакууматором (дольше хранится)
   };
+  reheating?: ReheatingInstruction[];  // инструкции разогрева
+  version?: number;           // версия seed-рецепта для условной синхронизации
   source?: string;            // откуда рецепт
   imageUrl?: string;
   createdAt: string;          // ISO date
   updatedAt: string;
+}
+
+/** Использование компонента из морозилки */
+export interface FreezerUsage {
+  freezerItemId: string;
+  portions: number;
 }
 
 /** Слот в меню */
@@ -101,6 +121,8 @@ export interface MealSlot {
     forWhom: FamilyMember;
     variation?: string;       // "с кабачковым соусом вместо сырного"
     missingIngredients?: string[];  // названия отсутствующих ингредиентов
+    usesFromFreezer?: FreezerUsage[];  // компоненты из морозилки
+    coffeeOnly?: boolean;     // только кофе, пропустить готовку
   }[];
 }
 
@@ -139,6 +161,7 @@ export interface ShoppingItem {
   markedMissing?: boolean;  // отмечен как отсутствующий
   markedAt?: string;  // когда отмечен
   source: 'auto' | 'manual' | 'missing';  // откуда добавлен
+  coveredByFreezer?: boolean;  // покрыто морозилкой
 }
 
 /** Элемент морозилки */
@@ -146,10 +169,14 @@ export interface FreezerItem {
   id: string;
   recipeId: string;
   name: string;
-  portions: number;
+  portions: number;           // обратная совместимость
+  portionsRemaining: number;
+  portionsOriginal: number;
+  batchId?: string;           // ID партии заготовки
   frozenDate: string;
   expiryDate: string;
   location?: string;          // "верхняя полка", "ящик 2"
+  reheating?: ReheatingInstruction[];
 }
 
 /** Задача подготовки */
@@ -165,6 +192,29 @@ export interface PrepTask {
   group: 'vegetables' | 'meat' | 'dairy' | 'grains' | 'other';  // группа для группировки
   canPrepareAhead: boolean;  // можно подготовить заранее
   storageTime?: number;  // часов хранения после подготовки
+}
+
+/** Задача batch cooking (заготовки) */
+export interface BatchTask {
+  id: string;
+  recipeId: string;
+  recipeTitle: string;
+  phase: 1 | 2 | 3 | 4;       // час/фаза
+  phaseLabel: string;           // "Фарш", "Параллельно", "Пюре и соусы", "Упаковка"
+  equipment: EquipmentId;
+  step: string;                 // описание задачи
+  duration: number;             // минуты
+  portions: number;             // сколько порций заготавливаем
+  completed: boolean;
+}
+
+/** План batch cooking */
+export interface BatchPlan {
+  id: string;
+  date: string;
+  tasks: BatchTask[];
+  totalTime: number;            // минуты
+  completedTasks: string[];
 }
 
 /** План подготовки */

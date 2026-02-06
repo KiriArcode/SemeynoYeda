@@ -7,6 +7,8 @@ import { ChefModeProvider } from '../contexts/ChefModeContext';
 const MenuPage = lazy(() => import('../pages/MenuPage'));
 const RecipesPage = lazy(() => import('../pages/RecipesPage'));
 const RecipeDetailPage = lazy(() => import('../pages/RecipeDetailPage'));
+const RecipeNewPage = lazy(() => import('../pages/RecipeNewPage'));
+const RecipeEditPage = lazy(() => import('../pages/RecipeEditPage'));
 const FreezerPage = lazy(() => import('../pages/FreezerPage'));
 const ShoppingPage = lazy(() => import('../pages/ShoppingPage'));
 const PrepPage = lazy(() => import('../pages/PrepPage'));
@@ -21,18 +23,13 @@ function LoadingFallback() {
   );
 }
 
-// Определяем basename в зависимости от окружения
-// В dev режиме basename пустой, в prod - '/SemeynoYeda'
-// Проверяем также window.location для надежности
 const getBasename = () => {
-  // Сначала проверяем window.location (работает и в dev, и в prod)
   if (typeof window !== 'undefined') {
     const pathname = window.location.pathname;
     if (pathname.startsWith('/SemeynoYeda')) {
       return '/SemeynoYeda';
     }
   }
-  // Иначе используем env переменную
   const isProd = (import.meta as any).env?.PROD || (import.meta as any).env?.MODE === 'production';
   return isProd ? '/SemeynoYeda' : '';
 };
@@ -51,7 +48,9 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Suspense fallback={<LoadingFallback />}><MenuPage /></Suspense> },
       { path: '/recipes', element: <Suspense fallback={<LoadingFallback />}><RecipesPage /></Suspense> },
+      { path: '/recipe/new', element: <Suspense fallback={<LoadingFallback />}><RecipeNewPage /></Suspense> },
       { path: '/recipe/:id', element: <Suspense fallback={<LoadingFallback />}><RecipeDetailPage /></Suspense> },
+      { path: '/recipe/:id/edit', element: <Suspense fallback={<LoadingFallback />}><RecipeEditPage /></Suspense> },
       { path: '/freezer', element: <Suspense fallback={<LoadingFallback />}><FreezerPage /></Suspense> },
       { path: '/shopping', element: <Suspense fallback={<LoadingFallback />}><ShoppingPage /></Suspense> },
       { path: '/prep', element: <Suspense fallback={<LoadingFallback />}><PrepPage /></Suspense> },
