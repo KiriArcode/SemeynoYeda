@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { db } from '../lib/db';
 import type { WeekMenu } from '../data/schema';
 import { MealSlot } from '../components/menu/MealSlot';
@@ -38,7 +39,7 @@ export default function MenuPage() {
   if (!weekMenu) {
     return (
       <div className="container mx-auto px-4 py-6 pb-24">
-        <div className="bg-dimension border border-nebula rounded-card p-5 text-center">
+        <div className="bg-dimension border border-nebula rounded-card p-5 text-center shadow-card">
           <h2 className="font-heading text-xl font-bold text-text-light mb-2">
             Вселенная голодна 🌀
           </h2>
@@ -46,16 +47,16 @@ export default function MenuPage() {
             Запланируем неделю?
           </p>
           <div className="mt-4 pt-4 border-t border-nebula">
-            <p className="text-sm text-text-dim font-body mb-3">
+            <p className="text-sm text-text-dim font-body mb-4">
               Начните с просмотра рецептов или создайте меню на неделю
             </p>
-            <div className="flex flex-col gap-2 items-center">
-              <a
-                href="/SemeynoYeda/recipes"
-                className="px-4 py-2 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-shadow"
+            <div className="flex flex-col gap-3 items-center">
+              <Link
+                to="/recipes"
+                className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all hover:scale-105"
               >
                 Посмотреть рецепты
-              </a>
+              </Link>
             </div>
           </div>
         </div>
