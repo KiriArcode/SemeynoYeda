@@ -42,9 +42,22 @@ export default function MenuPage() {
           <h2 className="font-heading text-xl font-bold text-text-light mb-2">
             Вселенная голодна 🌀
           </h2>
-          <p className="text-text-mid font-body">
+          <p className="text-text-mid font-body mb-4">
             Запланируем неделю?
           </p>
+          <div className="mt-4 pt-4 border-t border-nebula">
+            <p className="text-sm text-text-dim font-body mb-3">
+              Начните с просмотра рецептов или создайте меню на неделю
+            </p>
+            <div className="flex flex-col gap-2 items-center">
+              <a
+                href="/SemeynoYeda/recipes"
+                className="px-4 py-2 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-shadow"
+              >
+                Посмотреть рецепты
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     );
