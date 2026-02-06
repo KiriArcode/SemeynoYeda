@@ -20,6 +20,10 @@ export default function RecipesPage() {
 
   async function loadRecipes() {
     try {
+      // Убеждаемся, что база инициализирована
+      const { initializeDatabase } = await import('../lib/initDb');
+      await initializeDatabase();
+      
       const allRecipes = await db.table('recipes').toArray();
       setRecipes(allRecipes);
       setFilteredRecipes(allRecipes);
