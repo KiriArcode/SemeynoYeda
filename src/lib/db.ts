@@ -53,4 +53,16 @@ db.version(2)
       });
   });
 
+// Версия 3: добавление индекса createdAt для menus
+db.version(3)
+  .stores({
+    recipes: 'id, slug, category, *tags, suitableFor',
+    menus: 'id, weekStart, shoppingDay, createdAt',
+    freezer: 'id, recipeId, expiryDate',
+    shopping: 'ingredient, category, checked, markedMissing',
+    prepPlans: 'id, date',
+    cookingSessions: 'id, date, mealType',
+    chefSettings: 'id',
+  });
+
 export { db };
