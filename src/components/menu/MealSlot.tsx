@@ -14,6 +14,8 @@ interface MealSlotProps {
 export function MealSlot({ slot, onUpdate }: MealSlotProps) {
   const [showIngredientCheck, setShowIngredientCheck] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipesLoading, setRecipesLoading] = useState(false);
+  const [recipesError, setRecipesError] = useState<string | null>(null);
   const { getMissingIngredients } = useIngredientAvailability();
   const [missingIngredients, setMissingIngredients] = useState<string[]>([]);
 
@@ -24,22 +26,56 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
     if (recipeIds.length === 0) {
       setRecipes([]);
       setMissingIngredients([]);
+      setRecipesError(null);
       return;
     }
-    loadRecipes();
+    let cancelled = false;
+    setRecipesLoading(true);
+    setRecipesError(null);
+    (async () => {
+      try {
+        const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
+        const validRecipes = (loadedRecipes || []).filter((r): r is Recipe => r != null && typeof r === 'object' && 'id' in r && 'title' in r);
+        if (!cancelled) {
+          setRecipes(validRecipes);
+        }
+        const missing = await getMissingIngredients(recipeIds);
+        if (!cancelled) {
+          setMissingIngredients(missing);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setRecipes([]);
+          setRecipesError(error instanceof Error ? error.message : 'Ошибка загрузки рецептов');
+          console.error('MealSlot: Failed to load recipes', { recipeIds, error });
+        }
+      } finally {
+        if (!cancelled) {
+          setRecipesLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [JSON.stringify(recipeIds)]);
 
   async function loadRecipes() {
+    if (recipeIds.length === 0) return;
+    setRecipesLoading(true);
+    setRecipesError(null);
     try {
       const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
-      const validRecipes = loadedRecipes.filter((r): r is Recipe => r !== undefined);
+      const validRecipes = (loadedRecipes || []).filter((r): r is Recipe => r != null && typeof r === 'object' && 'id' in r && 'title' in r);
       setRecipes(validRecipes);
-
-      // Проверить отсутствующие ингредиенты
       const missing = await getMissingIngredients(recipeIds);
       setMissingIngredients(missing);
     } catch (error) {
-      console.error('Failed to load recipes:', error);
+      setRecipes([]);
+      setRecipesError(error instanceof Error ? error.message : 'Ошибка загрузки рецептов');
+      console.error('MealSlot: Failed to load recipes', { recipeIds, error });
+    } finally {
+      setRecipesLoading(false);
     }
   }
 
@@ -77,7 +113,13 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
             {slot.mealType === 'snack' && 'Полдник'}
             {slot.mealType === 'dinner' && 'Ужин'}
           </h4>
-          {recipes.length > 0 && (
+          {recipesLoading && recipeIds.length > 0 && (
+            <p className="text-sm font-body text-text-dim">Загрузка рецептов...</p>
+          )}
+          {recipesError && (
+            <p className="text-xs font-body text-ramen">{recipesError}</p>
+          )}
+          {!recipesLoading && recipes.length > 0 && (
             <div className="space-y-1">
               {recipes.map((recipe, index) => {
                 const entry = slot.recipes[index];
@@ -103,6 +145,9 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
                   </div>
                 );
               })}
+              {slot.recipes.length > recipes.length && (
+                <p className="text-xs font-body text-text-dim">Рецепт не найден</p>
+              )}
             </div>
           )}
         </div>

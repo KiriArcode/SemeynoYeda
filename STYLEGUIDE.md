@@ -1,5 +1,18 @@
 # 🟢 Dimension Kitchen — Style Guide
 
+**Словарь элементов по страницам и компонентам:** см. [DESIGN_DICTIONARY.md](DESIGN_DICTIONARY.md) — там перечислены все UI-элементы, классы и примеры кода.
+
+---
+
+## Как вносить правки в дизайн
+
+- **Цвета** — только из палитры: `void`, `dimension`, `rift`, `nebula`, `portal`, `ramen`, `miso`, `matcha`, `sakura`, `frost`, `plasma`. Текст: `text-light`, `text-mid`, `text-dim`, `text-ghost`. Фоны: `bg-void`, `bg-dimension`, `bg-rift`.
+- **Типографика** — заголовки: `font-heading` (Chakra Petch), размеры `text-xl`–`text-3xl`; основной текст: `font-body` (DM Sans); данные/время: `font-mono` (JetBrains Mono), цвет `text-portal`.
+- **Компоненты** — карточки: `bg-dimension border border-nebula rounded-card p-4 shadow-card`; кнопки — классы из этого гайда (Primary, Secondary, Ghost). Скругления: `rounded-button` (10px), `rounded-card` (16px), `rounded-modal` (20px), `rounded-pill` (9999px).
+- **Где править:** глобальные стили и переменные — [src/styles/globals.css](src/styles/globals.css); конфиг Tailwind — [tailwind.config.ts](tailwind.config.ts); стили в компонентах — через `className` в TSX. При добавлении новых паттернов обновлять [STYLEGUIDE.md](STYLEGUIDE.md) и [DESIGN_DICTIONARY.md](DESIGN_DICTIONARY.md).
+
+---
+
 ## Философия дизайна
 
 **Концепция: "Портал Рика ведёт на кухню"**
