@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../lib/db';
 import type { WeekMenu } from '../data/schema';
+import { getSeedWeekMenu } from '../data/seedMenu';
 import { MealSlot } from '../components/menu/MealSlot';
-import { Calendar } from 'lucide-react';
+import { Calendar, Copy } from 'lucide-react';
 
 export default function MenuPage() {
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creatingFromTemplate, setCreatingFromTemplate] = useState(false);
 
   useEffect(() => {
     loadWeekMenu();
@@ -18,11 +20,26 @@ export default function MenuPage() {
       const menu = await db.table('menus').orderBy('createdAt').last();
       if (menu) {
         setWeekMenu(menu);
+      } else {
+        setWeekMenu(null);
       }
     } catch (error) {
       console.error('Failed to load week menu:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function createMenuFromTemplate() {
+    setCreatingFromTemplate(true);
+    try {
+      const menu = getSeedWeekMenu();
+      await db.table('menus').add(menu);
+      await loadWeekMenu();
+    } catch (error) {
+      console.error('Failed to create menu from template:', error);
+    } finally {
+      setCreatingFromTemplate(false);
     }
   }
 
@@ -51,9 +68,18 @@ export default function MenuPage() {
               Начните с просмотра рецептов или создайте меню на неделю
             </p>
             <div className="flex flex-col gap-3 items-center">
+              <button
+                type="button"
+                onClick={createMenuFromTemplate}
+                disabled={creatingFromTemplate}
+                className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all hover:scale-105 disabled:opacity-60 flex items-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                {creatingFromTemplate ? 'Создаём...' : 'Создать меню из шаблона'}
+              </button>
               <Link
                 to="/recipes"
-                className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all hover:scale-105"
+                className="px-6 py-3 bg-rift border border-nebula text-text-light font-heading font-semibold rounded-button hover:bg-nebula transition-colors"
               >
                 Посмотреть рецепты
               </Link>
@@ -66,9 +92,20 @@ export default function MenuPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
-      <h1 className="font-heading text-2xl font-bold text-text-light mb-6">
-        Меню недели
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1 className="font-heading text-2xl font-bold text-text-light">
+          Меню недели
+        </h1>
+        <button
+          type="button"
+          onClick={createMenuFromTemplate}
+          disabled={creatingFromTemplate}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
+        >
+          <Copy className="w-4 h-4" />
+          {creatingFromTemplate ? 'Создаём...' : 'Новое из шаблона'}
+        </button>
+      </div>
 
       <div className="space-y-4">
         {weekMenu.days.map((day) => (

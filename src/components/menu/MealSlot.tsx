@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../../lib/db';
 import type { MealSlot as MealSlotType, Recipe } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
@@ -18,6 +18,16 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
   const [missingIngredients, setMissingIngredients] = useState<string[]>([]);
 
   const recipeIds = slot.recipes.map((r) => r.recipeId);
+
+  // Подгружать рецепты при отображении слота, чтобы названия блюд были видны сразу
+  useEffect(() => {
+    if (recipeIds.length === 0) {
+      setRecipes([]);
+      setMissingIngredients([]);
+      return;
+    }
+    loadRecipes();
+  }, [JSON.stringify(recipeIds)]);
 
   async function loadRecipes() {
     try {
@@ -69,24 +79,30 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
           </h4>
           {recipes.length > 0 && (
             <div className="space-y-1">
-              {recipes.map((recipe) => (
-                <div key={recipe.id} className="flex items-center gap-2">
-                  <span className="text-sm font-body text-text-mid">{recipe.title}</span>
-                  {slot.recipes.find((r) => r.recipeId === recipe.id)?.forWhom && (
-                    <span className={`text-xs px-2 py-0.5 rounded-pill font-heading font-semibold ${
-                      slot.recipes.find((r) => r.recipeId === recipe.id)?.forWhom === 'kolya'
-                        ? 'bg-portal/20 text-portal'
-                        : slot.recipes.find((r) => r.recipeId === recipe.id)?.forWhom === 'kristina'
-                        ? 'bg-ramen/20 text-ramen'
-                        : 'bg-plasma/20 text-plasma'
-                    }`}>
-                      {slot.recipes.find((r) => r.recipeId === recipe.id)?.forWhom === 'kolya' && 'Коля'}
-                      {slot.recipes.find((r) => r.recipeId === recipe.id)?.forWhom === 'kristina' && 'Кристина'}
-                      {slot.recipes.find((r) => r.recipeId === recipe.id)?.forWhom === 'both' && 'Оба'}
-                    </span>
-                  )}
-                </div>
-              ))}
+              {recipes.map((recipe, index) => {
+                const entry = slot.recipes[index];
+                return (
+                  <div key={`${recipe.id}-${index}`} className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-body text-text-mid">{recipe.title}</span>
+                    {entry?.variation && (
+                      <span className="text-xs text-text-dim font-body">({entry.variation})</span>
+                    )}
+                    {entry?.forWhom && (
+                      <span className={`text-xs px-2 py-0.5 rounded-pill font-heading font-semibold ${
+                        entry.forWhom === 'kolya'
+                          ? 'bg-portal/20 text-portal'
+                          : entry.forWhom === 'kristina'
+                          ? 'bg-ramen/20 text-ramen'
+                          : 'bg-plasma/20 text-plasma'
+                      }`}>
+                        {entry.forWhom === 'kolya' && 'Коля'}
+                        {entry.forWhom === 'kristina' && 'Кристина'}
+                        {entry.forWhom === 'both' && 'Оба'}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
