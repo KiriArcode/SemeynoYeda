@@ -6,27 +6,22 @@
     <title>SemeynoYeda — Семейная еда</title>
     <script>
       // GitHub Pages fallback для SPA
-      // Редиректим все 404 на index.html с сохранением пути
+      // Сохраняем оригинальный путь перед редиректом на index.html
       var path = window.location.pathname;
       var search = window.location.search;
       var hash = window.location.hash;
       
-      // Если путь уже содержит /SemeynoYeda/, используем его
-      // Иначе добавляем префикс
       var basePath = '/SemeynoYeda';
-      var targetPath = path;
       
-      if (!path.startsWith(basePath)) {
-        targetPath = basePath + path;
+      // Сохраняем оригинальный путь в sessionStorage для восстановления после редиректа
+      // Это нужно потому что после редиректа на index.html путь изменится
+      if (path !== basePath + '/index.html' && path !== basePath + '/') {
+        sessionStorage.setItem('404-redirect-path', path + search + hash);
       }
       
-      // Убираем trailing slash если есть (кроме корня)
-      if (targetPath !== basePath + '/' && targetPath.endsWith('/')) {
-        targetPath = targetPath.slice(0, -1);
-      }
-      
-      // Редиректим на index.html с сохранением пути
-      var redirectUrl = basePath + '/index.html' + (targetPath !== basePath + '/index.html' ? '#' + targetPath.replace(basePath, '') : '') + search + hash;
+      // Редиректим на index.html
+      // React Router восстановит путь из sessionStorage или использует текущий путь
+      var redirectUrl = basePath + '/index.html';
       window.location.replace(redirectUrl);
     </script>
   </head>

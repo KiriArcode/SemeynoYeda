@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import type { ChefModeSettings } from '../data/schema';
 import { ChefHat, Settings } from 'lucide-react';
+import { useChefMode } from '../contexts/ChefModeContext';
 
 const DEFAULT_SETTINGS: ChefModeSettings = {
   id: 'default',
@@ -12,12 +13,18 @@ const DEFAULT_SETTINGS: ChefModeSettings = {
 };
 
 export default function ChefSettingsPage() {
+  const { settings: contextSettings, loading: contextLoading } = useChefMode();
   const [settings, setSettings] = useState<ChefModeSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    if (contextSettings) {
+      setSettings(contextSettings);
+      setLoading(false);
+    } else if (!contextLoading) {
+      loadSettings();
+    }
+  }, [contextSettings, contextLoading]);
 
   async function loadSettings() {
     try {
@@ -26,6 +33,7 @@ export default function ChefSettingsPage() {
         setSettings(saved);
       } else {
         await db.table('chefSettings').put(DEFAULT_SETTINGS);
+        setSettings(DEFAULT_SETTINGS);
       }
     } catch (error) {
       console.error('Failed to load chef settings:', error);
@@ -37,7 +45,13 @@ export default function ChefSettingsPage() {
   async function updateSettings(updates: Partial<ChefModeSettings>) {
     const newSettings: ChefModeSettings = { ...settings, ...updates };
     setSettings(newSettings);
-    await db.table('chefSettings').put(newSettings);
+    try {
+      await db.table('chefSettings').put(newSettings);
+      // Отправляем событие для синхронизации других компонентов
+      window.dispatchEvent(new CustomEvent('chefModeChanged'));
+    } catch (error) {
+      console.error('Failed to update chef settings:', error);
+    }
   }
 
   if (loading) {

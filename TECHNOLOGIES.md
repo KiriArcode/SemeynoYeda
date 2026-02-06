@@ -134,7 +134,7 @@ SemeynoYeda построен на современном веб-стеке с ф
 
 **Конфигурация:**
 ```typescript
-basename: '/semeyno-yeda/' // для GitHub Pages
+basename: '/SemeynoYeda' // для GitHub Pages (БЕЗ trailing slash)
 ```
 
 ---

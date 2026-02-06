@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { db } from '../lib/db';
 import type { Recipe } from '../data/schema';
 import { Search } from 'lucide-react';
 
 export default function RecipesPage() {
-  const navigate = useNavigate();
   const location = useLocation();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
@@ -13,25 +12,6 @@ export default function RecipesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
-  console.log('[DEBUG] RecipesPage rendering:', { recipesCount: recipes.length, filteredCount: filteredRecipes.length, loading, navigateType: typeof navigate });
-
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7245/ingest/bacec0f2-4fcf-4e43-9ddc-9039aecfc526', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'RecipesPage.tsx:component-mount',
-        message: 'RecipesPage mounted',
-        data: { recipesCount: recipes.length, filteredCount: filteredRecipes.length, loading },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'C'
-      })
-    }).catch(() => {});
-  }, []);
-  // #endregion
 
   useEffect(() => {
     loadRecipes();
@@ -42,60 +22,15 @@ export default function RecipesPage() {
   }, [recipes, searchQuery, selectedCategory]);
 
   async function loadRecipes() {
-    // #region agent log
-    fetch('http://127.0.0.1:7245/ingest/bacec0f2-4fcf-4e43-9ddc-9039aecfc526', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'RecipesPage.tsx:loadRecipes-entry',
-        message: 'loadRecipes called',
-        data: {},
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'C'
-      })
-    }).catch(() => {});
-    // #endregion
     try {
       // Убеждаемся, что база инициализирована
       const { initializeDatabase } = await import('../lib/initDb');
       await initializeDatabase();
       
       const allRecipes = await db.table('recipes').toArray();
-      // #region agent log
-      fetch('http://127.0.0.1:7245/ingest/bacec0f2-4fcf-4e43-9ddc-9039aecfc526', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location: 'RecipesPage.tsx:loadRecipes-after-db',
-          message: 'Recipes loaded from DB',
-          data: { count: allRecipes.length, ids: allRecipes.map(r => r.id) },
-          timestamp: Date.now(),
-          sessionId: 'debug-session',
-          runId: 'run1',
-          hypothesisId: 'C'
-        })
-      }).catch(() => {});
-      // #endregion
       setRecipes(allRecipes);
       setFilteredRecipes(allRecipes);
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7245/ingest/bacec0f2-4fcf-4e43-9ddc-9039aecfc526', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location: 'RecipesPage.tsx:loadRecipes-error',
-          message: 'Error loading recipes',
-          data: { error: String(error) },
-          timestamp: Date.now(),
-          sessionId: 'debug-session',
-          runId: 'run1',
-          hypothesisId: 'C'
-        })
-      }).catch(() => {});
-      // #endregion
       console.error('Failed to load recipes:', error);
     } finally {
       setLoading(false);
@@ -200,24 +135,8 @@ export default function RecipesPage() {
                   console.log('[DEBUG] Recipe card Link clicked:', { 
                     recipeId: recipe.id, 
                     targetPath, 
-                    currentPath: location.pathname,
-                    windowPath: window.location.pathname
+                    currentPath: location.pathname
                   });
-                  // #region agent log
-                  fetch('http://127.0.0.1:7245/ingest/bacec0f2-4fcf-4e43-9ddc-9039aecfc526', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      location: 'RecipesPage.tsx:recipe-card-click',
-                      message: 'Recipe card clicked',
-                      data: { recipeId: recipe.id, recipeTitle: recipe.title, targetPath, currentPath: location.pathname },
-                      timestamp: Date.now(),
-                      sessionId: 'debug-session',
-                      runId: 'run1',
-                      hypothesisId: 'A'
-                    })
-                  }).catch(() => {});
-                  // #endregion
                 }}
                 className="bg-dimension border border-nebula rounded-card p-4 shadow-card hover:border-portal/30 hover:shadow-glow transition-all cursor-pointer block"
               >

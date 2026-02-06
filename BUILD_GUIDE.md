@@ -6,8 +6,8 @@
 
 ```bash
 # Создать Vite проект
-npm create vite@latest semeyno-yeda -- --template react-ts
-cd semeyno-yeda
+npm create vite@latest SemeynoYeda -- --template react-ts
+cd SemeynoYeda
 
 # Установить зависимости
 npm install
@@ -46,7 +46,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: '/semeyno-yeda/',  // ← имя репозитория на GitHub
+  base: '/SemeynoYeda/',  // ← имя репозитория на GitHub (с заглавными буквами)
   plugins: [
     react(),
     tailwindcss(),
@@ -60,7 +60,7 @@ export default defineConfig({
         theme_color: '#39FF14',
         background_color: '#0B0E14',
         display: 'standalone',
-        start_url: '/semeyno-yeda/',
+        start_url: '/SemeynoYeda/',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -88,8 +88,10 @@ export default defineConfig({
 
 #### src/styles/globals.css
 ```css
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @theme {
   /* Core — фоны и поверхности */
@@ -598,7 +600,7 @@ const router = createBrowserRouter([
     ],
   },
 ], {
-  basename: '/semeyno-yeda/',  // ← для GitHub Pages
+  basename: '/SemeynoYeda',  // ← для GitHub Pages (БЕЗ trailing slash)
 });
 
 export function AppRouter() {

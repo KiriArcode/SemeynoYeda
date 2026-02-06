@@ -30,18 +30,15 @@
 ### 2.2 Структура проекта
 
 ```
-semeyno-yeda/
+SemeynoYeda/
 ├── .cursor/                    # Cursor IDE настройки
-│   └── rules/
-│       └── project.mdc         # Правила для Cursor
+│   └── rules/                  # Правила для Cursor (опционально)
 ├── public/
 │   ├── icons/                  # PWA иконки (192, 512)
 │   └── manifest.json           # PWA манифест
 ├── src/
 │   ├── app/
-│   │   ├── App.tsx             # Корневой компонент
-│   │   ├── Router.tsx          # Маршруты
-│   │   └── providers.tsx       # Context providers
+│   │   └── Router.tsx          # Маршруты и конфигурация роутера
 │   ├── components/
 │   │   ├── ui/                 # Базовые UI компоненты
 │   │   │   ├── Button.tsx

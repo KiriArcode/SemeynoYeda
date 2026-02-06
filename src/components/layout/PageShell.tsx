@@ -1,6 +1,6 @@
-import { useState, useEffect, ReactNode } from 'react';
-import { db } from '../../lib/db';
+import { ReactNode } from 'react';
 import { ChefModeToggle } from './ChefModeToggle';
+import { useChefMode } from '../../contexts/ChefModeContext';
 
 interface PageShellProps {
   children: ReactNode;
@@ -8,31 +8,7 @@ interface PageShellProps {
 }
 
 export function PageShell({ children, showChefToggle = true }: PageShellProps) {
-  const [chefModeEnabled, setChefModeEnabled] = useState(false);
-
-  useEffect(() => {
-    loadChefMode();
-  }, []);
-
-  async function loadChefMode() {
-    try {
-      const settings = await db.table('chefSettings').get('default');
-      if (settings) {
-        setChefModeEnabled(settings.enabled);
-      }
-    } catch (error) {
-      console.error('Failed to load chef mode:', error);
-    }
-  }
-
-  // Подписка на изменения настроек режима повара
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadChefMode();
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const { enabled } = useChefMode();
 
   return (
     <div className="min-h-screen bg-void">
@@ -46,7 +22,7 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
           </div>
         </header>
       )}
-      <main className={`${chefModeEnabled ? 'chef-mode' : 'normal-mode'}`}>
+      <main className={`${enabled ? 'chef-mode' : 'normal-mode'}`}>
         {children}
       </main>
     </div>
