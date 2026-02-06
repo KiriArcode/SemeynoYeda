@@ -1,39 +1,62 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
 
-const ROUTE_LABELS: Record<string, string> = {
-  '': 'Меню',
-  'recipes': 'Рецепты',
-  'recipe': 'Рецепт',
-  'shopping': 'Покупки',
-  'freezer': 'Морозилка',
-  'prep': 'Подготовка',
-  'cooking': 'Готовка',
-  'settings': 'Настройки',
-  'chef': 'Режим повара',
-};
+interface BreadcrumbItem {
+  label: string;
+  path: string;
+}
+
+/**
+ * Строит хлебные крошки на основе текущего маршрута.
+ * Обрабатывает специальные случаи:
+ *   /recipe/:id     → Меню > Рецепты > Рецепт
+ *   /recipes        → Меню > Рецепты
+ *   /settings/chef  → Меню > Настройки повара
+ */
+function buildCrumbs(pathname: string): BreadcrumbItem[] {
+  const crumbs: BreadcrumbItem[] = [{ label: 'Меню', path: '/' }];
+  const segments = pathname.split('/').filter(Boolean);
+
+  if (segments.length === 0) return [];
+
+  // /recipe/:id → Меню > Рецепты > Рецепт
+  if (segments[0] === 'recipe' && segments.length >= 2) {
+    crumbs.push({ label: 'Рецепты', path: '/recipes' });
+    crumbs.push({ label: 'Рецепт', path: pathname });
+    return crumbs;
+  }
+
+  // /settings/chef → Меню > Настройки повара
+  if (segments[0] === 'settings' && segments[1] === 'chef') {
+    crumbs.push({ label: 'Настройки повара', path: '/settings/chef' });
+    return crumbs;
+  }
+
+  // Стандартные маршруты
+  const LABELS: Record<string, string> = {
+    recipes: 'Рецепты',
+    shopping: 'Покупки',
+    freezer: 'Морозилка',
+    prep: 'Подготовка',
+    cooking: 'Готовка',
+  };
+
+  const label = LABELS[segments[0]];
+  if (label) {
+    crumbs.push({ label, path: `/${segments[0]}` });
+  }
+
+  return crumbs;
+}
 
 export function Breadcrumbs() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Разбиваем путь на сегменты
-  const segments = location.pathname.split('/').filter(Boolean);
+  const crumbs = buildCrumbs(location.pathname);
 
   // На главной не показываем хлебные крошки
-  if (segments.length === 0) return null;
-
-  // Строим крошки
-  const crumbs: { label: string; path: string }[] = [
-    { label: 'Меню', path: '/' },
-  ];
-
-  let currentPath = '';
-  for (const segment of segments) {
-    currentPath += `/${segment}`;
-    const label = ROUTE_LABELS[segment] || segment;
-    crumbs.push({ label, path: currentPath });
-  }
+  if (crumbs.length === 0) return null;
 
   return (
     <div className="flex items-center gap-2 mb-4">
