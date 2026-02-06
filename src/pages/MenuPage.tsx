@@ -4,12 +4,13 @@ import { db } from '../lib/db';
 import type { WeekMenu } from '../data/schema';
 import { getSeedWeekMenu } from '../data/seedMenu';
 import { MealSlot } from '../components/menu/MealSlot';
-import { Calendar, Copy } from 'lucide-react';
+import { Calendar, Copy, CheckCircle2 } from 'lucide-react';
 
 export default function MenuPage() {
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [creatingFromTemplate, setCreatingFromTemplate] = useState(false);
+  const [templateSuccess, setTemplateSuccess] = useState(false);
 
   useEffect(() => {
     loadWeekMenu();
@@ -32,11 +33,15 @@ export default function MenuPage() {
 
   async function createMenuFromTemplate() {
     setCreatingFromTemplate(true);
+    setTemplateSuccess(false);
     try {
       const menu = getSeedWeekMenu();
       // put вместо add: если ID совпадает, перезаписать; иначе создать новое
       await db.table('menus').put(menu);
       await loadWeekMenu();
+      setTemplateSuccess(true);
+      // Убрать сообщение об успехе через 3 секунды
+      setTimeout(() => setTemplateSuccess(false), 3000);
     } catch (error) {
       console.error('Failed to create menu from template:', error);
     } finally {
@@ -97,15 +102,23 @@ export default function MenuPage() {
         <h1 className="font-heading text-2xl font-bold text-text-light">
           Меню недели
         </h1>
-        <button
-          type="button"
-          onClick={createMenuFromTemplate}
-          disabled={creatingFromTemplate}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
-        >
-          <Copy className="w-4 h-4" />
-          {creatingFromTemplate ? 'Создаём...' : 'Новое из шаблона'}
-        </button>
+        <div className="flex items-center gap-2">
+          {templateSuccess && (
+            <span className="flex items-center gap-1 text-xs text-portal font-body animate-fade-in">
+              <CheckCircle2 className="w-4 h-4" />
+              Готово!
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={createMenuFromTemplate}
+            disabled={creatingFromTemplate}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
+          >
+            <Copy className="w-4 h-4" />
+            {creatingFromTemplate ? 'Создаём...' : 'Новое из шаблона'}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">

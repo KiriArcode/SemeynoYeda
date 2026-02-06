@@ -47,8 +47,6 @@ export default function ChefSettingsPage() {
     setSettings(newSettings);
     try {
       await db.table('chefSettings').put(newSettings);
-      // Отправляем событие для синхронизации других компонентов
-      window.dispatchEvent(new CustomEvent('chefModeChanged'));
     } catch (error) {
       console.error('Failed to update chef settings:', error);
     }

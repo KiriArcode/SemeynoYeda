@@ -1,8 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { db } from '../lib/db';
-import type { Recipe, DietTag } from '../data/schema';
+import type { Recipe, DietTag, FamilyMember } from '../data/schema';
 import { Search } from 'lucide-react';
+
+const TAG_LABELS: Record<DietTag, string> = {
+  'gastritis-safe': 'Щадящее',
+  'soft-texture': 'Мягкая текстура',
+  'rich-feel': 'Сытное',
+  'freezable': 'Можно заморозить',
+  'quick': 'Быстро',
+  'prep-day': 'Заготовка',
+};
+
+const MEMBER_LABELS: Record<FamilyMember, string> = {
+  kolya: 'Коля',
+  kristina: 'Кристина',
+  both: 'Оба',
+};
 
 export default function RecipesPage() {
   const location = useLocation();
@@ -30,10 +45,6 @@ export default function RecipesPage() {
 
   async function loadRecipes() {
     try {
-      // Убеждаемся, что база инициализирована
-      const { initializeDatabase } = await import('../lib/initDb');
-      await initializeDatabase();
-      
       const allRecipes = await db.table('recipes').toArray();
       setRecipes(allRecipes);
       setFilteredRecipes(allRecipes);
@@ -153,26 +164,48 @@ export default function RecipesPage() {
               <Link
                 key={recipe.id}
                 to={targetPath}
-                onClick={() => {
-                  console.log('[DEBUG] Recipe card Link clicked:', { 
-                    recipeId: recipe.id, 
-                    targetPath, 
-                    currentPath: location.pathname
-                  });
-                }}
                 className="bg-dimension border border-nebula rounded-card p-4 shadow-card hover:border-portal/30 hover:shadow-glow transition-all cursor-pointer block card-hover"
               >
-                <h3 className="font-heading font-semibold text-text-light mb-2">
-                  {recipe.title}
-                </h3>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="font-heading font-semibold text-text-light">
+                    {recipe.title}
+                  </h3>
+                  <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-pill font-heading font-semibold ${
+                    recipe.suitableFor === 'kolya'
+                      ? 'bg-portal/20 text-portal'
+                      : recipe.suitableFor === 'kristina'
+                      ? 'bg-ramen/20 text-ramen'
+                      : 'bg-plasma/20 text-plasma'
+                  }`}>
+                    {MEMBER_LABELS[recipe.suitableFor]}
+                  </span>
+                </div>
                 {recipe.subtitle && (
                   <p className="text-sm text-text-dim font-body mb-2">{recipe.subtitle}</p>
                 )}
-                <div className="flex items-center gap-2 text-xs font-mono text-portal">
+                <div className="flex items-center gap-2 text-xs font-mono text-portal mb-2">
                   <span>⏱ {recipe.totalTime} мин</span>
                   <span className="text-text-dim">·</span>
                   <span>{recipe.servings} порций</span>
                 </div>
+                {recipe.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {recipe.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className={`text-[10px] px-1.5 py-0.5 rounded-pill font-heading ${
+                          tag === 'gastritis-safe' ? 'bg-matcha/20 text-matcha'
+                          : tag === 'freezable' ? 'bg-frost/20 text-frost'
+                          : tag === 'quick' ? 'bg-ramen/20 text-ramen'
+                          : tag === 'prep-day' ? 'bg-plasma/20 text-plasma'
+                          : 'bg-nebula text-text-dim'
+                        }`}
+                      >
+                        {TAG_LABELS[tag]}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </Link>
             );
           })}

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { db } from '../../lib/db';
 import type { MealSlot as MealSlotType, Recipe } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { IngredientCheck } from '../cooking/IngredientCheck';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ExternalLink } from 'lucide-react';
 
 interface MealSlotProps {
   slot: MealSlotType;
@@ -128,12 +129,18 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
             <p className="text-xs font-body text-ramen">{recipesError}</p>
           )}
           {!recipesLoading && recipes.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {recipes.map((recipe, index) => {
                 const entry = slot.recipes[index];
                 return (
                   <div key={`${recipe.id}-${index}`} className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-body text-text-mid">{recipe.title}</span>
+                    <Link
+                      to={`/recipe/${recipe.id}`}
+                      className="text-sm font-body text-text-mid hover:text-portal transition-colors flex items-center gap-1 underline decoration-nebula hover:decoration-portal"
+                    >
+                      {recipe.title}
+                      <ExternalLink className="w-3 h-3 opacity-50" />
+                    </Link>
                     {entry?.variation && (
                       <span className="text-xs text-text-dim font-body">({entry.variation})</span>
                     )}

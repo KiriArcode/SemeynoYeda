@@ -49,9 +49,6 @@ export function BottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => {
-                  console.log('[DEBUG] Nav link clicked:', { path: item.path, label: item.label, currentPath: location.pathname });
-                }}
                 className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors relative ${
                   active
                     ? 'text-portal'

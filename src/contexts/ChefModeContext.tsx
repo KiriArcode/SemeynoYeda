@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { db } from '../lib/db';
 import type { ChefModeSettings } from '../data/schema';
 
 interface ChefModeContextType {
   enabled: boolean;
-  settings: ChefModeSettings | null;
-  toggle: () => Promise<void>;
+  settings: ChefModeSettings;
+  toggle: () => void;
   loading: boolean;
 }
 
@@ -25,14 +25,6 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadSettings();
-
-    const handleStorageChange = () => {
-      loadSettings();
-    };
-    window.addEventListener('chefModeChanged', handleStorageChange);
-    return () => {
-      window.removeEventListener('chefModeChanged', handleStorageChange);
-    };
   }, []);
 
   async function loadSettings() {
@@ -42,35 +34,32 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
         setSettings(saved);
       } else {
         await db.table('chefSettings').put(DEFAULT_SETTINGS);
-        setSettings(DEFAULT_SETTINGS);
       }
     } catch (error) {
-      console.error('Failed to load chef mode settings:', error);
-      setSettings(DEFAULT_SETTINGS);
+      console.error('ChefMode: Failed to load settings', error);
     } finally {
       setLoading(false);
     }
   }
 
-  async function toggle() {
-    const currentSettings = settings || DEFAULT_SETTINGS;
-    const newSettings: ChefModeSettings = {
-      ...currentSettings,
-      enabled: !currentSettings.enabled,
-    };
+  // Синхронный optimistic toggle — мгновенная реакция UI
+  const toggle = useCallback(() => {
+    setSettings((prev) => {
+      const newSettings: ChefModeSettings = {
+        ...prev,
+        enabled: !prev.enabled,
+      };
 
-    // Optimistic update — instant UI response
-    setSettings(newSettings);
+      // Запись в БД в фоне (не блокирует UI)
+      db.table('chefSettings').put(newSettings).catch((error) => {
+        console.error('ChefMode: Failed to persist toggle', error);
+        // Откат при ошибке записи
+        setSettings(prev);
+      });
 
-    try {
-      await db.table('chefSettings').put(newSettings);
-      window.dispatchEvent(new CustomEvent('chefModeChanged'));
-    } catch (error) {
-      console.error('Failed to toggle chef mode:', error);
-      // Revert on failure
-      setSettings(currentSettings);
-    }
-  }
+      return newSettings;
+    });
+  }, []);
 
   return (
     <ChefModeContext.Provider

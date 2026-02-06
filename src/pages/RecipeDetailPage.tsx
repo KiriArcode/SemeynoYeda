@@ -1,8 +1,36 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import type { Recipe } from '../data/schema';
-import { Clock, Users } from 'lucide-react';
+import type { Recipe, DietTag, FamilyMember, EquipmentId } from '../data/schema';
+import { Clock, Users, Snowflake, Thermometer } from 'lucide-react';
+
+const TAG_LABELS: Record<DietTag, string> = {
+  'gastritis-safe': 'Щадящее',
+  'soft-texture': 'Мягкая текстура',
+  'rich-feel': 'Сытное',
+  'freezable': 'Можно заморозить',
+  'quick': 'Быстро',
+  'prep-day': 'Заготовка',
+};
+
+const MEMBER_LABELS: Record<FamilyMember, string> = {
+  kolya: 'Коля',
+  kristina: 'Кристина',
+  both: 'Оба',
+};
+
+const EQUIPMENT_LABELS: Record<EquipmentId, string> = {
+  stove: 'Плита',
+  oven: 'Духовка',
+  'air-grill': 'Аэрогриль',
+  'e-grill': 'Электрогриль',
+  steamer: 'Пароварка',
+  blender: 'Блендер',
+  mixer: 'Миксер',
+  grinder: 'Гриндер',
+  vacuum: 'Вакууматор',
+  bowls: 'Миски',
+};
 
 export default function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,9 +80,37 @@ export default function RecipeDetailPage() {
         {recipe.title}
       </h1>
       {recipe.subtitle && (
-        <p className="text-text-mid font-body mb-6">{recipe.subtitle}</p>
+        <p className="text-text-mid font-body mb-4">{recipe.subtitle}</p>
       )}
 
+      {/* Для кого и теги */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className={`text-xs px-2.5 py-1 rounded-pill font-heading font-semibold ${
+          recipe.suitableFor === 'kolya'
+            ? 'bg-portal/20 text-portal'
+            : recipe.suitableFor === 'kristina'
+            ? 'bg-ramen/20 text-ramen'
+            : 'bg-plasma/20 text-plasma'
+        }`}>
+          {MEMBER_LABELS[recipe.suitableFor]}
+        </span>
+        {recipe.tags.map((tag) => (
+          <span
+            key={tag}
+            className={`text-xs px-2 py-0.5 rounded-pill font-heading ${
+              tag === 'gastritis-safe' ? 'bg-matcha/20 text-matcha'
+              : tag === 'freezable' ? 'bg-frost/20 text-frost'
+              : tag === 'quick' ? 'bg-ramen/20 text-ramen'
+              : tag === 'prep-day' ? 'bg-plasma/20 text-plasma'
+              : 'bg-nebula text-text-dim'
+            }`}
+          >
+            {TAG_LABELS[tag]}
+          </span>
+        ))}
+      </div>
+
+      {/* Мета: время, порции */}
       <div className="flex items-center gap-4 mb-6 text-sm font-mono text-portal">
         <span className="flex items-center gap-1">
           <Clock className="w-4 h-4" />
@@ -65,6 +121,48 @@ export default function RecipeDetailPage() {
           {recipe.servings} порций
         </span>
       </div>
+
+      {/* Оборудование и хранение */}
+      {(recipe.equipment.length > 0 || recipe.storage.fridge || recipe.storage.freezer) && (
+        <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">
+          {recipe.equipment.length > 0 && (
+            <div className="mb-3">
+              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">
+                Оборудование
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {recipe.equipment.map((eq) => (
+                  <span key={eq} className="text-xs px-2.5 py-1 bg-rift border border-nebula rounded-pill text-text-mid font-body">
+                    {EQUIPMENT_LABELS[eq]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {(recipe.storage.fridge || recipe.storage.freezer) && (
+            <div className={recipe.equipment.length > 0 ? 'pt-3 border-t border-nebula' : ''}>
+              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">
+                Хранение
+              </h3>
+              <div className="flex flex-wrap gap-3 text-xs font-body text-text-mid">
+                {recipe.storage.fridge && (
+                  <span className="flex items-center gap-1">
+                    <Thermometer className="w-3.5 h-3.5 text-ramen" />
+                    Холодильник: {recipe.storage.fridge} дн.
+                  </span>
+                )}
+                {recipe.storage.freezer && (
+                  <span className="flex items-center gap-1">
+                    <Snowflake className="w-3.5 h-3.5 text-frost" />
+                    Морозилка: {recipe.storage.freezer} мес.
+                    {recipe.storage.vacuumSealed && ' (вакуум)'}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Ингредиенты */}
       <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">

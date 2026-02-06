@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { ChefModeToggle } from './ChefModeToggle';
+import { Breadcrumbs } from './Breadcrumbs';
 import { useChefMode } from '../../contexts/ChefModeContext';
 
 interface PageShellProps {
@@ -23,6 +24,9 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
         </header>
       )}
       <main className={`${enabled ? 'chef-mode' : 'normal-mode'}`}>
+        <div className="container mx-auto px-4 pt-4">
+          <Breadcrumbs />
+        </div>
         {children}
       </main>
     </div>

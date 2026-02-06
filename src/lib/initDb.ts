@@ -3,39 +3,38 @@ import { getSeedRecipes } from '../data/seedRecipes';
 import { getSeedWeekMenu } from '../data/seedMenu';
 
 /**
- * Проверяет, пуста ли база данных, и инициализирует её начальными данными
+ * Инициализирует и синхронизирует базу данных при каждом запуске.
+ * Всегда делает upsert seed-рецептов и seed-меню,
+ * чтобы новые рецепты из git попадали в приложение.
  */
 export async function initializeDatabase(): Promise<void> {
   try {
-    const recipeCount = await db.table('recipes').count();
-
-    if (recipeCount === 0) {
-      console.log('База данных пуста, загружаем начальные рецепты...');
-      await loadInitialRecipes();
-      console.log('Создаём начальное меню недели...');
-      await loadInitialMenu();
-    }
+    await syncSeedRecipes();
+    await syncSeedMenu();
   } catch (error) {
     console.error('Ошибка при инициализации базы данных:', error);
   }
 }
 
 /**
- * Загружает начальные рецепты в базу данных (из документа меню Пн–Вс)
+ * Upsert всех seed-рецептов в БД по id.
+ * Новые добавляются, существующие обновляются.
+ * Рецепты, созданные пользователем (без seed- prefix), не затрагиваются.
  */
-async function loadInitialRecipes(): Promise<void> {
-  const initialRecipes = getSeedRecipes();
-  await db.table('recipes').bulkAdd(initialRecipes);
-  console.log(`Загружено ${initialRecipes.length} начальных рецептов`);
+async function syncSeedRecipes(): Promise<void> {
+  const seedRecipes = getSeedRecipes();
+  // bulkPut делает upsert: если id существует — обновить, иначе создать
+  await db.table('recipes').bulkPut(seedRecipes);
+  console.log(`Синхронизировано ${seedRecipes.length} seed-рецептов`);
 }
 
 /**
- * Создаёт начальное недельное меню (Пн–Вс, 4 приёма) по документу
+ * Upsert seed-меню. Создаёт если нет, обновляет если есть.
  */
-async function loadInitialMenu(): Promise<void> {
+async function syncSeedMenu(): Promise<void> {
   const menu = getSeedWeekMenu();
-  await db.table('menus').add(menu);
-  console.log('Создано начальное меню недели');
+  await db.table('menus').put(menu);
+  console.log('Синхронизировано seed-меню');
 }
 
 /**
