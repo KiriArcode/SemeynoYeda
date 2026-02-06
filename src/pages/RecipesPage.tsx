@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { db } from '../lib/db';
-import type { Recipe } from '../data/schema';
+import type { Recipe, DietTag } from '../data/schema';
 import { Search } from 'lucide-react';
 
 export default function RecipesPage() {
@@ -10,8 +10,15 @@ export default function RecipesPage() {
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Извлечение тега из query параметров
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tag = searchParams.get('tag');
+    setSelectedTag(tag);
+  }, [location.search]);
 
   useEffect(() => {
     loadRecipes();
@@ -19,7 +26,7 @@ export default function RecipesPage() {
 
   useEffect(() => {
     filterRecipes();
-  }, [recipes, searchQuery, selectedCategory]);
+  }, [recipes, searchQuery, selectedCategory, selectedTag]);
 
   async function loadRecipes() {
     try {
@@ -39,6 +46,14 @@ export default function RecipesPage() {
 
   function filterRecipes() {
     let filtered = recipes;
+
+    // Фильтр по тегу из query параметра (например, ?tag=prep-day)
+    if (selectedTag) {
+      const validTags: DietTag[] = ['gastritis-safe', 'soft-texture', 'rich-feel', 'freezable', 'quick', 'prep-day'];
+      if (validTags.includes(selectedTag as DietTag)) {
+        filtered = filtered.filter((recipe) => recipe.tags.includes(selectedTag as DietTag));
+      }
+    }
 
     if (searchQuery) {
       filtered = filtered.filter((recipe) =>
@@ -75,11 +90,18 @@ export default function RecipesPage() {
     );
   }
 
+  const pageTitle = selectedTag === 'prep-day' ? 'Заготовки' : 'Рецепты';
+
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
       <h1 className="font-heading text-2xl font-bold text-text-light mb-6">
-        Рецепты
+        {pageTitle}
       </h1>
+      {selectedTag === 'prep-day' && (
+        <p className="text-text-mid font-body mb-4">
+          Рецепты для заготовок выходного дня
+        </p>
+      )}
 
       {/* Поиск */}
       <div className="bg-dimension border border-nebula rounded-card p-4 mb-4 shadow-card">
