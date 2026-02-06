@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SemeynoYeda — Семейная еда</title>
+    <script>
+      // GitHub Pages fallback для SPA
+      // Редиректим все 404 на index.html с сохранением пути
+      var path = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      
+      // Если путь уже содержит /SemeynoYeda/, используем его
+      // Иначе добавляем префикс
+      var basePath = '/SemeynoYeda';
+      var targetPath = path;
+      
+      if (!path.startsWith(basePath)) {
+        targetPath = basePath + path;
+      }
+      
+      // Убираем trailing slash если есть (кроме корня)
+      if (targetPath !== basePath + '/' && targetPath.endsWith('/')) {
+        targetPath = targetPath.slice(0, -1);
+      }
+      
+      // Редиректим на index.html с сохранением пути
+      var redirectUrl = basePath + '/index.html' + (targetPath !== basePath + '/index.html' ? '#' + targetPath.replace(basePath, '') : '') + search + hash;
+      window.location.replace(redirectUrl);
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; color: #39FF14; background: #0B0E14;">
+        <p>Загрузка...</p>
+      </div>
+    </div>
+  </body>
+</html>
