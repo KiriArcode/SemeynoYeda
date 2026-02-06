@@ -61,7 +61,7 @@ export function Breadcrumbs() {
   return (
     <div className="flex items-center gap-2 mb-4">
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => { console.log('[Breadcrumbs] Navigate back'); navigate(-1); }}
         className="flex items-center gap-1 px-2 py-1 text-xs font-heading font-semibold text-text-mid bg-rift border border-nebula rounded-button hover:bg-nebula hover:text-text-light hover:border-portal/30 transition-colors"
       >
         <ChevronLeft className="w-3.5 h-3.5" />

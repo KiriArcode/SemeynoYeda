@@ -26,6 +26,7 @@ export function BottomNav() {
   const { enabled } = useChefMode();
 
   const navItems = enabled ? CHEF_MODE_NAV : NORMAL_MODE_NAV;
+  console.log('[BottomNav] Render, chefMode:', enabled, 'path:', location.pathname, 'items:', navItems.map(i => i.label).join(', '));
 
   function isActive(path: string): boolean {
     if (path === '/') {
@@ -49,6 +50,7 @@ export function BottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={() => console.log(`[BottomNav] Navigate to: ${item.label} (${item.path})`)}
                 className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors relative ${
                   active
                     ? 'text-portal'

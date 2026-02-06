@@ -17,33 +17,38 @@ export default function MenuPage() {
   }, []);
 
   async function loadWeekMenu() {
+    console.log('[MenuPage] Loading week menu...');
     try {
       const menu = await db.table('menus').orderBy('createdAt').last();
       if (menu) {
+        console.log(`[MenuPage] Menu loaded: ${menu.id}, ${menu.days?.length || 0} days`);
         setWeekMenu(menu);
       } else {
+        console.log('[MenuPage] No menu found');
         setWeekMenu(null);
       }
     } catch (error) {
-      console.error('Failed to load week menu:', error);
+      console.error('[MenuPage] Failed to load week menu:', error);
     } finally {
       setLoading(false);
     }
   }
 
   async function createMenuFromTemplate() {
+    console.log('[MenuPage] Creating menu from template...');
     setCreatingFromTemplate(true);
     setTemplateSuccess(false);
     try {
       const menu = getSeedWeekMenu();
-      // put вместо add: если ID совпадает, перезаписать; иначе создать новое
+      console.log('[MenuPage] Template menu:', menu.id, menu.days?.length, 'days');
       await db.table('menus').put(menu);
+      console.log('[MenuPage] Menu saved to DB');
       await loadWeekMenu();
       setTemplateSuccess(true);
-      // Убрать сообщение об успехе через 3 секунды
+      console.log('[MenuPage] Template creation SUCCESS');
       setTimeout(() => setTemplateSuccess(false), 3000);
     } catch (error) {
-      console.error('Failed to create menu from template:', error);
+      console.error('[MenuPage] Failed to create menu from template:', error);
     } finally {
       setCreatingFromTemplate(false);
     }

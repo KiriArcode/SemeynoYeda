@@ -159,6 +159,7 @@ export function useShoppingList() {
   }
 
   async function addMissingIngredients(missing: string[]) {
+    console.log(`[useShoppingList] addMissingIngredients called with ${missing.length} items:`, missing);
     const existingItems = await db.table('shopping').toArray();
     const existingNames = new Set(existingItems.map((item) => item.ingredient));
 
@@ -176,9 +177,11 @@ export function useShoppingList() {
         source: 'missing',
       }));
 
+    console.log(`[useShoppingList] ${newItems.length} new items to add (${existingNames.size} already exist)`);
     if (newItems.length > 0) {
       await db.table('shopping').bulkPut(newItems);
       await loadItems();
+      console.log('[useShoppingList] Items added to DB');
     }
   }
 

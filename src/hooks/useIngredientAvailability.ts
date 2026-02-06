@@ -11,6 +11,7 @@ export function useIngredientAvailability() {
 
   const markIngredientMissing = useCallback(
     async (ingredient: string) => {
+      console.log(`[useIngredientAvailability] markMissing: "${ingredient}"`);
       setAvailabilityMap((prev) => {
         const newMap = new Map(prev);
         newMap.set(ingredient, 'missing');
@@ -24,6 +25,7 @@ export function useIngredientAvailability() {
   );
 
   const markIngredientAvailable = useCallback((ingredient: string) => {
+    console.log(`[useIngredientAvailability] markAvailable: "${ingredient}"`);
     setAvailabilityMap((prev) => {
       const newMap = new Map(prev);
       newMap.set(ingredient, 'available');

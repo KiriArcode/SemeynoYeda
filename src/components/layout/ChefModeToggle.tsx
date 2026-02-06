@@ -10,7 +10,7 @@ export function ChefModeToggle() {
 
   return (
     <button
-      onClick={() => { toggle(); }}
+      onClick={() => { console.log('[ChefModeToggle] Clicked, current state:', enabled); toggle(); }}
       type="button"
       className={`flex items-center gap-2 px-4 py-2 rounded-button font-heading font-semibold text-sm transition-all cursor-pointer select-none ${
         enabled

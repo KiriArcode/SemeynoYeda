@@ -44,11 +44,13 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
 
   // Синхронный optimistic toggle — мгновенная реакция UI
   const toggle = useCallback(() => {
+    console.log('[ChefModeContext] toggle() called');
     setSettings((prev) => {
       const newSettings: ChefModeSettings = {
         ...prev,
         enabled: !prev.enabled,
       };
+      console.log('[ChefModeContext] Toggling:', prev.enabled, '->', newSettings.enabled);
 
       // Запись в БД в фоне (не блокирует UI)
       db.table('chefSettings').put(newSettings).catch((error) => {

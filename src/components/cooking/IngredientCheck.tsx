@@ -77,6 +77,7 @@ export function IngredientCheck({ recipeIds, onComplete }: IngredientCheckProps)
   }
 
   async function handleAvailabilityChange(name: string, availability: IngredientAvailability) {
+    console.log(`[IngredientCheck] Set "${name}" -> ${availability}`);
     if (availability === 'missing') {
       await markIngredientMissing(name);
     } else if (availability === 'available') {
@@ -89,8 +90,10 @@ export function IngredientCheck({ recipeIds, onComplete }: IngredientCheckProps)
       .filter((ing) => ing.availability === 'missing')
       .map((ing) => ing.name);
     
+    console.log(`[IngredientCheck] Add ${missing.length} missing to shopping list:`, missing);
     if (missing.length > 0) {
       await addMissingToShoppingList(missing);
+      console.log('[IngredientCheck] Added to shopping list successfully');
       if (onComplete) {
         onComplete(missing);
       }

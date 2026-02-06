@@ -11,6 +11,8 @@ interface PageShellProps {
 export function PageShell({ children, showChefToggle = true }: PageShellProps) {
   const { enabled } = useChefMode();
 
+  console.log('[PageShell] Render, chefMode:', enabled);
+
   return (
     <div className="min-h-screen bg-void">
       {showChefToggle && (
@@ -23,7 +25,7 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
           </div>
         </header>
       )}
-      <main className={`${enabled ? 'chef-mode' : 'normal-mode'}`}>
+      <main className={`pb-20 ${enabled ? 'chef-mode' : 'normal-mode'}`}>
         <div className="container mx-auto px-4 pt-4">
           <Breadcrumbs />
         </div>

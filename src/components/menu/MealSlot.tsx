@@ -4,13 +4,20 @@ import { db } from '../../lib/db';
 import type { MealSlot as MealSlotType, Recipe } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { IngredientCheck } from '../cooking/IngredientCheck';
-import { AlertTriangle, ExternalLink } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface MealSlotProps {
   slot: MealSlotType;
   date: string;
   onUpdate?: (updatedSlot: MealSlotType) => void;
 }
+
+const MEAL_LABELS: Record<string, { label: string; icon: string }> = {
+  breakfast: { label: 'Завтрак', icon: '🌅' },
+  lunch: { label: 'Обед', icon: '🍽️' },
+  snack: { label: 'Полдник', icon: '🍎' },
+  dinner: { label: 'Ужин', icon: '🌙' },
+};
 
 export function MealSlot({ slot, onUpdate }: MealSlotProps) {
   const [showIngredientCheck, setShowIngredientCheck] = useState(false);
@@ -21,8 +28,9 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
   const [missingIngredients, setMissingIngredients] = useState<string[]>([]);
 
   const recipeIds = slot.recipes.map((r) => r.recipeId);
+  const meal = MEAL_LABELS[slot.mealType] || { label: slot.mealType, icon: '🍴' };
 
-  // Подгружать рецепты при отображении слота, чтобы названия блюд были видны сразу
+  // Подгружать рецепты при отображении слота
   useEffect(() => {
     if (recipeIds.length === 0) {
       setRecipes([]);
@@ -33,12 +41,14 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
     let cancelled = false;
     setRecipesLoading(true);
     setRecipesError(null);
+    console.log(`[MealSlot:${slot.mealType}] Loading ${recipeIds.length} recipes...`);
     (async () => {
       try {
         const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
         const validRecipes = (loadedRecipes || []).filter((r): r is Recipe => r != null && typeof r === 'object' && 'id' in r && 'title' in r);
         if (!cancelled) {
           setRecipes(validRecipes);
+          console.log(`[MealSlot:${slot.mealType}] Loaded ${validRecipes.length}/${recipeIds.length} recipes`);
         }
         const missing = await getMissingIngredients(recipeIds);
         if (!cancelled) {
@@ -48,7 +58,7 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
         if (!cancelled) {
           setRecipes([]);
           setRecipesError(error instanceof Error ? error.message : 'Ошибка загрузки рецептов');
-          console.error('MealSlot: Failed to load recipes', { recipeIds, error });
+          console.error(`[MealSlot:${slot.mealType}] Failed to load recipes`, { recipeIds, error });
         }
       } finally {
         if (!cancelled) {
@@ -61,35 +71,21 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
     };
   }, [JSON.stringify(recipeIds)]);
 
-  async function loadRecipes() {
-    if (recipeIds.length === 0) return;
-    setRecipesLoading(true);
-    setRecipesError(null);
-    try {
-      const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
-      const validRecipes = (loadedRecipes || []).filter((r): r is Recipe => r != null && typeof r === 'object' && 'id' in r && 'title' in r);
-      setRecipes(validRecipes);
-      const missing = await getMissingIngredients(recipeIds);
-      setMissingIngredients(missing);
-    } catch (error) {
-      setRecipes([]);
-      setRecipesError(error instanceof Error ? error.message : 'Ошибка загрузки рецептов');
-      console.error('MealSlot: Failed to load recipes', { recipeIds, error });
-    } finally {
-      setRecipesLoading(false);
-    }
-  }
-
   function handleCheckIngredients() {
-    loadRecipes();
+    console.log(`[MealSlot:${slot.mealType}] Opening ingredient check`);
     setShowIngredientCheck(true);
   }
 
+  function handleCloseIngredientCheck() {
+    console.log(`[MealSlot:${slot.mealType}] Closing ingredient check`);
+    setShowIngredientCheck(false);
+  }
+
   function handleIngredientCheckComplete(missing: string[]) {
+    console.log(`[MealSlot:${slot.mealType}] Ingredient check complete, missing: ${missing.length}`);
     setMissingIngredients(missing);
     setShowIngredientCheck(false);
 
-    // Обновить слот с отсутствующими ингредиентами
     if (onUpdate) {
       const updatedSlot: MealSlotType = {
         ...slot,
@@ -116,11 +112,9 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
     <div className={`bg-dimension border border-nebula rounded-card p-4 shadow-card animate-card-appear ${borderClass}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h4 className="font-heading font-semibold text-text-light mb-2">
-            {slot.mealType === 'breakfast' && 'Завтрак'}
-            {slot.mealType === 'lunch' && 'Обед'}
-            {slot.mealType === 'snack' && 'Полдник'}
-            {slot.mealType === 'dinner' && 'Ужин'}
+          <h4 className="font-heading font-semibold text-text-light mb-2 flex items-center gap-2">
+            <span>{meal.icon}</span>
+            <span>{meal.label}</span>
           </h4>
           {recipesLoading && recipeIds.length > 0 && (
             <p className="text-sm font-body text-text-dim">Загрузка рецептов...</p>
@@ -136,10 +130,10 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
                   <div key={`${recipe.id}-${index}`} className="flex flex-wrap items-center gap-2">
                     <Link
                       to={`/recipe/${recipe.id}`}
-                      className="text-sm font-body text-text-mid hover:text-portal transition-colors flex items-center gap-1 underline decoration-nebula hover:decoration-portal"
+                      onClick={() => console.log(`[MealSlot] Navigate to recipe: ${recipe.title}`)}
+                      className="text-sm font-body text-text-mid hover:text-portal transition-colors underline decoration-nebula hover:decoration-portal"
                     >
                       {recipe.title}
-                      <ExternalLink className="w-3 h-3 opacity-50" />
                     </Link>
                     {entry?.variation && (
                       <span className="text-xs text-text-dim font-body">({entry.variation})</span>
@@ -170,20 +164,32 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
         {hasMissingIngredients && (
           <div className="flex items-center gap-1 text-ramen">
             <AlertTriangle className="w-4 h-4" />
-            <span className="text-xs font-body">Не хватает ингредиентов</span>
+            <span className="text-xs font-body">Не хватает</span>
           </div>
         )}
       </div>
 
-      <button
-        onClick={handleCheckIngredients}
-        className="w-full mt-2 bg-rift border border-nebula text-text-light font-heading font-semibold text-xs py-2 px-3 rounded-button hover:bg-nebula hover:border-portal/30 transition-colors"
-      >
-        Проверить ингредиенты
-      </button>
+      {!showIngredientCheck && (
+        <button
+          onClick={handleCheckIngredients}
+          className="w-full mt-2 bg-rift border border-nebula text-text-light font-heading font-semibold text-xs py-2 px-3 rounded-button hover:bg-nebula hover:border-portal/30 transition-colors"
+        >
+          Проверить ингредиенты
+        </button>
+      )}
 
       {showIngredientCheck && (
         <div className="mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-heading font-semibold text-text-dim">Ингредиенты для {meal.label.toLowerCase()}а</span>
+            <button
+              onClick={handleCloseIngredientCheck}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-heading font-semibold text-text-mid bg-rift border border-nebula rounded-button hover:bg-nebula hover:text-ramen hover:border-ramen/30 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Закрыть
+            </button>
+          </div>
           <IngredientCheck
             recipeIds={recipeIds}
             onComplete={handleIngredientCheckComplete}
