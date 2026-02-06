@@ -96,6 +96,8 @@ export function ShoppingSettings() {
             День покупок
           </label>
           <select
+            id="shopping-day"
+            name="shopping-day"
             value={settings.shoppingDay}
             onChange={(e) =>
               saveSettings({

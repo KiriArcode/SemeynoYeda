@@ -158,6 +158,8 @@ export default function ChefSettingsPage() {
             Время подготовки по умолчанию (минут)
           </label>
           <input
+            id="default-prep-time"
+            name="default-prep-time"
             type="number"
             min="15"
             max="180"

@@ -84,6 +84,8 @@ export default function PrepPage() {
         <div className="relative">
           <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-dim" />
           <input
+            id="prep-date"
+            name="prep-date"
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}

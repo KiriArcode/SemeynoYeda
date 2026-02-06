@@ -98,6 +98,8 @@ export default function CookingPage() {
           Дата
         </label>
         <input
+          id="cooking-date"
+          name="cooking-date"
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}

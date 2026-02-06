@@ -83,6 +83,8 @@ export default function RecipesPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-dim" />
           <input
+            id="recipe-search"
+            name="recipe-search"
             type="text"
             placeholder="Поиск рецептов..."
             value={searchQuery}
@@ -131,8 +133,9 @@ export default function RecipesPage() {
               {recipe.subtitle && (
                 <p className="text-sm text-text-dim font-body mb-2">{recipe.subtitle}</p>
               )}
-              <div className="flex items-center gap-4 text-xs font-mono text-portal">
+              <div className="flex items-center gap-2 text-xs font-mono text-portal">
                 <span>⏱ {recipe.totalTime} мин</span>
+                <span className="text-text-dim">·</span>
                 <span>{recipe.servings} порций</span>
               </div>
             </div>
