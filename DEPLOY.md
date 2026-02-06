@@ -20,10 +20,24 @@
 
 ### Настройка GitHub Pages
 
-1. Перейдите в настройки репозитория на GitHub
-2. В разделе "Pages" выберите:
-   - Source: GitHub Actions
-   - Branch: main
+**ВАЖНО:** GitHub Pages должен быть включен ДО первого деплоя!
+
+1. Перейдите в настройки репозитория на GitHub:
+   ```
+   https://github.com/KiriArcode/SemeynoYeda/settings/pages
+   ```
+   (или замените `KiriArcode` на ваш username)
+
+2. В разделе "Pages" → "Build and deployment":
+   - **Source:** выберите "GitHub Actions"
+   - Сохраните изменения
+
+3. После включения GitHub Actions автоматически создаст environment `github-pages`
+
+4. Если environment не создался автоматически:
+   - Перейдите в Settings → Environments
+   - Создайте новый environment с именем `github-pages`
+   - Не нужно добавлять никаких переменных или секретов
 
 ### Ручной деплой
 
