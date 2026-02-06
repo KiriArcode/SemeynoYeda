@@ -20,26 +20,18 @@ const DEFAULT_SETTINGS: ChefModeSettings = {
 };
 
 export function ChefModeProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<ChefModeSettings | null>(null);
+  const [settings, setSettings] = useState<ChefModeSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadSettings();
-    
-    // Подписка на изменения в базе данных через события
+
     const handleStorageChange = () => {
       loadSettings();
     };
-    
-    // Слушаем кастомные события обновления режима повара
     window.addEventListener('chefModeChanged', handleStorageChange);
-    
-    // Также проверяем изменения периодически (как fallback)
-    const interval = setInterval(loadSettings, 500);
-    
     return () => {
       window.removeEventListener('chefModeChanged', handleStorageChange);
-      clearInterval(interval);
     };
   }, []);
 
@@ -49,7 +41,6 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
       if (saved) {
         setSettings(saved);
       } else {
-        // Создать настройки по умолчанию
         await db.table('chefSettings').put(DEFAULT_SETTINGS);
         setSettings(DEFAULT_SETTINGS);
       }
@@ -63,27 +54,28 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
 
   async function toggle() {
     const currentSettings = settings || DEFAULT_SETTINGS;
-    
     const newSettings: ChefModeSettings = {
       ...currentSettings,
       enabled: !currentSettings.enabled,
     };
-    
+
+    // Optimistic update — instant UI response
+    setSettings(newSettings);
+
     try {
       await db.table('chefSettings').put(newSettings);
-      setSettings(newSettings);
-      
-      // Отправляем событие для синхронизации других компонентов
       window.dispatchEvent(new CustomEvent('chefModeChanged'));
     } catch (error) {
       console.error('Failed to toggle chef mode:', error);
+      // Revert on failure
+      setSettings(currentSettings);
     }
   }
 
   return (
     <ChefModeContext.Provider
       value={{
-        enabled: settings?.enabled ?? false,
+        enabled: settings.enabled,
         settings,
         toggle,
         loading,

@@ -160,7 +160,7 @@ export default function RecipesPage() {
                     currentPath: location.pathname
                   });
                 }}
-                className="bg-dimension border border-nebula rounded-card p-4 shadow-card hover:border-portal/30 hover:shadow-glow transition-all cursor-pointer block"
+                className="bg-dimension border border-nebula rounded-card p-4 shadow-card hover:border-portal/30 hover:shadow-glow transition-all cursor-pointer block card-hover"
               >
                 <h3 className="font-heading font-semibold text-text-light mb-2">
                   {recipe.title}

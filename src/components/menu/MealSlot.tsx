@@ -103,8 +103,16 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
 
   const hasMissingIngredients = missingIngredients.length > 0 || slot.recipes.some((r) => r.missingIngredients && r.missingIngredients.length > 0);
 
+  // Цветная полоска слева по профилю
+  const forWhomSet = new Set(slot.recipes.map((r) => r.forWhom));
+  const borderClass =
+    forWhomSet.size === 1 && forWhomSet.has('kolya') ? 'meal-border-kolya'
+    : forWhomSet.size === 1 && forWhomSet.has('kristina') ? 'meal-border-kristina'
+    : forWhomSet.size === 1 && forWhomSet.has('both') ? 'meal-border-both'
+    : 'meal-border-mixed';
+
   return (
-    <div className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
+    <div className={`bg-dimension border border-nebula rounded-card p-4 shadow-card animate-card-appear ${borderClass}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <h4 className="font-heading font-semibold text-text-light mb-2">

@@ -58,7 +58,7 @@ export default function RecipeDetailPage() {
       <div className="flex items-center gap-4 mb-6 text-sm font-mono text-portal">
         <span className="flex items-center gap-1">
           <Clock className="w-4 h-4" />
-          {recipe.totalTime} мин
+          ⏱ {recipe.totalTime} мин
         </span>
         <span className="flex items-center gap-1">
           <Users className="w-4 h-4" />

@@ -185,6 +185,7 @@ export function useShoppingList() {
   return {
     items,
     loading,
+    loadItems,
     generateFromMenu,
     addItem,
     updateItem,

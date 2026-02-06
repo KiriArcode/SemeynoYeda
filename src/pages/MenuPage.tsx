@@ -34,7 +34,8 @@ export default function MenuPage() {
     setCreatingFromTemplate(true);
     try {
       const menu = getSeedWeekMenu();
-      await db.table('menus').add(menu);
+      // put вместо add: если ID совпадает, перезаписать; иначе создать новое
+      await db.table('menus').put(menu);
       await loadWeekMenu();
     } catch (error) {
       console.error('Failed to create menu from template:', error);
@@ -79,7 +80,7 @@ export default function MenuPage() {
               </button>
               <Link
                 to="/recipes"
-                className="px-6 py-3 bg-rift border border-nebula text-text-light font-heading font-semibold rounded-button hover:bg-nebula transition-colors"
+                className="px-6 py-3 bg-rift border border-nebula text-text-light font-heading font-semibold rounded-button hover:bg-nebula hover:border-portal/30 transition-colors"
               >
                 Посмотреть рецепты
               </Link>
@@ -109,7 +110,7 @@ export default function MenuPage() {
 
       <div className="space-y-4">
         {weekMenu.days.map((day) => (
-          <div key={day.date} className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
+          <div key={day.date} className="bg-dimension border border-nebula rounded-card p-4 shadow-card animate-card-appear">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-portal" />
               <h2 className="font-heading font-semibold text-text-light">

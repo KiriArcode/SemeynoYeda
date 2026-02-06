@@ -1,11 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { db } from '../lib/db';
 import { useShoppingList } from '../hooks/useShoppingList';
 import { ShoppingSettings } from '../components/shopping/ShoppingSettings';
-import { CheckCircle2, ShoppingCart } from 'lucide-react';
+import { CheckCircle2, ShoppingCart, RefreshCw } from 'lucide-react';
 
 export default function ShoppingPage() {
-  const { items, loading, toggleChecked, clearChecked } = useShoppingList();
+  const { items, loading, loadItems, toggleChecked, clearChecked, generateShoppingList } = useShoppingList();
   const [filter, setFilter] = useState<'all' | 'auto' | 'manual' | 'missing'>('all');
+  const [generating, setGenerating] = useState(false);
+
+  // Авто-генерация списка из текущего меню при первом посещении, если список пуст
+  useEffect(() => {
+    if (!loading && items.length === 0) {
+      autoGenerateList();
+    }
+  }, [loading]);
+
+  async function autoGenerateList() {
+    setGenerating(true);
+    try {
+      const menu = await db.table('menus').orderBy('createdAt').last();
+      if (menu) {
+        const newItems = await generateShoppingList(menu);
+        if (newItems.length > 0) {
+          await db.table('shopping').bulkPut(newItems);
+          await loadItems();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to auto-generate shopping list:', error);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleRegenerate() {
+    setGenerating(true);
+    try {
+      const menu = await db.table('menus').orderBy('createdAt').last();
+      if (menu) {
+        const newItems = await generateShoppingList(menu);
+        if (newItems.length > 0) {
+          await db.table('shopping').clear();
+          await db.table('shopping').bulkPut(newItems);
+          await loadItems();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to regenerate shopping list:', error);
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   const filteredItems = items.filter((item) => {
     if (filter === 'all') return true;
@@ -33,11 +79,21 @@ export default function ShoppingPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
-      <div className="flex items-center gap-3 mb-6">
-        <ShoppingCart className="w-6 h-6 text-portal" />
-        <h1 className="font-heading text-2xl font-bold text-text-light">
-          Список покупок
-        </h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <ShoppingCart className="w-6 h-6 text-portal" />
+          <h1 className="font-heading text-2xl font-bold text-text-light">
+            Список покупок
+          </h1>
+        </div>
+        <button
+          onClick={handleRegenerate}
+          disabled={generating}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
+        >
+          <RefreshCw className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} />
+          {generating ? 'Генерация...' : 'Из меню'}
+        </button>
       </div>
 
       {/* Настройки */}
@@ -149,7 +205,7 @@ export default function ShoppingPage() {
           {checkedCount > 0 && (
             <button
               onClick={clearChecked}
-              className="w-full bg-rift border border-nebula text-text-mid font-heading font-semibold py-2 px-4 rounded-button hover:border-portal/30 transition-colors"
+              className="w-full px-6 py-3 bg-rift border border-nebula text-text-light font-heading font-semibold rounded-button hover:bg-nebula hover:border-portal/30 transition-colors"
             >
               Очистить купленное
             </button>
