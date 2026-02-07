@@ -45,9 +45,9 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
     <div className="min-h-screen bg-void">
       {/* Top header bar */}
       {showChefToggle && (
-        <header className="sticky top-0 z-50 bg-dimension border-b border-nebula shadow-nav">
+        <header className="sticky top-0 z-50 border-b shadow-nav" style={{ background: 'rgba(11,14,20,0.93)', backdropFilter: 'blur(12px)', borderColor: '#161C2A' }}>
           <div className="container mx-auto px-4 py-2 flex items-center justify-between">
-            <Link to="/" className="font-heading text-lg font-bold text-text-light hover:text-portal transition-colors">
+            <Link to="/" className="font-heading text-base font-extrabold text-text-light hover:text-portal transition-colors">
               SemeynoYeda
             </Link>
             <ChefModeToggle />

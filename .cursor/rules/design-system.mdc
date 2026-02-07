@@ -1,0 +1,114 @@
+---
+description: Design system rules for SemeynoYeda — Dimension Kitchen UI. Enforces color palette, typography, spacing, component patterns, and forbidden practices.
+globs: ["src/**/*.tsx", "src/**/*.ts", "src/**/*.css"]
+alwaysApply: true
+---
+
+# SemeynoYeda — Design System v2.0
+
+## ЦВЕТА
+
+### Фоны (5 уровней глубины)
+- `--void: #0B0E14` — основной фон body
+- `--panel: #111620` — sticky header, bottom nav
+- `--card: #161C2A` — карточки, аккордеоны
+- `--elevated: #1E2538` — модалки, dropdown, hover
+- `--nebula: #252D3B` — бордеры, разделители
+
+### Portal (основной акцент)
+- `#39FF14` — portal-green
+- `#00E676` — portal-dim (hover, secondary)
+- `rgba(57,255,20,0.12)` — portal-glow (box-shadow)
+- `rgba(57,255,20,0.05)` — portal-soft (bg активных)
+
+### Акценты
+- Кристина / anime: `#FF6B9D` (accent-pink)
+- Коля / tech: `#00E5FF` (accent-cyan)
+- Таймеры / предупреждения: `#FF9100` (accent-orange)
+- Заготовки / prep: `#B388FF` (accent-purple)
+
+### Семья — цвета участников
+- **Коля**: main `#00E5FF`, bg `rgba(0,229,255,0.08)`, border `rgba(0,229,255,0.2)`
+- **Кристина**: main `#FF6B9D`, bg `rgba(255,107,157,0.08)`, border `rgba(255,107,157,0.2)`
+- **Оба**: main `#39FF14`, bg `rgba(57,255,20,0.08)`, border `rgba(57,255,20,0.2)`
+
+Tailwind: `text-kolya bg-kolya/8 border-kolya/20`, `text-kristina bg-kristina/8 border-kristina/20`, `text-portal bg-portal/8 border-portal/20`
+
+### Теги рецептов
+- gastritis-safe: bg `#0D2818`, text `#39FF14`, border `#1A4030`
+- freezable: bg `#0D1B28`, text `#00E5FF`, border `#1A3040`
+- quick: bg `#281A0D`, text `#FF9100`, border `#403020`
+- prep-day: bg `#1A0D28`, text `#B388FF`, border `#2D1A40`
+- rich-feel: bg `#280D1A`, text `#FF6B9D`, border `#401A2D`
+
+## ШРИФТЫ
+- Heading: `'Exo 2'`, fallback `'Chakra Petch'`
+- Mono: `'Share Tech Mono'`, fallback `'JetBrains Mono'`
+- Body: `'DM Sans'`, fallback `'Noto Sans JP'`
+- **ЗАПРЕЩЕНЫ**: Inter, Roboto, Arial, system-ui
+
+## ТИПОГРАФИКА
+- Page Title: heading 36px w900 ls:-0.5px
+- Section Title: heading 22px w800
+- Card Title: heading 16px w800 lh:1.2
+- Body: heading 13px w500 (text-secondary)
+- Data / Mono: mono 11px (text-muted)
+- Dimension Label: mono 10px ls:1.5px uppercase (portal-dim)
+- Tag: heading 11px w600 ls:0.3px
+- Button: heading 13px w700 ls:0.3px
+
+## BORDER-RADIUS
+- tag: 4px, sm: 6px, md: 8px, button: 10px
+- card: 12px, lg: 14px, xl: 16px, modal: 20px, pill: 9999px
+
+## BORDERS
+- standard: `1px solid #1E2538`
+- hover: `1px solid rgba(57,255,20,0.25)`
+- active: `1px solid rgba(57,255,20,0.4)`
+- divider: `1px solid #161C2A`
+
+## КНОПКИ
+### Primary
+`bg: #00E676, color: #0B0E14, hover → bg: #39FF14 + glow shadow`
+### Secondary
+`bg: transparent, border: 1.5px portal-green/25, color: #39FF14`
+### Ghost
+`bg: transparent, no border, color: #8892A6, hover → color: #39FF14`
+### Icon Button (swap ⇄, delete)
+`28×28, rounded-[8px], bg: #0B0E14, border: #1E2538`
+**ВАЖНО**: обернуть в 44×44 touch target на мобиле
+
+## НАВИГАЦИЯ
+- Bottom Nav: 4 таба max, rounded-[20px] контейнер, portal-soft активный фон
+- Chef Mode: НЕ отдельные табы — floating overlay снизу
+- Touch targets: >= 44×44px (Apple HIG)
+
+## АНИМАЦИИ
+- Default transition: `all 0.25s cubic-bezier(0.4, 0, 0.2, 1)`
+- Card appear: slideUp с stagger delay `calc(var(--i) * 60ms)`
+- Accordion: slideDown 0.2s
+- Max duration: 0.4s (кроме фоновых блобов)
+
+## МОДАЛКИ
+- Рендерить через `createPortal(modal, document.body)`
+- z-index: 9999
+- backdrop-filter: blur(12px)
+- Закрытие: клик overlay, X, Escape
+
+## ЗАПРЕЩЕНО
+- Светлые/белые фоны
+- Inter, Roboto, Arial, system-ui
+- Inline styles (только Tailwind, исключение — gap в старых компонентах)
+- Анимации > 0.4s (кроме блобов)
+- Touch targets < 44×44px
+- Пастельные тона
+- border-radius < 4px
+- localStorage (только IndexedDB через Dexie)
+- Серверный рендеринг
+
+## ПРАВИЛА КОДА
+- TypeScript strict, все типы в schema.ts, никаких any
+- React: функциональные, named export, hooks в src/hooks/
+- Tailwind: ТОЛЬКО тёмная тема, кастомные токены из конфига
+- Данные: JSON в src/data/, runtime в IndexedDB (Dexie)
+- Языки: UI русский, код английский, dim-labels английский

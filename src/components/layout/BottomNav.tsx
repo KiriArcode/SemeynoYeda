@@ -8,17 +8,17 @@ interface NavItem {
 }
 
 const NORMAL_MODE_NAV: NavItem[] = [
-  { icon: '🗓️', label: 'Меню', path: '/' },
+  { icon: '📅', label: 'Меню', path: '/' },
   { icon: '📖', label: 'Рецепты', path: '/recipes' },
-  { icon: '🧊', label: 'Морозилка', path: '/freezer' },
+  { icon: '❄️', label: 'Морозилка', path: '/freezer' },
   { icon: '🛒', label: 'Покупки', path: '/shopping' },
 ];
 
 const CHEF_MODE_NAV: NavItem[] = [
-  { icon: '🗓️', label: 'Меню', path: '/' },
+  { icon: '📅', label: 'Меню', path: '/' },
   { icon: '📖', label: 'Рецепты', path: '/recipes' },
   { icon: '📦', label: 'Заготовки', path: '/prep' },
-  { icon: '🧊', label: 'Морозилка', path: '/freezer' },
+  { icon: '❄️', label: 'Морозилка', path: '/freezer' },
   { icon: '🛒', label: 'Покупки', path: '/shopping' },
 ];
 
@@ -40,30 +40,45 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-dimension border-t border-nebula shadow-nav z-50" style={{ minHeight: '56px' }}>
-      <div className="container mx-auto px-2">
-        <div className="flex items-center justify-around">
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] transition-colors relative ${
-                  active ? 'text-portal' : 'text-text-ghost'
-                }`}
+    <nav className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
+      <div className="flex mx-auto max-w-[360px] bg-panel border border-elevated" style={{ borderRadius: '20px', padding: '6px', backdropFilter: 'blur(12px)' }}>
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 pb-2 relative cursor-pointer transition-all ${
+                active ? 'bg-portal-soft' : ''
+              }`}
+              style={{ borderRadius: '14px', gap: '3px' }}
+            >
+              <span
+                className="text-lg transition-all"
+                style={{ filter: active ? 'none' : 'grayscale(0.6) opacity(0.4)' }}
               >
-                {active && (
-                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-portal shadow-glow rounded-t-full" />
-                )}
-                <span className="text-lg mb-0.5">{item.icon}</span>
-                <span className={`text-[10px] font-heading font-semibold ${active ? 'text-portal' : 'text-text-ghost'}`}>
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+                {item.icon}
+              </span>
+              <span className={`text-[10px] font-heading font-bold tracking-wide ${
+                active ? 'text-portal' : 'text-text-muted'
+              }`}>
+                {item.label}
+              </span>
+              {active && (
+                <div
+                  className="absolute bg-portal"
+                  style={{
+                    bottom: '4px',
+                    width: '16px',
+                    height: '2px',
+                    borderRadius: '1px',
+                    boxShadow: '0 0 8px rgba(57,255,20,0.4)',
+                  }}
+                />
+              )}
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

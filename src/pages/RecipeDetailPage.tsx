@@ -38,13 +38,14 @@ const EQUIPMENT_LABELS: Record<EquipmentId, string> = {
 
 function getTagStyle(tag: DietTag): string {
   switch (tag) {
-    case 'gastritis-safe': return 'bg-matcha/15 text-matcha border-matcha/40';
-    case 'freezable': return 'bg-frost/15 text-frost border-frost/40';
-    case 'quick': return 'bg-ramen/15 text-ramen border-ramen/40';
-    case 'prep-day': return 'bg-plasma/15 text-plasma border-plasma/40';
-    case 'overnight': return 'bg-plasma/15 text-plasma border-plasma/40';
-    case 'packable': return 'bg-miso/15 text-miso border-miso/40';
-    case 'low-calorie': return 'bg-matcha/15 text-matcha border-matcha/40';
+    case 'gastritis-safe': return 'bg-[#0D2818] text-portal border-[#1A4030]';
+    case 'freezable': return 'bg-[#0D1B28] text-frost border-[#1A3040]';
+    case 'quick': return 'bg-[#281A0D] text-accent-orange border-[#403020]';
+    case 'prep-day': return 'bg-[#1A0D28] text-plasma border-[#2D1A40]';
+    case 'overnight': return 'bg-[#1A0D28] text-plasma border-[#2D1A40]';
+    case 'packable': return 'bg-[#281A0D] text-accent-orange border-[#403020]';
+    case 'rich-feel': return 'bg-[#280D1A] text-kristina border-[#401A2D]';
+    case 'low-calorie': return 'bg-[#0D2818] text-portal border-[#1A4030]';
     default: return 'bg-nebula text-text-dim border-text-ghost';
   }
 }
@@ -133,10 +134,10 @@ export default function RecipeDetailPage() {
       <div className="flex flex-wrap items-center mb-4" style={{ gap: '10px' }}>
         <span className={`text-xs px-3 py-1 font-heading font-semibold border ${
           recipe.suitableFor === 'kolya'
-            ? 'bg-portal/15 text-portal border-portal/40'
+            ? 'bg-kolya/8 text-kolya border-kolya/20'
             : recipe.suitableFor === 'kristina'
-            ? 'bg-ramen/15 text-ramen border-ramen/40'
-            : 'bg-plasma/15 text-plasma border-plasma/40'
+            ? 'bg-kristina/8 text-kristina border-kristina/20'
+            : 'bg-portal/8 text-portal border-portal/20'
         }`} style={{ borderRadius: '9999px' }}>
           {MEMBER_LABELS[recipe.suitableFor]}
         </span>
@@ -202,9 +203,9 @@ export default function RecipeDetailPage() {
             {recipe.reheating.map((rh, i) => (
               <div key={i} className="flex items-center text-xs font-body text-text-mid" style={{ gap: '8px' }}>
                 <span className={`px-2 py-0.5 font-heading font-semibold border ${
-                  rh.forWhom === 'kolya' ? 'bg-portal/15 text-portal border-portal/40'
-                  : rh.forWhom === 'kristina' ? 'bg-ramen/15 text-ramen border-ramen/40'
-                  : 'bg-plasma/15 text-plasma border-plasma/40'
+                  rh.forWhom === 'kolya' ? 'bg-kolya/8 text-kolya border-kolya/20'
+                  : rh.forWhom === 'kristina' ? 'bg-kristina/8 text-kristina border-kristina/20'
+                  : 'bg-portal/8 text-portal border-portal/20'
                 }`} style={{ borderRadius: '9999px' }}>
                   {MEMBER_LABELS[rh.forWhom]}
                 </span>

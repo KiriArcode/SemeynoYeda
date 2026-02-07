@@ -169,10 +169,10 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
                     {entry?.forWhom && (
                       <span className={`text-xs px-3 py-1 font-heading font-semibold border ${
                         entry.forWhom === 'kolya'
-                          ? 'bg-portal/15 text-portal border-portal/40'
+                          ? 'bg-kolya/8 text-kolya border-kolya/20'
                           : entry.forWhom === 'kristina'
-                          ? 'bg-ramen/15 text-ramen border-ramen/40'
-                          : 'bg-plasma/15 text-plasma border-plasma/40'
+                          ? 'bg-kristina/8 text-kristina border-kristina/20'
+                          : 'bg-portal/8 text-portal border-portal/20'
                       }`} style={{ borderRadius: '9999px' }}>
                         {MEMBER_LABELS[entry.forWhom]}
                       </span>

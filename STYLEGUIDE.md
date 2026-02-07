@@ -1,15 +1,15 @@
-# 🟢 Dimension Kitchen — Style Guide
+# Dimension Kitchen — Style Guide v2
 
-**Словарь элементов по страницам и компонентам:** см. [DESIGN_DICTIONARY.md](DESIGN_DICTIONARY.md) — там перечислены все UI-элементы, классы и примеры кода.
+**Словарь элементов по страницам и компонентам:** см. [DESIGN_DICTIONARY.md](DESIGN_DICTIONARY.md)
 
 ---
 
 ## Как вносить правки в дизайн
 
-- **Цвета** — только из палитры: `void`, `dimension`, `rift`, `nebula`, `portal`, `ramen`, `miso`, `matcha`, `sakura`, `frost`, `plasma`. Текст: `text-light`, `text-mid`, `text-dim`, `text-ghost`. Фоны: `bg-void`, `bg-dimension`, `bg-rift`.
-- **Типографика** — заголовки: `font-heading` (Chakra Petch), размеры `text-xl`–`text-3xl`; основной текст: `font-body` (DM Sans); данные/время: `font-mono` (JetBrains Mono), цвет `text-portal`.
-- **Компоненты** — карточки: `bg-dimension border border-nebula rounded-card p-4 shadow-card`; кнопки — классы из этого гайда (Primary, Secondary, Ghost). Скругления: `rounded-button` (10px), `rounded-card` (16px), `rounded-modal` (20px), `rounded-pill` (9999px).
-- **Где править:** глобальные стили и переменные — [src/styles/globals.css](src/styles/globals.css); конфиг Tailwind — [tailwind.config.ts](tailwind.config.ts); стили в компонентах — через `className` в TSX. При добавлении новых паттернов обновлять [STYLEGUIDE.md](STYLEGUIDE.md) и [DESIGN_DICTIONARY.md](DESIGN_DICTIONARY.md).
+- **Цвета** — только из палитры ниже. Не придумывать новые.
+- **Типографика** — заголовки: `font-heading`, body: `font-body`, данные: `font-mono`.
+- **Где править:** [src/styles/globals.css](src/styles/globals.css), [tailwind.config.ts](tailwind.config.ts), TSX-компоненты через `className`.
+- **Новые паттерны** — обновлять [STYLEGUIDE.md](STYLEGUIDE.md) и [DESIGN_DICTIONARY.md](DESIGN_DICTIONARY.md).
 
 ---
 
@@ -17,94 +17,167 @@
 
 **Концепция: "Портал Рика ведёт на кухню"**
 
-Тёмный void как основа. Портальный зелёный (#39FF14) — навигация и интерактив. Тёплые «фудовые» цвета (ramen, miso, matcha, sakura) — контент о еде. Anime-чистые линии. Sci-fi типографика Chakra Petch. Уютно внутри, дерзко снаружи.
+Тёмный void как основа. Портальный зелёный (#39FF14) — навигация и интерактив. Тёплые «фудовые» цвета — контент о еде. Чистые линии. Sci-fi типографика.
 
 **Три столпа:**
-- **Dark Foundation** — глубокий космический фон, карточки чуть светлее, белый не используется
-- **Portal Navigation** — зелёный портал = всё интерактивное (кнопки, ссылки, акценты, индикаторы)
-- **Food Warmth** — контент о еде окрашен тёплыми цветами: оранжевый ramen, розовый sakura, зелёный matcha
+- **Dark Foundation** — глубокий космический фон, 5 уровней поверхностей от тёмного к светлому
+- **Portal Navigation** — зелёный портал = всё интерактивное
+- **Food Warmth** — контент о еде окрашен тёплыми цветами
+
+**Принципы UX:**
+- **Визуальная иерархия** — заголовки крупнее, карточки с hover-эффектами, акцентные цвета для действий. Не всё серое на сером.
+- **Touch targets** — все тач-зоны кнопок минимум 44×44px (Apple HIG).
+- **Информационная плотность** — аккордеоны для длинных списков, свёрнутые секции, компактные карточки.
+- **Прогресс и обратная связь** — progress bars, счётчики done/total, анимации при действиях.
 
 ---
 
 ## 1. Цветовая палитра
 
-### Core — фоны и поверхности
+### Фоны — 5 уровней глубины
+
 ```css
 :root {
-  --void:       #0B0E14;   /* Основной фон — глубокий космос */
-  --dimension:  #141821;   /* Карточки, панели */
-  --rift:       #1C2230;   /* Поднятые элементы, модалки */
-  --nebula:     #252D3B;   /* Hover, бордеры, разделители */
+  --void:      #0B0E14;   /* L0: основной фон — глубокий космос */
+  --panel:     #111620;   /* L1: панели, sidebar */
+  --dimension: #141821;   /* L1: карточки (алиас для panel) */
+  --card:      #161C2A;   /* L2: поднятые карточки */
+  --rift:      #1C2230;   /* L2: elevated элементы, модалки (алиас) */
+  --elevated:  #1E2538;   /* L3: hover, активные состояния */
+  --nebula:    #252D3B;   /* L4: бордеры, разделители */
+  --hover:     #1A2235;   /* hover-состояния внутри карточек */
 }
 ```
 
 ### Portal — акценты и интерактив
+
 ```css
 :root {
-  --portal:      #39FF14;                /* Главный акцент — портал Рика */
-  --portal-dim:  #2BD911;                /* Hover на акценте */
-  --portal-glow: rgba(57,255,20,0.15);   /* Свечение, glow эффекты */
-  --portal-mist: rgba(57,255,20,0.06);   /* Едва заметный тинт фона */
+  --portal:      #39FF14;                /* Главный акцент */
+  --portal-dim:  #00E676;                /* Приглушённый зелёный (hover, secondary) */
+  --portal-glow: rgba(57,255,20,0.12);   /* Свечение */
+  --portal-soft: rgba(57,255,20,0.05);   /* Едва заметный тинт */
+}
+```
+
+### Accent — дополнительные акценты
+
+```css
+:root {
+  --accent-pink:   #FF6B9D;   /* Кристина, danger, важное */
+  --accent-cyan:   #00E5FF;   /* Коля, информация, frost */
+  --accent-orange: #FF9100;   /* Время, предупреждения, fast */
+  --accent-yellow: #FFE500;   /* Мелкие замечания */
+  --accent-purple: #B388FF;   /* Заготовки, prep, оба */
 }
 ```
 
 ### Food — еда и контент
+
 ```css
 :root {
-  --ramen:  #FFB347;   /* Тёплый оранжевый — основной «фудовый» цвет */
-  --miso:   #E8985A;   /* Глубокий тёплый — вторичные элементы еды */
-  --matcha: #8DB580;   /* Приглушённый зелёный — овощи, здоровое */
-  --sakura: #FFB7C5;   /* Нежный розовый — десерты, сладкое */
-  --frost:  #8DB5E0;   /* Холодный голубой — морозилка, заморозка */
+  --ramen:  #FFB347;   /* Тёплый оранжевый */
+  --miso:   #E8985A;   /* Глубокий тёплый */
+  --matcha: #8DB580;   /* Приглушённый зелёный */
+  --sakura: #FFB7C5;   /* Нежный розовый */
+  --frost:  #8DB5E0;   /* Холодный голубой */
+  --plasma: #B197FC;   /* Фиолетовый */
 }
 ```
 
 ### Text — иерархия
+
 ```css
 :root {
-  --text-light: #F0EDE8;   /* Основной текст */
-  --text-mid:   #9BA3B2;   /* Вторичный текст, описания */
-  --text-dim:   #5A6270;   /* Подписи, мета-информация */
-  --text-ghost: #3A4150;   /* Плейсхолдеры, неактивные элементы */
+  --text-primary: #E8ECF4;   /* Основной текст */
+  --text-light:   #F0EDE8;   /* (алиас для обратной совместимости) */
+  --text-secondary: #8892A6; /* Описания */
+  --text-mid:     #9BA3B2;   /* (алиас) */
+  --text-muted:   #525D72;   /* Мета, подписи */
+  --text-dim:     #5A6270;   /* (алиас) */
+  --text-ghost:   #3A4150;   /* Неактивные, placeholder */
+  --text-inverse: #0B0E14;   /* Текст на светлом фоне */
 }
 ```
 
-### Family — кто ест
+### Family — цвета участников (ОБНОВЛЕНО)
+
 ```css
 :root {
-  --kolya:    #39FF14;   /* Портал-грин — щадящее, гастрит */
-  --kristina: #FFB347;   /* Рамен-оранж — богатая, сытная еда */
-  --both:     #B197FC;   /* Плазма-фиолет — общие блюда */
+  /* Коля — cyan (информационный, спокойный) */
+  --kolya-main:   #00E5FF;
+  --kolya-bg:     rgba(0,229,255,0.08);
+  --kolya-border: rgba(0,229,255,0.2);
+
+  /* Кристина — pink (тёплый, выразительный) */
+  --kristina-main:   #FF6B9D;
+  --kristina-bg:     rgba(255,107,157,0.08);
+  --kristina-border: rgba(255,107,157,0.2);
+
+  /* Оба — portal green */
+  --both-main:   #39FF14;
+  --both-bg:     rgba(57,255,20,0.08);
+  --both-border: rgba(57,255,20,0.2);
 }
 ```
+
+> **Важно:** Ранее kolya = portal green, kristina = ramen. Теперь kolya = **cyan**, kristina = **pink** — чтобы не путались с тегами еды.
+
+### Теги — цветовая система
+
+Каждый тег имеет свой набор bg/text/border:
+
+| Тег | bg | text | border | CSS-пример |
+|-----|----|------|--------|------------|
+| `gastritis-safe` (Щадящее) | `#0D2818` | `#39FF14` | `#1A4030` | `bg-[#0D2818] text-portal border-[#1A4030]` |
+| `freezable` (Заморозка) | `#0D1B28` | `#00E5FF` | `#1A3040` | `bg-[#0D1B28] text-frost border-[#1A3040]` |
+| `quick` (Быстро) | `#281A0D` | `#FF9100` | `#403020` | `bg-[#281A0D] text-[#FF9100] border-[#403020]` |
+| `prep-day` (Заготовка) | `#1A0D28` | `#B388FF` | `#2D1A40` | `bg-[#1A0D28] text-plasma border-[#2D1A40]` |
+| `overnight` (С вечера) | `#1A0D28` | `#B388FF` | `#2D1A40` | как prep-day |
+| `packable` (С собой) | `#281A0D` | `#FF9100` | `#403020` | как quick |
+| `low-calorie` | `#0D2818` | `#39FF14` | `#1A4030` | как gastritis-safe |
 
 ---
 
 ## 2. Типографика
 
 ### Шрифты
+
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
 :root {
-  --font-heading: 'Chakra Petch', sans-serif;   /* Sci-fi заголовки */
-  --font-body:    'DM Sans', sans-serif;          /* Чистый body текст */
-  --font-mono:    'JetBrains Mono', monospace;     /* Данные, время, температура */
+  --font-heading: 'Exo 2', 'Chakra Petch', sans-serif;
+  --font-body:    'DM Sans', 'Noto Sans JP', sans-serif;
+  --font-mono:    'Share Tech Mono', 'JetBrains Mono', monospace;
 }
 ```
 
+> **Миграция:** Exo 2 заменяет Chakra Petch (более чистые веса, лучше на мобильных). Share Tech Mono — для sci-fi дат и меток. Старые шрифты остаются как fallback.
+
 ### Шкала
 
-| Роль | Шрифт | Размер | Вес | Цвет | Пример |
-|------|-------|--------|-----|------|--------|
-| Display | Chakra Petch | 36px | 800 | --text-light | Hero заголовки |
-| H1 | Chakra Petch | 28px | 800 | --text-light | Заголовки секций |
-| H2 | Chakra Petch | 22px | 700 | --text-light | Заголовки карточек |
-| H3 | Chakra Petch | 18px | 700 | --text-mid | Подзаголовки |
-| Body | DM Sans | 15px | 400 | --text-mid | Основной текст |
-| Small | DM Sans | 13px | 400 | --text-dim | Описания |
-| Label | Chakra Petch | 12px | 600 | --text-dim | ЗАВТРАК, ЗАГОТОВКА |
-| Mono | JetBrains Mono | 13px | 500 | --portal | ⏱ 25 мин · 180°C |
+| Роль | Шрифт | Размер | Вес | Цвет |
+|------|-------|--------|-----|------|
+| Display | heading | 26-36px | 800-900 | text-primary |
+| H1 | heading | 22px | 800 | text-primary |
+| H2 | heading | 18px | 700 | text-primary |
+| H3 | heading | 14-16px | 700 | text-primary |
+| Body | body | 13-15px | 400-500 | text-secondary |
+| Small | body | 11-12px | 400 | text-muted |
+| Label | mono | 10px | 700 | accent/muted |
+| Mono data | mono | 11-13px | 500 | portal/muted |
+
+### Специальные метки (sector labels)
+
+Для декоративных заголовков в стиле sci-fi:
+```
+font-family: var(--font-mono);
+font-size: 10px;
+letter-spacing: 1.5px;
+color: var(--portal-dim);
+```
+Пример: `DIM-MON · SECTOR 1`, `ЧАС 1 · ФАРШ`, `РЕЦЕПТ · СОУС`
 
 ---
 
@@ -112,20 +185,24 @@
 
 ### Отступы
 ```css
---space-1: 4px;    --space-2: 8px;    --space-3: 12px;
---space-4: 16px;   --space-5: 24px;   --space-6: 32px;   --space-8: 48px;
+--space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+--space-4: 16px; --space-5: 24px; --space-6: 32px; --space-8: 48px;
 ```
 
 ### Скругления
 ```css
---radius-button: 10px;   --radius-card: 16px;
---radius-modal: 20px;    --radius-pill: 9999px;
+--radius-sm: 4px;      /* теги */
+--radius-md: 8px;      /* кнопки внутри карточек */
+--radius-button: 10px; /* кнопки */
+--radius-card: 12-16px;/* карточки */
+--radius-modal: 20px;  /* модалки */
+--radius-pill: 9999px; /* бейджи */
 ```
 
 ### Тени
 ```css
 --shadow-card:    0 2px 8px rgba(0,0,0,0.3);
---shadow-glow:    0 4px 16px rgba(57,255,20,0.15);
+--shadow-glow:    0 0 24px rgba(57,255,20,0.12);
 --shadow-elevate: 0 8px 32px rgba(0,0,0,0.5);
 --shadow-nav:     0 -4px 20px rgba(0,0,0,0.4);
 ```
@@ -134,588 +211,319 @@
 
 ## 4. Компоненты
 
-### Карточка рецепта
-- Фон: `--dimension`, бордер `--nebula`
-- Hover: бордер `portal @ 30%`, тень `--shadow-glow`, `translateY(-2px)`
-- Мета-данные: `--font-mono`, `--portal`
-- Оборудование: пилюли с эмодзи
+### Badge (бейдж участника)
 
-### Слот приёма пищи
-- Цветная полоска 3px слева для каждого профиля
-- Кнопка "заменить": ghost portal
-- Время: `--font-mono`
+Тонкий бейдж с цветной точкой и свечением:
 
-### Теги
-Формула: `bg: rgba(цвет, 0.12)`, `border: rgba(цвет, 0.3)`, `color: цвет`
-
-| Тег | Цвет | Эмодзи |
-|-----|------|--------|
-| щадящее | portal | ♨️ |
-| заморозка | frost | ❄️ |
-| быстро | ramen | ⚡ |
-| заготовка | plasma | 📦 |
-| сытно | miso | 🔥 |
-| prep-day | portal-dim | 🧪 |
-
-### Кнопки
-- **Primary:** gradient portal → portal-dim, текст void, тень glow
-- **Secondary:** transparent, бордер nebula, текст light
-- **Danger:** bg `rgba(FF6B6B, 0.1)`, текст/бордер #FF6B6B
-- Все: radius-button (10px), font-heading, 600, 13px
-
-### Bottom Navigation
-- Фон dimension, бордер-top nebula, тень nav
-- Active: текст portal + зелёная полоска 3px сверху с glow
-- Inactive: text-ghost
-- Эмодзи 20px + label font-heading 10px
-
-### Family Indicators
-- 🟢 Коля: #39FF14 + glow
-- 🟠 Кристина: #FFB347 + glow  
-- 🟣 Оба: #B197FC + glow
-
-### Мета-данные рецептов (время и порции)
-
-**Требования к spacing:**
-- Расстояние между элементами: `gap-2` (8px)
-- Визуальный разделитель: точка `·` в цвете `text-dim`
-- Шрифт: `font-mono`, размер `text-xs`
-- Цвет: `text-portal` для значений
-
-**Пример:**
 ```tsx
-<div className="flex items-center gap-2 text-xs font-mono text-portal">
-  <span>⏱ {time} мин</span>
-  <span className="text-text-dim">·</span>
-  <span>{servings} порций</span>
+<span style={{
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  padding: '3px 10px', borderRadius: 20,
+  background: memberBg, border: `1px solid ${memberBorder}`,
+  fontSize: 12, fontWeight: 600, color: memberMain,
+}}>
+  <span style={{ width: 6, height: 6, borderRadius: '50%',
+    background: memberMain, boxShadow: `0 0 6px ${memberMain}60` }} />
+  {label}
+</span>
+```
+
+| Участник | main | bg | border |
+|----------|------|----|--------|
+| Коля | `#00E5FF` | `rgba(0,229,255,0.08)` | `rgba(0,229,255,0.2)` |
+| Кристина | `#FF6B9D` | `rgba(255,107,157,0.08)` | `rgba(255,107,157,0.2)` |
+| Оба | `#39FF14` | `rgba(57,255,20,0.08)` | `rgba(57,255,20,0.2)` |
+
+### Tag (тег рецепта)
+
+Компактный тег с фоновой подложкой:
+
+```tsx
+<span style={{
+  padding: '2px 8px', borderRadius: 4,
+  background: tagBg, border: `1px solid ${tagBorder}`,
+  fontSize: 11, fontWeight: 600, color: tagText,
+}}>Щадящее</span>
+```
+
+### Pill (фильтр-переключатель)
+
+```tsx
+<button style={{
+  padding: '6px 14px', borderRadius: 20, border: 'none',
+  background: active ? 'rgba(57,255,20,0.12)' : 'transparent',
+  color: active ? '#39FF14' : '#525D72',
+  outline: active ? '1px solid rgba(57,255,20,0.19)' : '1px solid transparent',
+}}>Фильтр</button>
+```
+
+### Карточка рецепта — полная
+
+- Фон: `card` (#161C2A), бордер `elevated`
+- Hover: бордер `portal @ 30%`, тень glow, `translateY(-2px)`
+- Иконка рецепта: 44×44 квадрат с `elevated` фоном, скругление 12px
+- Заголовок: heading 16px 800
+- Мета: mono 11px muted — `⏱ 30 мин · 20 порций`
+- Теги: ряд Tag компонентов
+- Оборудование: ряд мини-карточек `bg-dark border-elevated` с эмодзи
+- Хранение: mono 11px muted — `🧊 Холодильник: 2 дн. · ❄️ Морозилка: 3 мес.`
+
+### Карточка рецепта — компактная (для SwapModal, поиск)
+
+```tsx
+<div style={{
+  display: 'flex', alignItems: 'center', gap: 12,
+  padding: '12px 14px', borderRadius: 12, background: '#161C2A',
+  border: '1px solid #1E2538',
+}}>
+  <div /* 40×40 icon */ />
+  <div /* title + meta */ />
+  <Badge /* member */ />
 </div>
 ```
 
-**Применение:**
-- Карточки рецептов в списке (RecipesPage) — использует `gap-2` с разделителем
-- Детальная страница рецепта (RecipeDetailPage) — использует `gap-4` без разделителя (оставить как есть для большей читаемости)
-- Любые другие места отображения времени и порций
+### MealSlot — аккордеон
 
-### Header/PageShell
+Вместо всех приёмов раскрытых — **аккордеон**: один приём развёрнут, остальные свёрнуты.
 
-**Структура:**
-- Фон: `bg-dimension`, бордер-bottom: `border-nebula`
-- Позиционирование: `sticky top-0 z-50`
-- Тень: `shadow-nav`
-- Контейнер: `container mx-auto px-4 py-3`
-- Расположение: заголовок слева (`font-heading text-xl font-bold text-text-light`), ChefModeToggle справа
+Каждый элемент внутри приёма:
+- **Цветная полоска** 3px слева — цвет участника (opacity 0.6)
+- **Название** heading 13px 500
+- **Подзаголовок** (если есть) heading 11px muted
+- **Badge** мини-бейдж участника (10px, сокращённый: К, Кр, Оба)
+- **Кнопка swap** 28×28 с иконкой ⇄, border elevated, bg dark
 
-**Пример:**
 ```tsx
-<header className="sticky top-0 z-50 bg-dimension border-b border-nebula shadow-nav">
-  <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-    <h1 className="font-heading text-xl font-bold text-text-light">SemeynoYeda</h1>
-    <ChefModeToggle />
-  </div>
-</header>
-```
-
-### ChefModeToggle
-
-**Кнопка переключения режима повара:**
-- Активное состояние: `bg-gradient-to-r from-portal to-portal-dim text-void shadow-glow`
-- Неактивное состояние: `bg-rift border border-nebula text-text-mid hover:bg-nebula`
-- Размеры: `px-4 py-2`, `rounded-button`
-- Шрифт: `font-heading font-semibold text-sm`
-- Иконка: `ChefHat` из lucide-react, размер `w-4 h-4`
-
-### Формы и инпуты
-
-**Text Input (поиск):**
-- Фон: `bg-rift`, бордер: `border-nebula`
-- Скругление: `rounded-button`
-- Padding: `px-4 py-2` (для поиска с иконкой: `pl-10`)
-- Текст: `text-text-light font-body`
-- Focus: `focus:outline-none focus:border-portal focus:ring-2 focus:ring-portal-glow`
-- Placeholder: `text-text-dim`
-
-**Поиск с иконкой:**
-- Контейнер: `relative`
-- Иконка: `absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-dim`
-- Input: `pl-10` для отступа под иконку
-- Иконка: `Search` из lucide-react
-
-**Date Input:**
-- Те же стили что и text input
-- Можно добавить иконку Calendar слева через `absolute` позиционирование
-
-**Select Dropdown:**
-- Те же стили что и text input
-- Опции: `bg-rift text-text-light`
-
-**Label для форм:**
-- Стиль: `block text-sm font-heading font-semibold text-text-mid mb-2` (или `text-text-light` для важных полей)
-- Всегда должен быть связан с полем через `id` и `htmlFor` или `id` и `name`
-
-**Пример поиска с иконкой:**
-```tsx
-<div className="relative">
-  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-dim" />
-  <input
-    type="text"
-    id="recipe-search"
-    name="recipe-search"
-    className="w-full bg-rift border border-nebula rounded-button px-4 py-2 pl-10 text-text-light font-body focus:outline-none focus:border-portal focus:ring-2 focus:ring-portal-glow"
-    placeholder="Поиск рецептов..."
-  />
-</div>
-```
-
-**Пример обычного input:**
-```tsx
-<input
-  type="text"
-  className="w-full bg-rift border border-nebula rounded-button px-4 py-2 text-text-light font-body focus:outline-none focus:border-portal focus:ring-2 focus:ring-portal-glow"
-  placeholder="Поиск..."
-/>
-```
-
-### Toggle Switch
-
-**Переключатель (автогенерация списка покупок):**
-- Контейнер: `relative inline-flex h-6 w-11 items-center rounded-pill`
-- Активное состояние: `bg-gradient-to-r from-portal to-portal-dim shadow-glow`
-- Неактивное состояние: `bg-nebula`
-- Переключатель (кружок): `inline-block h-4 w-4 rounded-full bg-void`
-- Позиция: `translate-x-6` (активно) или `translate-x-1` (неактивно)
-- Transition: `transition-transform` и `transition-colors`
-
-**Пример:**
-```tsx
-<button className={`relative inline-flex h-6 w-11 items-center rounded-pill transition-colors ${
-  enabled ? 'bg-gradient-to-r from-portal to-portal-dim shadow-glow' : 'bg-nebula'
-}`}>
-  <span className={`inline-block h-4 w-4 transform rounded-full bg-void transition-transform ${
-    enabled ? 'translate-x-6' : 'translate-x-1'
-  }`} />
+// Свёрнутый приём — только header
+<button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
+  <span>{icon}</span>
+  <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{label}</span>
+  <span style={{ fontSize: 11, color: muted }}>{time}</span>
+  <span>▼</span>
 </button>
+
+// Развёрнутый — header + список блюд
 ```
 
-### Checkbox
+### Week Overview — горизонтальная полоска
 
-**Квадратный чекбокс:**
-- Размер: `w-5 h-5`
-- Скругление: `rounded-button`
-- Бордер: `border-2`
-- Неактивное: `border-nebula hover:border-portal`
-- Активное: `bg-portal border-portal`
-- Иконка внутри: `CheckCircle2` из lucide-react, размер `w-3 h-3 text-void`
-- Flex для центрирования: `flex items-center justify-center`
+Компактный обзор недели — 7 ячеек, каждая ~52px:
 
-**Пример:**
-```tsx
-<button className={`w-5 h-5 rounded-button border-2 flex items-center justify-center transition-colors ${
-  checked ? 'bg-portal border-portal' : 'border-nebula hover:border-portal'
-}`}>
-  {checked && <CheckCircle2 className="w-3 h-3 text-void" />}
-</button>
+```
+[ПН] [ВТ] [СР] [ЧТ] [ПТ] [СБ📦] [ВС📦]
+ ●●●● ●●●● ●●●●                    
 ```
 
-### Progress Bar
+- Активный день: портальный фон + зелёный текст + зелёный border
+- Prep day (выходные): иконка 📦 вместо точек, фиолетовый текст
+- Обычный день: 4 точки (заполненные = приёмы с рецептами)
 
-**Прогресс-бар:**
-- Контейнер: `h-2 bg-rift rounded-pill overflow-hidden`
-- Заполнение: `h-full bg-gradient-to-r from-portal to-portal-dim shadow-glow`
-- Ширина: динамическая через `style={{ width: '${progress}%' }}`
-- Transition: `transition-all duration-300` (или `duration-1000` для таймеров)
+### Stats Bar (метаданные рецепта)
 
-**Пример:**
-```tsx
-<div className="h-2 bg-rift rounded-pill overflow-hidden">
-  <div
-    className="h-full bg-gradient-to-r from-portal to-portal-dim transition-all duration-300 shadow-glow"
-    style={{ width: `${progress}%` }}
-  />
-</div>
+Горизонтальная полоска с иконками, подписями и значениями:
+
+```
+[ ⏱ Время | 🍽 Порции | 🧊 Холод. | ❄️ Мороз. ]
+[  20 мин |    6     |  4 дн.   |  3 мес.  ]
 ```
 
-### Loading States
-
-**Единый стиль для всех состояний загрузки:**
-- Контейнер: `bg-dimension border border-nebula rounded-card p-4`
-- Текст: `text-text-mid font-body`
-- Сообщение: "Загрузка..." или "Загрузка {контекст}..."
-
-**Пример:**
 ```tsx
-<div className="bg-dimension border border-nebula rounded-card p-4">
-  <div className="text-text-mid font-body">Загрузка...</div>
-</div>
-```
-
-### Empty States
-
-**Пустые состояния страниц:**
-
-**Меню (MenuPage):**
-- Заголовок: "Вселенная голодна 🌀"
-- Подзаголовок: "Запланируем неделю?"
-- Кнопка: Primary стиль, текст "Посмотреть рецепты"
-
-**Рецепты (RecipesPage):**
-- Текст: "Рецепты не найдены"
-- Центрирование: `text-center`
-
-**Список покупок (ShoppingPage):**
-- Текст: "Список покупок пуст"
-
-**Таймеры (ParallelCooking):**
-- Заголовок: "Параллельная готовка"
-- Текст: "Нет активных таймеров. Таймер запущен в параллельной вселенной"
-
-**Подготовка (PrepPage):**
-- Текст: "Нет рецептов для выбранной даты. Вселенная голодна 🌀 Запланируем неделю?"
-
-**Общий стиль:**
-- Контейнер: `bg-dimension border border-nebula rounded-card p-5`
-- Текст: `text-text-mid font-body`
-- Центрирование: `text-center` (если нужно)
-
-### PrepTaskCard
-
-**Карточка задачи подготовки:**
-- Фон: `bg-dimension`, бордер: `border-nebula`
-- Скругление: `rounded-card`
-- Padding: `p-3`
-- Состояния:
-  - Завершено: `opacity-60 border-nebula`
-  - Активно: `hover:border-portal/30 hover:shadow-glow`
-- Структура: чекбокс слева, контент справа (`flex items-start gap-3`)
-- Группировка: эмодзи категории + название ингредиента
-- Мета-информация: количество, единица измерения, время хранения
-
-**Пример:**
-```tsx
-<div className={`bg-dimension border rounded-card p-3 transition-all ${
-  completed ? 'border-nebula opacity-60' : 'border-nebula hover:border-portal/30 hover:shadow-glow'
-}`}>
-  <div className="flex items-start gap-3">
-    {/* Checkbox */}
-    <button className="w-5 h-5 rounded-button border-2 ...">...</button>
-    {/* Content */}
-    <div className="flex-1">
-      <div className="flex items-center gap-2">
-        <span className="text-lg">{GROUP_ICONS[group]}</span>
-        <h4 className="font-heading font-semibold text-sm">{ingredient}</h4>
-      </div>
-      {/* Meta info */}
+<div style={{ display: 'flex', gap: 1, borderRadius: 10, overflow: 'hidden', background: card, border: '1px solid elevated' }}>
+  {stats.map(s => (
+    <div style={{ flex: 1, padding: '10px 8px', textAlign: 'center', borderLeft: '1px solid elevated' }}>
+      <div>{s.icon}</div>
+      <div style={{ fontSize: 10, color: muted }}>{s.label}</div>
+      <div style={{ fontSize: 13, fontWeight: 700 }}>{s.value}</div>
     </div>
-  </div>
-</div>
-```
-
-### CookingTimer Card
-
-**Карточка активного таймера:**
-- Фон: `bg-rift`, бордер: `border-portal/30`
-- Скругление: `rounded-card`
-- Тень: `shadow-glow`
-- Анимация: `animate-pulse` (опционально)
-- Структура:
-  - Заголовок с иконкой Clock и названием таймера
-  - Название рецепта (если есть)
-  - Кнопки управления (pause/play, stop)
-  - Прогресс-бар с временем и процентом
-
-**Пример:**
-```tsx
-<div className="bg-rift border border-portal/30 rounded-card p-4 shadow-glow">
-  <div className="flex items-start justify-between mb-3">
-    <div className="flex items-center gap-2">
-      <Clock className="w-4 h-4 text-portal" />
-      <h4 className="font-heading font-semibold text-text-light">{label}</h4>
-    </div>
-    {/* Кнопки управления */}
-  </div>
-  {/* Прогресс-бар */}
-</div>
-```
-
-### IngredientCheck
-
-**Компонент проверки ингредиентов:**
-- Три состояния:
-  - **Available** (есть): `CheckCircle2` зелёный (`text-portal`)
-  - **Missing** (отсутствует): `XCircle` оранжевый (`text-ramen`)
-  - **Unknown** (неизвестно): `HelpCircle` серый (`text-text-dim`)
-- Карточка ингредиента: стандартная карточка с кнопками состояния
-- Кнопки: три кнопки для выбора состояния
-
-**Пример:**
-```tsx
-<div className="flex items-center gap-2">
-  {availability === 'available' && <CheckCircle2 className="w-5 h-5 text-portal" />}
-  {availability === 'missing' && <XCircle className="w-5 h-5 text-ramen" />}
-  {availability === 'unknown' && <HelpCircle className="w-5 h-5 text-text-dim" />}
-</div>
-```
-
-### RecipeDetailPage — шаги приготовления
-
-**Нумерованные шаги:**
-- Контейнер: `space-y-4` для вертикальных отступов
-- Структура: номер слева, контент справа (`flex gap-3`)
-- Номер шага:
-  - Круг: `w-8 h-8 rounded-full bg-rift border border-nebula`
-  - Текст: `text-sm font-heading font-semibold text-portal`
-  - Центрирование: `flex items-center justify-center`
-- Контент шага:
-  - Текст: `text-text-light font-body`
-  - Оборудование: `text-sm text-text-dim font-body`
-  - Время: `text-xs font-mono text-portal`
-  - Совет: `text-xs text-text-dim font-body italic` с эмодзи 💡
-
-**Пример:**
-```tsx
-<ol className="space-y-4">
-  {steps.map((step) => (
-    <li key={step.order} className="flex gap-3">
-      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-rift border border-nebula flex items-center justify-center text-sm font-heading font-semibold text-portal">
-        {step.order}
-      </span>
-      <div className="flex-1">
-        <p className="text-text-light font-body">{step.text}</p>
-        {step.equipment && (
-          <p className="text-sm text-text-dim font-body">{step.equipment.label}</p>
-        )}
-        {step.duration && (
-          <p className="text-xs font-mono text-portal mt-1">⏱ {step.duration} мин</p>
-        )}
-      </div>
-    </li>
-  ))}
-</ol>
-```
-
-### Фильтры (Filter Buttons)
-
-**Горизонтальные фильтры:**
-- Контейнер: `flex gap-2` с `overflow-x-auto`
-- Кнопка:
-  - Активная: `bg-gradient-to-r from-portal to-portal-dim text-void shadow-glow`
-  - Неактивная: `bg-rift border border-nebula text-text-mid hover:border-portal/30`
-- Размеры: `px-3 py-1` или `px-4 py-2`
-- Скругление: `rounded-button`
-- Шрифт: `font-heading font-semibold text-xs` или `text-sm`
-- `whitespace-nowrap` для предотвращения переноса
-
-**Пример:**
-```tsx
-<div className="flex gap-2 overflow-x-auto">
-  {filters.map((filter) => (
-    <button
-      key={filter.value}
-      className={`px-3 py-1 rounded-button font-heading font-semibold text-xs whitespace-nowrap transition-colors ${
-        active === filter.value
-          ? 'bg-gradient-to-r from-portal to-portal-dim text-void shadow-glow'
-          : 'bg-rift border border-nebula text-text-mid hover:border-portal/30'
-      }`}
-    >
-      {filter.label}
-    </button>
   ))}
 </div>
 ```
 
-### Modal/Dialog
+### Equipment Card
 
-**Модальное окно:**
-- Overlay: `fixed inset-0 bg-void/80 backdrop-blur-sm z-50`
-- Контейнер: `fixed inset-0 flex items-center justify-center z-50 p-4`
-- Модальное окно:
-  - Фон: `bg-rift`, бордер: `border-nebula`
-  - Скругление: `rounded-modal` (20px)
-  - Тень: `shadow-elevate`
-  - Максимальная ширина: `max-w-md w-full`
-  - Padding: `p-6`
-- Заголовок: `font-heading text-xl font-bold text-text-light mb-4`
-- Контент: `text-text-mid font-body`
-- Кнопки: внизу модального окна, `flex gap-3 justify-end`
+Карточка оборудования с иконкой и настройкой:
 
-**Пример:**
 ```tsx
-<div className="fixed inset-0 bg-void/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-  <div className="bg-rift border border-nebula rounded-modal shadow-elevate max-w-md w-full p-6">
-    <h2 className="font-heading text-xl font-bold text-text-light mb-4">Заголовок</h2>
-    <div className="text-text-mid font-body mb-6">
-      {/* Контент */}
-    </div>
-    <div className="flex gap-3 justify-end">
-      {/* Кнопки */}
-    </div>
+<div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: card, border: '1px solid elevated' }}>
+  <span style={{ fontSize: 20 }}>🔥</span>
+  <div>
+    <div style={{ fontWeight: 600, fontSize: 13 }}>Плита</div>
+    <div style={{ fontSize: 10, color: muted }}>средний огонь</div>
   </div>
 </div>
 ```
 
-### Toast/Notification
+### Prep Checklist (заготовки)
 
-**Уведомления:**
-- Контейнер: `fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50` (или `top-4 right-4`)
-- Toast элемент:
-  - Фон: `bg-rift`, бордер: `border-nebula` или `border-portal` для успеха
-  - Скругление: `rounded-card`
-  - Тень: `shadow-elevate`
-  - Padding: `px-4 py-3`
-  - Минимальная ширина: `min-w-[300px]`
-  - Анимация: `animate-slide-up` или `animate-fade-in`
-- Типы:
-  - **Success**: `border-portal`, иконка `CheckCircle2` зелёная
-  - **Error**: `border-ramen`, иконка `XCircle` оранжевая
-  - **Info**: `border-nebula`, иконка `Info` серая
-- Текст: `text-text-light font-body text-sm`
-- Кнопка закрытия: `absolute top-2 right-2` с иконкой `X`
+Чек-лист с прогрессом, разбитый по часам/фазам:
 
-**Пример:**
+- **Header фазы:** mono label (`ЧАС 1 · ФАРШ`), heading title, счётчик done/total, progress bar
+- **Задача:** чекбокс 22×22 с rounded 6px + контент
+  - Выполнено: opacity 0.45, line-through, зелёная галочка
+  - Не выполнено: border elevated, пустой
+- **Мета задачи:** recipe name (mono muted), time (mono orange), equipment badge, `⚡ парал.` (cyan)
+- **Tip:** зелёный блок `portal-soft` с бордером слева, 💡 иконка
+
+### AlertBanner (уведомления морозилки)
+
+| Тип | bg | border | icon color |
+|-----|----|--------|------------|
+| low-stock | ramen/10 | ramen/30 | ramen |
+| expiring | ramen/10 | ramen/30 | ramen |
+| suggestion | frost/10 | frost/30 | frost |
+
+Закрываемый, с иконкой и кнопкой X.
+
+### Issue Card (для внутренних ревью)
+
 ```tsx
-<div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50">
-  <div className="bg-rift border border-portal rounded-card shadow-elevate px-4 py-3 min-w-[300px] flex items-center gap-3">
-    <CheckCircle2 className="w-5 h-5 text-portal flex-shrink-0" />
-    <p className="text-text-light font-body text-sm flex-1">Сообщение</p>
-    <button className="text-text-dim hover:text-text-light">
-      <X className="w-4 h-4" />
-    </button>
-  </div>
+<div style={{ padding: '14px 16px', borderRadius: 10, background: card, borderLeft: `3px solid ${severityColor}` }}>
+  <span /* severity badge: fontSize 10, mono, bg color+15% */ />
+  <span /* title: heading 14px 700 */ />
+  <p /* description: heading 13px secondary */ />
 </div>
 ```
 
-### CookingSession
-
-**Сессия готовки (многошаговый компонент):**
-- Контейнер: `space-y-6` для вертикальных отступов
-- Заголовок сессии:
-  - Фон: `bg-dimension`, бордер: `border-nebula`
-  - Скругление: `rounded-card`
-  - Тень: `shadow-card`
-  - Padding: `p-5`
-  - Иконка: `ChefHat` размер `w-6 h-6 text-portal`
-  - Заголовок: `font-heading text-2xl font-bold text-text-light`
-- Состояния:
-  - **check** (проверка ингредиентов): показывает `IngredientCheck`
-  - **cooking** (готовка): показывает `ParallelCooking` и инструкции
-  - **complete** (завершено): карточка с `border-portal`, `shadow-glow`, иконка `CheckCircle2`
-- Инструкции по готовке:
-  - Контейнер: `bg-dimension border border-nebula rounded-card p-5`
-  - Заголовок: `font-heading text-lg font-bold text-text-light mb-4`
-  - Шаги: нумерованный список с круглыми индикаторами (как в RecipeDetailPage)
-  - Кнопка завершения: Primary стиль, `w-full`
-
-**Пример:**
-```tsx
-<div className="space-y-6">
-  {/* Заголовок сессии */}
-  <div className="bg-dimension border border-nebula rounded-card p-5 shadow-card">
-    <div className="flex items-center gap-3 mb-4">
-      <ChefHat className="w-6 h-6 text-portal" />
-      <h2 className="font-heading text-2xl font-bold text-text-light">Сессия готовки</h2>
-    </div>
-  </div>
-  
-  {/* Состояния */}
-  {step === 'complete' && (
-    <div className="bg-dimension border border-portal rounded-card p-5 shadow-glow">
-      <div className="flex items-center gap-3 mb-2">
-        <CheckCircle2 className="w-6 h-6 text-portal" />
-        <h3 className="font-heading text-xl font-bold text-portal">Готовка завершена!</h3>
-      </div>
-    </div>
-  )}
-</div>
-```
-
-### MealSlot (детальное описание)
-
-**Слот приёма пищи:**
-- Контейнер: `bg-dimension border border-nebula rounded-card p-4 shadow-card`
-- Заголовок: `font-heading font-semibold text-text-light mb-2`
-- Список рецептов: `space-y-1` с названием и индикатором "для кого"
-- Индикатор "для кого":
-  - Коля: `bg-portal/20 text-portal`
-  - Кристина: `bg-ramen/20 text-ramen`
-  - Оба: `bg-plasma/20 text-plasma`
-  - Размер: `text-xs px-2 py-0.5 rounded-pill font-heading font-semibold`
-- Предупреждение об отсутствующих ингредиентах:
-  - Иконка: `AlertTriangle` размер `w-4 h-4 text-ramen`
-  - Текст: `text-xs font-body text-ramen`
-  - Позиция: справа вверху
-- Кнопка проверки ингредиентов:
-  - Стиль: Secondary (ghost)
-  - Размер: `w-full mt-2`
-  - Текст: `font-heading font-semibold text-xs`
-
-**Пример:**
-```tsx
-<div className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
-  <div className="flex items-start justify-between mb-3">
-    <div className="flex-1">
-      <h4 className="font-heading font-semibold text-text-light mb-2">Завтрак</h4>
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-body text-text-mid">Название рецепта</span>
-          <span className="text-xs px-2 py-0.5 rounded-pill font-heading font-semibold bg-portal/20 text-portal">
-            Коля
-          </span>
-        </div>
-      </div>
-    </div>
-    {hasMissingIngredients && (
-      <div className="flex items-center gap-1 text-ramen">
-        <AlertTriangle className="w-4 h-4" />
-        <span className="text-xs font-body">Не хватает ингредиентов</span>
-      </div>
-    )}
-  </div>
-  <button className="w-full mt-2 bg-rift border border-nebula text-text-light font-heading font-semibold text-xs py-2 px-3 rounded-button hover:bg-nebula hover:border-portal/30 transition-colors">
-    Проверить ингредиенты
-  </button>
-</div>
-```
-
-### ShoppingSettings
-
-**Настройки покупок:**
-- Контейнер: `bg-dimension border border-nebula rounded-card p-5 shadow-card`
-- Заголовок: `font-heading text-xl font-bold text-text-light mb-4`
-- Поля формы: `space-y-4`
-- Label: `block text-sm font-heading font-semibold text-text-mid mb-2`
-- Select: стили как у обычного select (см. "Формы и инпуты")
-- Toggle Switch: стили как у обычного toggle (см. "Toggle Switch")
-- Вспомогательный текст: `text-sm text-text-dim font-body mt-2`
+Severity цвета: critical → pink, major → orange, minor → yellow, enhance → portal
 
 ---
 
-## 5. Анимации
+## 5. Навигация
+
+### Header + Section Nav
+
+Двухуровневый header:
+1. **Верхний ряд:** логотип + ChefModeToggle
+2. **Section nav:** горизонтальные вкладки с border-bottom индикатором
+
+```
+┌─────────────────────────────────────┐
+│ SemeynoYeda              [Повар ON] │
+├─────────────────────────────────────┤
+│ 📅Меню  📖Рецепты  📦Заготовки ... │
+└─────────────────────────────────────┘
+```
+
+Активная вкладка: `text-portal` + `border-b-2 border-portal`
+Неактивная: `text-ghost` + `border-b-2 border-transparent`
+
+### Bottom Nav
+
+Фон panel, скруглённый контейнер (radius 20), 4-5 табов:
+
+- **Active:** иконка без фильтра, portal green текст, зелёная точка/полоска снизу с glow, фон portal-soft
+- **Inactive:** иконка grayscale 60% + opacity 40%, muted текст
+- Размеры: минимум 48px ширина на таб
+
+```
+┌──────────────────────────────────┐
+│  📅     📖     ❄️     🛒        │
+│ Меню  Рецепты Морозилка Покупки │
+│  ──                              │
+└──────────────────────────────────┘
+```
+
+### Breadcrumbs
+
+- Mono шрифт, 11px, muted цвет
+- Разделитель: `/` с opacity 0.3
+- Текущая страница: text-secondary
+- Ссылки: portal-dim, cursor pointer
+
+```
+Рецепты / Соусы / Кабачковый соус
+```
+
+### Режим повара
+
+Не отдельный набор табов — **floating overlay** внизу экрана:
+- Показывает текущий шаг, таймер, прогресс
+- Тап раскрывает полный чек-лист
+- Gradient-линия сверху (orange → yellow)
+- Кнопка "Далее →" в portal стиле
+
+---
+
+## 6. Кнопки
+
+### Primary
+```css
+background: var(--portal-dim);
+color: var(--text-inverse);
+font-weight: 700; font-size: 13px;
+border-radius: 10px;
+```
+
+### Secondary
+```css
+background: transparent;
+border: 1px solid var(--elevated);
+color: var(--text-muted);
+font-weight: 600; font-size: 13px;
+border-radius: 10px;
+```
+
+### Danger
+```css
+background: rgba(255,107,157,0.1);
+border: 1px solid rgba(255,107,157,0.3);
+color: #FF6B9D;
+```
+
+### Swap Button
+Минимум 28×28 (лучше 44×44 на мобильных):
+```css
+width: 28px; height: 28px;
+border-radius: 8px;
+border: 1px solid var(--elevated);
+background: var(--void);
+color: var(--text-muted);
+```
+
+---
+
+## 7. Модалки
+
+**ВАЖНО:** все модалки рендерятся через `createPortal(modal, document.body)` для обхода CSS stacking context от анимаций.
 
 ```css
-/* Появление карточки */
+z-index: 9999;
+backdrop-filter: blur(12px);
+background: rgba(11,14,20,0.80);
+```
+
+Поддержка закрытия по Escape.
+
+---
+
+## 8. Анимации
+
+```css
 @keyframes cardAppear {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Портальное свечение */
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 400px; }
+}
+
 @keyframes portalPulse {
   0%, 100% { box-shadow: 0 0 16px rgba(57,255,20,0.2); }
   50% { box-shadow: 0 0 24px rgba(57,255,20,0.35); }
 }
-
-/* Scroll snap */
-.week-scroll { scroll-snap-type: x mandatory; }
-.day-column { scroll-snap-align: start; }
-
-/* Скроллбар */
-::-webkit-scrollbar-thumb:hover { background: var(--portal); }
 ```
+
+Transition по умолчанию: `all 0.2s ease` или `all 0.25s cubic-bezier(0.4,0,0.2,1)` для карточек.
+
+Скроллбар: 5px, thumb = elevated, thumb:hover = portal.
 
 ---
 
-## 6. Тон контента
+## 9. Тон контента
 
-Гиковский, дружеский, с лёгким sci-fi вайбом. Отсылки к R&M — easter eggs, не в каждом экране.
+Гиковский, дружеский, с лёгким sci-fi вайбом.
 
 - Пустое меню: "Вселенная голодна 🌀 Запланируем неделю?"
 - Рецепт добавлен: "Рецепт в базе, Морти"
@@ -725,7 +533,28 @@
 
 ---
 
-## 7. Tailwind конфиг
+## 10. Известные проблемы и TODO
+
+Из UX-ревью (приоритет: critical → major → minor → enhance):
+
+| Приоритет | Проблема | Решение |
+|-----------|----------|---------|
+| КРИТИЧНО | Визуальная иерархия отсутствует | Чёткие уровни: заголовки крупнее, hover-эффекты, акцентные CTA |
+| КРИТИЧНО | Теги нечитаемы при ярком свете | Фоновые подложки с контрастной рамкой (таблица тегов выше) |
+| ВАЖНО | Бейджи Коля/Кристина конкурируют с контентом | Cyan/Pink вместо Portal/Ramen, тонкие бейджи с цветной точкой |
+| ВАЖНО | День меню слишком длинный | Аккордеон — 1 приём развёрнут, остальные свёрнуты |
+| ВАЖНО | Рецепт без визуальной структуры | Stats bar + Equipment cards + разделённые секции |
+| ВАЖНО | Чек-лист заготовок без прогресса | Progress bar, done/total, разделение по часам, tips |
+| ВАЖНО | Кнопка swap ⇄ слишком мелкая | Увеличить до 28×28 минимум, hover-эффект |
+| МЕЛОЧЬ | Нет разделителя мин/порции | Добавить ` · ` между значениями |
+| МЕЛОЧЬ | Breadcrumbs слишком яркие | Mono шрифт, muted цвет |
+| УЛУЧШЕНИЕ | Компактный week-overview | Горизонтальная полоска дней с точками |
+| УЛУЧШЕНИЕ | Quick-swap из последних рецептов | "Недавно использованные" в начале SwapModal |
+| УЛУЧШЕНИЕ | Таймеры с вибрацией | Vibration API в PWA для окончания таймеров |
+
+---
+
+## 11. Tailwind конфиг (обновлённый)
 
 ```typescript
 export default {
@@ -736,23 +565,33 @@ export default {
         dimension: { DEFAULT: '#141821' },
         rift:      { DEFAULT: '#1C2230' },
         nebula:    { DEFAULT: '#252D3B' },
-        portal:    { DEFAULT: '#39FF14', dim: '#2BD911' },
+        portal:    { DEFAULT: '#39FF14', dim: '#00E676' },
         ramen:     { DEFAULT: '#FFB347' },
         miso:      { DEFAULT: '#E8985A' },
         matcha:    { DEFAULT: '#8DB580' },
         sakura:    { DEFAULT: '#FFB7C5' },
         frost:     { DEFAULT: '#8DB5E0' },
         plasma:    { DEFAULT: '#B197FC' },
+        // Accent
+        'accent-pink':   { DEFAULT: '#FF6B9D' },
+        'accent-cyan':   { DEFAULT: '#00E5FF' },
+        'accent-orange': { DEFAULT: '#FF9100' },
+        // Семья
+        'kolya':    { DEFAULT: '#00E5FF' },
+        'kristina': { DEFAULT: '#FF6B9D' },
       },
       fontFamily: {
-        heading: ['Chakra Petch', 'sans-serif'],
-        body:    ['DM Sans', 'sans-serif'],
-        mono:    ['JetBrains Mono', 'monospace'],
+        heading: ['Exo 2', 'Chakra Petch', 'sans-serif'],
+        body:    ['DM Sans', 'Noto Sans JP', 'sans-serif'],
+        mono:    ['Share Tech Mono', 'JetBrains Mono', 'monospace'],
       },
-      borderRadius: { card: '16px', button: '10px', modal: '20px', pill: '9999px' },
+      borderRadius: {
+        sm: '4px', md: '8px', button: '10px',
+        card: '16px', modal: '20px', pill: '9999px',
+      },
       boxShadow: {
         card: '0 2px 8px rgba(0,0,0,0.3)',
-        glow: '0 4px 16px rgba(57,255,20,0.15)',
+        glow: '0 0 24px rgba(57,255,20,0.12)',
         elevate: '0 8px 32px rgba(0,0,0,0.5)',
         nav: '0 -4px 20px rgba(0,0,0,0.4)',
       },
