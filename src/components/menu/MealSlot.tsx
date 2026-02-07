@@ -134,21 +134,21 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
 
   return (
     <div className="border-b border-nebula last:border-b-0">
-      {/* Header row — clickable to toggle accordion */}
+      {/* Header row — clickable to toggle accordion; explicit colors for visibility */}
       <button
         onClick={onToggle}
         className={`w-full flex items-center py-3 px-3 transition-all ${
           onToggle ? 'cursor-pointer' : 'cursor-default'
         }`}
-        style={{ gap: '10px', minHeight: '44px' }}
+        style={{ gap: '10px', minHeight: '44px', color: '#E8ECF4' }}
         type="button"
       >
         <span className="text-base">{meal.icon}</span>
-        <span className="flex-1 text-left font-heading font-bold text-sm text-text-primary">
+        <span className="flex-1 text-left font-heading font-bold text-sm" style={{ color: '#E8ECF4' }}>
           {meal.label}
         </span>
         {!isExpanded && recipes.length > 0 && (
-          <span className="text-[11px] font-mono text-text-muted">
+          <span className="text-[11px] font-mono" style={{ color: '#8892A6' }}>
             {estimatedTime > 0 ? `разогрев ${estimatedTime} мин` : `${recipes.length} бл.`}
           </span>
         )}
@@ -157,7 +157,8 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
         )}
         {onToggle && (
           <ChevronDown
-            className={`w-4 h-4 text-text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            style={{ color: '#8892A6' }}
           />
         )}
       </button>
@@ -248,7 +249,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                       <span className="text-[10px] text-miso flex-shrink-0" title="Можно взять с собой">🥡</span>
                     )}
 
-                    {/* Swap button — clearly visible with explicit styles */}
+                    {/* Swap button — clearly visible with explicit styles (default: text-mid, hover: portal) */}
                     {onUpdate && (
                       <button
                         onClick={(e) => handleSwapRecipe(e, index)}
@@ -261,7 +262,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                           borderRadius: '8px',
                           border: '1px solid #252D3B',
                           background: '#0B0E14',
-                          color: '#525D72',
+                          color: '#9BA3B2',
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.borderColor = 'rgba(57,255,20,0.3)';
@@ -269,7 +270,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.borderColor = '#252D3B';
-                          e.currentTarget.style.color = '#525D72';
+                          e.currentTarget.style.color = '#9BA3B2';
                         }}
                       >
                         <ArrowLeftRight className="w-3.5 h-3.5" />
