@@ -147,8 +147,9 @@ export default function ShoppingPage() {
           <div className="text-text-mid font-body">Загрузка...</div>
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="bg-dimension border border-nebula rounded-card p-5 text-center">
-          <p className="text-text-mid font-body">
+        <div className="bg-panel border border-elevated rounded-card p-6 text-center shadow-card">
+          <div className="text-[10px] font-mono text-text-ghost tracking-widest mb-1">買い物リストは空です</div>
+          <p className="text-text-secondary font-body">
             Список покупок пуст
           </p>
         </div>

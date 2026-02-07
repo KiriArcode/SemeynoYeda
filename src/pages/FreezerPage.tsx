@@ -179,10 +179,11 @@ export default function FreezerPage() {
 
       {/* Items list */}
       {items.length === 0 ? (
-        <div className="bg-dimension border border-nebula rounded-card p-6 text-center shadow-card">
+        <div className="bg-panel border border-elevated rounded-card p-6 text-center shadow-card">
           <Snowflake className="w-10 h-10 text-frost/30 mx-auto mb-3" />
-          <p className="text-text-mid font-body">Морозилка пуста</p>
-          <p className="text-xs text-text-dim font-body mt-1">Добавьте заготовки после prep day</p>
+          <div className="text-[10px] font-mono text-text-ghost tracking-widest mb-1">冷凍庫は空です</div>
+          <p className="text-text-secondary font-body">Морозилка пуста</p>
+          <p className="text-xs text-text-muted font-body mt-1">Добавьте заготовки после prep day</p>
         </div>
       ) : (
         <div className="space-y-3">

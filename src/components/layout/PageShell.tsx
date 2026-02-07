@@ -42,7 +42,14 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-void">
+    <div className="min-h-screen bg-void relative">
+      {/* Portal blobs background decoration */}
+      <div className="portal-blobs">
+        <div className="portal-blob-1" />
+        <div className="portal-blob-2" />
+        <div className="portal-blob-3" />
+      </div>
+
       {/* Top header bar */}
       {showChefToggle && (
         <header className="sticky top-0 z-50 border-b shadow-nav" style={{ background: 'rgba(11,14,20,0.93)', backdropFilter: 'blur(12px)', borderColor: '#161C2A' }}>
@@ -79,7 +86,7 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
         </header>
       )}
 
-      <main className={`pb-20 ${enabled ? 'chef-mode' : 'normal-mode'}`}>
+      <main className={`pb-20 relative z-10 ${enabled ? 'chef-mode' : 'normal-mode'}`}>
         <div className="container mx-auto px-4 pt-3">
           <Breadcrumbs />
         </div>

@@ -5,29 +5,31 @@ import type { MealSlot as MealSlotType, Recipe } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { IngredientCheck } from '../cooking/IngredientCheck';
 import { SwapModal } from './SwapModal';
-import { AlertTriangle, X, Snowflake, ArrowLeftRight, Coffee } from 'lucide-react';
+import { AlertTriangle, X, Snowflake, ArrowLeftRight, Coffee, ChevronDown } from 'lucide-react';
 
 interface MealSlotProps {
   slot: MealSlotType;
   date: string;
   onUpdate?: (updatedSlot: MealSlotType) => void;
+  isExpanded?: boolean;
+  onToggle?: () => void;
 }
 
 const MEAL_LABELS: Record<string, { label: string; icon: string }> = {
   breakfast: { label: 'Завтрак', icon: '🌅' },
-  lunch: { label: 'Обед', icon: '🍽️' },
-  snack: { label: 'Полдник', icon: '🍎' },
+  lunch: { label: 'Обед', icon: '☀️' },
+  snack: { label: 'Полдник', icon: '🍵' },
   dinner: { label: 'Ужин', icon: '🌙' },
 };
 
-const MEMBER_LABELS: Record<string, string> = {
-  kolya: 'Коля',
-  kristina: 'Кристина',
+const MEMBER_SHORT: Record<string, string> = {
+  kolya: 'К',
+  kristina: 'Кр',
   both: 'Оба',
 };
 
 
-export function MealSlot({ slot, onUpdate }: MealSlotProps) {
+export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSlotProps) {
   const [showIngredientCheck, setShowIngredientCheck] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipesLoading, setRecipesLoading] = useState(false);
@@ -107,109 +109,168 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
   }
 
   const hasMissingIngredients = missingIngredients.length > 0 || slot.recipes.some((r) => r.missingIngredients && r.missingIngredients.length > 0);
-  const forWhomSet = new Set(slot.recipes.map((r) => r.forWhom));
-  const borderClass =
-    forWhomSet.size === 1 && forWhomSet.has('kolya') ? 'meal-border-kolya'
-    : forWhomSet.size === 1 && forWhomSet.has('kristina') ? 'meal-border-kristina'
-    : forWhomSet.size === 1 && forWhomSet.has('both') ? 'meal-border-both'
-    : 'meal-border-mixed';
 
-  return (
-    <div className={`bg-dimension border border-nebula rounded-card p-4 shadow-card animate-card-appear ${borderClass}`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <h4 className="font-heading font-semibold text-text-light mb-2 flex items-center" style={{ gap: '8px' }}>
-            <span>{meal.icon}</span>
-            <span>{meal.label}</span>
-          </h4>
-          {recipesLoading && recipeIds.length > 0 && (
-            <p className="text-sm font-body text-text-dim">Загрузка рецептов...</p>
-          )}
-          {recipesError && (
-            <p className="text-xs font-body text-ramen">{recipesError}</p>
-          )}
-          {!recipesLoading && recipes.length > 0 && (
-            <div className="space-y-1.5">
-              {recipes.map((recipe, index) => {
-                const entry = slot.recipes[index];
-                const isFrozen = entry?.usesFromFreezer && entry.usesFromFreezer.length > 0;
-                const isCoffeeOnly = entry?.coffeeOnly;
-                return (
-                  <div key={`${recipe.id}-${index}`} className="flex flex-wrap items-center" style={{ gap: '8px' }}>
-                    {isCoffeeOnly ? (
-                      <span className="text-sm font-body text-text-dim flex items-center" style={{ gap: '4px' }}>
-                        <Coffee className="w-3.5 h-3.5" /> Только кофе
-                      </span>
-                    ) : (
-                      <>
-                        <Link
-                          to={`/recipe/${recipe.id}`}
-                          onClick={() => console.log(`[MealSlot] Navigate to recipe: ${recipe.title}`)}
-                          className="text-sm font-body text-text-mid hover:text-portal transition-colors underline decoration-nebula hover:decoration-portal"
-                        >
-                          {recipe.title}
-                        </Link>
-                        {isFrozen && (
-                          <span title="Из морозилки"><Snowflake className="w-3.5 h-3.5 text-frost" /></span>
-                        )}
-                        {/* Reheating hint for frozen items */}
-                        {isFrozen && recipe.reheating && entry?.forWhom && (
-                          (() => {
-                            const rh = recipe.reheating.find(r => r.forWhom === entry.forWhom || r.forWhom === 'both');
-                            return rh ? (
-                              <span className="text-[10px] font-mono text-frost">{rh.method}</span>
-                            ) : null;
-                          })()
-                        )}
-                      </>
-                    )}
-                    {entry?.variation && (
-                      <span className="text-xs text-text-dim font-body">({entry.variation})</span>
-                    )}
-                    {entry?.forWhom && (
-                      <span className={`text-xs px-3 py-1 font-heading font-semibold border ${
-                        entry.forWhom === 'kolya'
-                          ? 'bg-kolya/8 text-kolya border-kolya/20'
-                          : entry.forWhom === 'kristina'
-                          ? 'bg-kristina/8 text-kristina border-kristina/20'
-                          : 'bg-portal/8 text-portal border-portal/20'
-                      }`} style={{ borderRadius: '9999px' }}>
-                        {MEMBER_LABELS[entry.forWhom]}
-                      </span>
-                    )}
-                    {/* Packable icon for lunch */}
-                    {slot.mealType === 'lunch' && recipe.tags?.includes('packable') && (
-                      <span className="text-[10px] text-miso" title="Можно взять с собой">🥡</span>
-                    )}
-                    {/* Swap button */}
-                    {onUpdate && (
-                      <button onClick={() => handleSwapRecipe(index)}
-                        className="text-text-ghost hover:text-portal transition-colors p-0.5" title="Заменить блюдо">
-                        <ArrowLeftRight className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              {slot.recipes.length > recipes.length && (
-                <p className="text-xs font-body text-text-dim">Рецепт не найден</p>
-              )}
-            </div>
+  // Estimate total reheat/cook time from recipes
+  const estimatedTime = recipes.reduce((sum, r) => {
+    const reheat = r.reheating?.[0]?.duration;
+    return sum + (reheat ?? Math.min(r.totalTime, 15));
+  }, 0);
+
+  // Collapsed header row
+  const headerRow = (
+    <button
+      onClick={onToggle}
+      className={`w-full flex items-center py-3 px-3 transition-all ${
+        onToggle ? 'cursor-pointer' : 'cursor-default'
+      }`}
+      style={{ gap: '10px', minHeight: '44px' }}
+      type="button"
+    >
+      <span className="text-base">{meal.icon}</span>
+      <span className="flex-1 text-left font-heading font-bold text-sm text-text-primary">
+        {meal.label}
+      </span>
+      {!isExpanded && recipes.length > 0 && (
+        <span className="text-[11px] font-mono text-text-muted">
+          {estimatedTime > 0 && `~${estimatedTime} мин`}
+        </span>
+      )}
+      {!isExpanded && recipes.length > 0 && (
+        <span className="text-[11px] font-mono text-text-muted">
+          {recipes.length} бл.
+        </span>
+      )}
+      {hasMissingIngredients && !isExpanded && (
+        <AlertTriangle className="w-3.5 h-3.5 text-ramen flex-shrink-0" />
+      )}
+      {onToggle && (
+        <ChevronDown
+          className={`w-4 h-4 text-text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+        />
+      )}
+    </button>
+  );
+
+  // Expanded content
+  const expandedContent = (
+    <div
+      className="px-3 pb-3 animate-slide-down"
+    >
+      {recipesLoading && recipeIds.length > 0 && (
+        <p className="text-sm font-body text-text-dim">Загрузка рецептов...</p>
+      )}
+      {recipesError && (
+        <p className="text-xs font-body text-ramen">{recipesError}</p>
+      )}
+      {!recipesLoading && recipes.length > 0 && (
+        <div className="space-y-1.5">
+          {recipes.map((recipe, index) => {
+            const entry = slot.recipes[index];
+            const isFrozen = entry?.usesFromFreezer && entry.usesFromFreezer.length > 0;
+            const isCoffeeOnly = entry?.coffeeOnly;
+            const forWhomSet = new Set([entry?.forWhom].filter(Boolean));
+            const borderClass =
+              forWhomSet.has('kolya') ? 'border-l-[3px] border-l-kolya/60'
+              : forWhomSet.has('kristina') ? 'border-l-[3px] border-l-kristina/60'
+              : forWhomSet.has('both') ? 'border-l-[3px] border-l-portal/60'
+              : '';
+
+            return (
+              <div
+                key={`${recipe.id}-${index}`}
+                className={`flex items-center py-1.5 pl-3 ${borderClass}`}
+                style={{ gap: '8px' }}
+              >
+                <div className="flex-1 min-w-0">
+                  {isCoffeeOnly ? (
+                    <span className="text-sm font-body text-text-dim flex items-center" style={{ gap: '4px' }}>
+                      <Coffee className="w-3.5 h-3.5" /> Только кофе
+                    </span>
+                  ) : (
+                    <div>
+                      <Link
+                        to={`/recipe/${recipe.id}`}
+                        onClick={() => console.log(`[MealSlot] Navigate to recipe: ${recipe.title}`)}
+                        className="text-sm font-heading font-medium text-text-primary hover:text-portal transition-colors"
+                      >
+                        {recipe.title}
+                      </Link>
+                      {entry?.variation && (
+                        <span className="text-[11px] text-text-muted font-body ml-1">
+                          {entry.variation}
+                        </span>
+                      )}
+                      {/* Subtitle row: ingredients hint */}
+                      {recipe.subtitle && (
+                        <div className="text-[11px] text-text-muted font-body">{recipe.subtitle}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Frozen badge */}
+                {isFrozen && (
+                  <span title="Из морозилки"><Snowflake className="w-3.5 h-3.5 text-frost flex-shrink-0" /></span>
+                )}
+
+                {/* Reheating hint */}
+                {isFrozen && recipe.reheating && entry?.forWhom && (
+                  (() => {
+                    const rh = recipe.reheating.find(r => r.forWhom === entry.forWhom || r.forWhom === 'both');
+                    return rh ? (
+                      <span className="text-[10px] font-mono text-frost flex-shrink-0">{rh.method}</span>
+                    ) : null;
+                  })()
+                )}
+
+                {/* Member badge (compact) */}
+                {entry?.forWhom && (
+                  <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 font-heading font-semibold border rounded-pill ${
+                    entry.forWhom === 'kolya'
+                      ? 'bg-kolya/8 text-kolya border-kolya/20'
+                      : entry.forWhom === 'kristina'
+                      ? 'bg-kristina/8 text-kristina border-kristina/20'
+                      : 'bg-portal/8 text-portal border-portal/20'
+                  }`}>
+                    {MEMBER_SHORT[entry.forWhom]}
+                  </span>
+                )}
+
+                {/* Packable icon */}
+                {slot.mealType === 'lunch' && recipe.tags?.includes('packable') && (
+                  <span className="text-[10px] text-miso flex-shrink-0" title="Можно взять с собой">🥡</span>
+                )}
+
+                {/* Swap button — 28x28 min */}
+                {onUpdate && (
+                  <button
+                    onClick={() => handleSwapRecipe(index)}
+                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md border border-elevated bg-void text-text-muted hover:text-portal hover:border-portal/30 transition-colors"
+                    title="Заменить блюдо"
+                  >
+                    <ArrowLeftRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {slot.recipes.length > recipes.length && (
+            <p className="text-xs font-body text-text-dim">Рецепт не найден</p>
           )}
         </div>
+      )}
 
-        {hasMissingIngredients && (
-          <div className="flex items-center text-ramen" style={{ gap: '4px' }}>
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-xs font-body">Не хватает</span>
-          </div>
-        )}
-      </div>
+      {hasMissingIngredients && isExpanded && (
+        <div className="flex items-center text-ramen mt-2" style={{ gap: '4px' }}>
+          <AlertTriangle className="w-4 h-4" />
+          <span className="text-xs font-body">Не хватает ингредиентов</span>
+        </div>
+      )}
 
-      {!showIngredientCheck && (
+      {!showIngredientCheck && isExpanded && (
         <button
           onClick={() => { console.log(`[MealSlot:${slot.mealType}] Opening ingredient check`); setShowIngredientCheck(true); }}
-          className="w-full mt-2 bg-rift border border-nebula text-text-light font-heading font-semibold text-xs py-2 px-3 rounded-button hover:bg-nebula hover:border-portal/30 transition-colors"
+          className="w-full mt-3 bg-rift border border-nebula text-text-secondary font-heading font-semibold text-xs py-2 px-3 rounded-button hover:bg-nebula hover:border-portal/30 transition-colors"
         >
           Проверить ингредиенты
         </button>
@@ -218,10 +279,10 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
       {showIngredientCheck && (
         <div className="mt-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-heading font-semibold text-text-dim">Ингредиенты для {meal.label.toLowerCase()}а</span>
+            <span className="text-xs font-heading font-semibold text-text-muted">Ингредиенты для {meal.label.toLowerCase()}а</span>
             <button
               onClick={() => { console.log(`[MealSlot:${slot.mealType}] Closing ingredient check`); setShowIngredientCheck(false); }}
-              className="flex items-center px-2 py-1 text-xs font-heading font-semibold text-text-mid bg-rift border border-nebula rounded-button hover:bg-nebula hover:text-ramen hover:border-ramen/30 transition-colors"
+              className="flex items-center px-2 py-1 text-xs font-heading font-semibold text-text-secondary bg-rift border border-nebula rounded-button hover:bg-nebula hover:text-ramen hover:border-ramen/30 transition-colors"
               style={{ gap: '4px' }}
             >
               <X className="w-3.5 h-3.5" /> Закрыть
@@ -242,6 +303,13 @@ export function MealSlot({ slot, onUpdate }: MealSlotProps) {
           filterMealType={slot.mealType}
         />
       )}
+    </div>
+  );
+
+  return (
+    <div className="border-b border-nebula last:border-b-0">
+      {headerRow}
+      {isExpanded && expandedContent}
     </div>
   );
 }

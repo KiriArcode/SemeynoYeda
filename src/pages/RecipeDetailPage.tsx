@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import type { Recipe, DietTag, FamilyMember, EquipmentId } from '../data/schema';
-import { Clock, Users, Snowflake, Thermometer, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 
 const TAG_LABELS: Record<DietTag, string> = {
@@ -34,6 +34,12 @@ const EQUIPMENT_LABELS: Record<EquipmentId, string> = {
   grinder: 'Гриндер',
   vacuum: 'Вакууматор',
   bowls: 'Миски',
+};
+
+const EQUIPMENT_ICONS: Record<string, string> = {
+  stove: '🔥', oven: '🔥', 'air-grill': '🌀', 'e-grill': '🔌',
+  steamer: '♨️', blender: '🔪', mixer: '🧩', grinder: '⚙️',
+  vacuum: '📦', bowls: '🥣',
 };
 
 function getTagStyle(tag: DietTag): string {
@@ -103,9 +109,16 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
+      {/* Sector label + category breadcrumb */}
+      <div className="mb-2">
+        <span className="text-[10px] font-mono text-portal-dim tracking-[1.5px] uppercase">
+          РЕЦЕПТ · {recipe.category === 'sauce' ? 'СОУС' : recipe.category === 'main' ? 'ОСНОВНОЕ' : recipe.category === 'side' ? 'ГАРНИР' : recipe.category === 'breakfast' ? 'ЗАВТРАК' : recipe.category === 'snack' ? 'ПЕРЕКУС' : recipe.category === 'soup' ? 'СУП' : recipe.category === 'dessert' ? 'ДЕСЕРТ' : String(recipe.category).toUpperCase()}
+        </span>
+      </div>
+
       {/* Заголовок + кнопки редактирования */}
       <div className="flex items-start justify-between mb-2">
-        <h1 className="font-heading text-3xl font-bold text-text-light flex-1">
+        <h1 className="font-heading text-2xl font-extrabold text-text-primary flex-1">
           {recipe.title}
         </h1>
         <div className="flex items-center" style={{ gap: '8px' }}>
@@ -127,7 +140,7 @@ export default function RecipeDetailPage() {
       </div>
 
       {recipe.subtitle && (
-        <p className="text-text-mid font-body mb-4">{recipe.subtitle}</p>
+        <p className="text-text-secondary font-body mb-3">{recipe.subtitle}</p>
       )}
 
       {/* Для кого и теги */}
@@ -149,59 +162,72 @@ export default function RecipeDetailPage() {
         ))}
       </div>
 
-      {/* Мета */}
-      <div className="flex items-center mb-6 text-sm font-mono text-portal" style={{ gap: '16px' }}>
-        <span className="flex items-center" style={{ gap: '4px' }}>
-          <Clock className="w-4 h-4" /> {recipe.totalTime} мин
-        </span>
-        <span className="flex items-center" style={{ gap: '4px' }}>
-          <Users className="w-4 h-4" /> {recipe.servings} порций
-        </span>
+      {/* Stats Bar */}
+      <div className="flex mb-6 bg-card border border-elevated rounded-button overflow-hidden">
+        <div className="flex-1 py-2.5 px-2 text-center">
+          <div className="text-base mb-0.5">⏱</div>
+          <div className="text-[10px] font-mono text-text-muted">Время</div>
+          <div className="text-sm font-heading font-bold text-text-primary">{recipe.totalTime} мин</div>
+        </div>
+        <div className="flex-1 py-2.5 px-2 text-center border-l border-elevated">
+          <div className="text-base mb-0.5">🍽</div>
+          <div className="text-[10px] font-mono text-text-muted">Порции</div>
+          <div className="text-sm font-heading font-bold text-text-primary">{recipe.servings}</div>
+        </div>
+        {recipe.storage.fridge && (
+          <div className="flex-1 py-2.5 px-2 text-center border-l border-elevated">
+            <div className="text-base mb-0.5">🧊</div>
+            <div className="text-[10px] font-mono text-text-muted">Холод.</div>
+            <div className="text-sm font-heading font-bold text-text-primary">{recipe.storage.fridge} дн.</div>
+          </div>
+        )}
+        {recipe.storage.freezer && (
+          <div className="flex-1 py-2.5 px-2 text-center border-l border-elevated">
+            <div className="text-base mb-0.5">❄️</div>
+            <div className="text-[10px] font-mono text-text-muted">Мороз.</div>
+            <div className="text-sm font-heading font-bold text-text-primary">
+              {recipe.storage.freezer} мес.{recipe.storage.vacuumSealed ? ' 📦' : ''}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Оборудование и хранение */}
-      {(recipe.equipment.length > 0 || recipe.storage.fridge || recipe.storage.freezer) && (
-        <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">
-          {recipe.equipment.length > 0 && (
-            <div className="mb-3">
-              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">Оборудование</h3>
-              <div className="flex flex-wrap" style={{ gap: '8px' }}>
-                {recipe.equipment.map((eq) => (
-                  <span key={eq} className="text-xs px-3 py-1 bg-rift border border-nebula text-text-mid font-body" style={{ borderRadius: '9999px' }}>
-                    {EQUIPMENT_LABELS[eq]}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {(recipe.storage.fridge || recipe.storage.freezer) && (
-            <div className={recipe.equipment.length > 0 ? 'pt-3 border-t border-nebula' : ''}>
-              <h3 className="text-sm font-heading font-semibold text-text-light mb-2">Хранение</h3>
-              <div className="flex flex-wrap text-xs font-body text-text-mid" style={{ gap: '12px' }}>
-                {recipe.storage.fridge && (
-                  <span className="flex items-center" style={{ gap: '4px' }}>
-                    <Thermometer className="w-3.5 h-3.5 text-ramen" /> Холодильник: {recipe.storage.fridge} дн.
-                  </span>
-                )}
-                {recipe.storage.freezer && (
-                  <span className="flex items-center" style={{ gap: '4px' }}>
-                    <Snowflake className="w-3.5 h-3.5 text-frost" /> Морозилка: {recipe.storage.freezer} мес.
-                    {recipe.storage.vacuumSealed && ' (вакуум)'}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+      {/* Equipment Cards */}
+      {recipe.equipment.length > 0 && (
+        <div className="mb-6">
+          <span className="block text-[10px] font-mono text-portal-dim tracking-[1.5px] mb-2 uppercase">
+            Оборудование
+          </span>
+          <div className="flex flex-wrap" style={{ gap: '8px' }}>
+            {recipe.equipment.map((eq) => {
+              const icon = EQUIPMENT_ICONS[eq] || '🔧';
+              const label = EQUIPMENT_LABELS[eq] || eq;
+              // Find settings from recipe steps
+              const stepWithEq = recipe.steps.find(s => s.equipment?.id === eq);
+              const settings = stepWithEq?.equipment?.settings;
+              return (
+                <div key={eq} className="flex items-center bg-card border border-elevated rounded-button py-2.5 px-3" style={{ gap: '8px' }}>
+                  <span className="text-xl">{icon}</span>
+                  <div>
+                    <div className="text-[13px] font-heading font-semibold text-text-primary">{label}</div>
+                    {settings && (
+                      <div className="text-[10px] font-mono text-text-muted">{settings}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* Разогрев */}
       {recipe.reheating && recipe.reheating.length > 0 && (
-        <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">
-          <h3 className="text-sm font-heading font-semibold text-text-light mb-2">Разогрев из морозилки</h3>
+        <div className="bg-card border border-elevated rounded-card p-5 mb-6 shadow-card">
+          <h3 className="text-sm font-heading font-semibold text-text-primary mb-2">Разогрев из морозилки</h3>
           <div className="space-y-2">
             {recipe.reheating.map((rh, i) => (
-              <div key={i} className="flex items-center text-xs font-body text-text-mid" style={{ gap: '8px' }}>
+              <div key={i} className="flex items-center text-xs font-body text-text-secondary" style={{ gap: '8px' }}>
                 <span className={`px-2 py-0.5 font-heading font-semibold border ${
                   rh.forWhom === 'kolya' ? 'bg-kolya/8 text-kolya border-kolya/20'
                   : rh.forWhom === 'kristina' ? 'bg-kristina/8 text-kristina border-kristina/20'
@@ -218,15 +244,15 @@ export default function RecipeDetailPage() {
       )}
 
       {/* Ингредиенты */}
-      <div className="bg-dimension border border-nebula rounded-card p-5 mb-6 shadow-card">
-        <h2 className="font-heading text-xl font-bold text-text-light mb-4">Ингредиенты</h2>
+      <div className="bg-card border border-elevated rounded-card p-5 mb-6 shadow-card">
+        <h2 className="font-heading text-xl font-bold text-text-primary mb-4">Ингредиенты</h2>
         <ul className="space-y-2">
           {recipe.ingredients.map((ingredient, index) => (
-            <li key={index} className="flex items-center text-text-mid font-body" style={{ gap: '8px' }}>
+            <li key={index} className="flex items-center text-text-secondary font-body" style={{ gap: '8px' }}>
               <span className="text-portal">•</span>
               <span>
                 {ingredient.amount} {ingredient.unit} {ingredient.name}
-                {ingredient.note && <span className="text-text-dim"> ({ingredient.note})</span>}
+                {ingredient.note && <span className="text-text-muted"> ({ingredient.note})</span>}
               </span>
             </li>
           ))}
@@ -234,23 +260,28 @@ export default function RecipeDetailPage() {
       </div>
 
       {/* Шаги */}
-      <div className="bg-dimension border border-nebula rounded-card p-5 shadow-card">
-        <h2 className="font-heading text-xl font-bold text-text-light mb-4">Приготовление</h2>
+      <div className="bg-card border border-elevated rounded-card p-5 shadow-card">
+        <h2 className="font-heading text-xl font-bold text-text-primary mb-4">Приготовление</h2>
         <ol className="space-y-4">
           {recipe.steps.map((step) => (
             <li key={step.order} className="flex" style={{ gap: '12px' }}>
-              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-rift border border-nebula flex items-center justify-center text-sm font-heading font-semibold text-portal">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-rift border border-elevated flex items-center justify-center text-sm font-heading font-semibold text-portal">
                 {step.order}
               </span>
               <div className="flex-1">
-                <p className="text-text-light font-body mb-1">{step.text}</p>
+                <p className="text-text-primary font-body mb-1">{step.text}</p>
                 {step.equipment && (
-                  <p className="text-sm text-text-dim font-body">
+                  <p className="text-sm text-text-muted font-body">
                     {step.equipment.label}{step.equipment.settings && ` · ${step.equipment.settings}`}
                   </p>
                 )}
                 {step.duration && <p className="text-xs font-mono text-portal mt-1">⏱ {step.duration} мин</p>}
-                {step.tip && <p className="text-xs text-text-dim font-body mt-1 italic">💡 {step.tip}</p>}
+                {step.parallel && <span className="inline-block text-[10px] font-mono text-accent-cyan mt-1 mr-2">⚡ парал.</span>}
+                {step.tip && (
+                  <div className="mt-1.5 px-2.5 py-1.5 bg-portal-soft border-l-2 border-portal rounded text-xs text-portal font-body">
+                    💡 {step.tip}
+                  </div>
+                )}
               </div>
             </li>
           ))}
@@ -258,9 +289,9 @@ export default function RecipeDetailPage() {
       </div>
 
       {recipe.notes && (
-        <div className="bg-dimension border border-nebula rounded-card p-5 mt-6 shadow-card">
-          <h3 className="font-heading font-semibold text-text-light mb-2">Заметки</h3>
-          <p className="text-text-mid font-body">{recipe.notes}</p>
+        <div className="bg-card border border-elevated rounded-card p-5 mt-6 shadow-card">
+          <h3 className="font-heading font-semibold text-text-primary mb-2">Заметки</h3>
+          <p className="text-text-secondary font-body">{recipe.notes}</p>
         </div>
       )}
 

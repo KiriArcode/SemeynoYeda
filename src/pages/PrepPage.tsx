@@ -3,7 +3,7 @@ import { db } from '../lib/db';
 import type { WeekMenu, FreezerItem, EquipmentId } from '../data/schema';
 import { useBatchCooking } from '../hooks/useBatchCooking';
 import { nanoid } from 'nanoid';
-import { CheckCircle2, Circle, Clock, ChefHat, Snowflake, Play, BarChart3 } from 'lucide-react';
+import { CheckCircle2, Clock, ChefHat, Snowflake, Play, BarChart3 } from 'lucide-react';
 
 const EQUIPMENT_LABELS: Record<EquipmentId, string> = {
   stove: '🔥 Плита', oven: '🔲 Духовка', 'air-grill': '🌀 Аэрогриль', 'e-grill': '⚡ Электрогриль',
@@ -16,6 +16,31 @@ const EQUIPMENT_COLORS: Record<string, string> = {
   steamer: 'bg-frost/30', blender: 'bg-matcha/30', mixer: 'bg-plasma/30', grinder: 'bg-ramen/20',
   vacuum: 'bg-frost/20', bowls: 'bg-nebula',
 };
+
+const PHASE_LABELS: Record<number, string> = {
+  1: 'ФАРШ',
+  2: 'ПАРАЛ.',
+  3: 'ПЮРЕ',
+  4: 'УПАКОВКА',
+};
+
+/** Simple parallel detection: tasks in phases 1-3 that share equipment time slots */
+function canRunParallel(taskIndex: number, phaseTasks: { equipment: string; duration: number }[]): boolean {
+  if (phaseTasks.length <= 1) return false;
+  const task = phaseTasks[taskIndex];
+  // A task can run in parallel if there's another task in the same phase using different equipment
+  return phaseTasks.some((t, i) => i !== taskIndex && t.equipment !== task.equipment);
+}
+
+/** Generate a tip for a task based on context */
+function generateTip(taskIndex: number, phaseTasks: { equipment: string; step: string; recipeTitle: string }[]): string | null {
+  const task = phaseTasks[taskIndex];
+  const othersWithDiffEquipment = phaseTasks.filter((t, i) => i !== taskIndex && t.equipment !== task.equipment);
+  if (othersWithDiffEquipment.length > 0 && taskIndex === 0) {
+    return `Пока ${task.step.toLowerCase().slice(0, 30)}... — ${othersWithDiffEquipment[0].step.toLowerCase().slice(0, 40)}`;
+  }
+  return null;
+}
 
 export default function PrepPage() {
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
@@ -45,12 +70,10 @@ export default function PrepPage() {
 
   async function handleFreezeCompleted() {
     if (!plan) return;
-    // Find completed packaging tasks and create FreezerItems
     const packagingTasks = plan.tasks.filter(t => t.completed && t.phase === 4);
     for (const task of packagingTasks) {
       const existing = await db.table('freezer').where('recipeId').equals(task.recipeId).first();
       if (existing) {
-        // Add portions to existing
         await db.table('freezer').update(existing.id, {
           portionsRemaining: existing.portionsRemaining + task.portions,
           portionsOriginal: existing.portionsOriginal + task.portions,
@@ -79,8 +102,8 @@ export default function PrepPage() {
   if (loading || planLoading) {
     return (
       <div className="container mx-auto px-4 py-6 pb-24">
-        <div className="bg-dimension border border-nebula rounded-card p-4">
-          <div className="text-text-mid font-body">Загрузка...</div>
+        <div className="bg-panel border border-elevated rounded-card p-4">
+          <div className="text-text-secondary font-body">Загрузка...</div>
         </div>
       </div>
     );
@@ -89,23 +112,24 @@ export default function PrepPage() {
   if (!weekMenu) {
     return (
       <div className="container mx-auto px-4 py-6 pb-24">
-        <div className="bg-dimension border border-nebula rounded-card p-6 text-center shadow-card">
+        <div className="bg-panel border border-elevated rounded-card p-6 text-center shadow-card">
           <ChefHat className="w-10 h-10 text-portal/30 mx-auto mb-3" />
-          <p className="text-text-mid font-body">Сначала создайте меню на неделю</p>
+          <div className="text-[10px] font-mono text-text-ghost tracking-widest mb-1">準備プランなし</div>
+          <p className="text-text-secondary font-body">Сначала создайте меню на неделю</p>
         </div>
       </div>
     );
   }
 
-  // If no plan yet, show generate button
   if (!plan) {
     return (
       <div className="container mx-auto px-4 py-6 pb-24">
-        <h1 className="font-heading text-2xl font-bold text-text-light mb-6 flex items-center" style={{ gap: '8px' }}>
+        <h1 className="font-heading text-2xl font-bold text-text-primary mb-6 flex items-center" style={{ gap: '8px' }}>
           <ChefHat className="w-6 h-6 text-portal" /> Заготовки выходного дня
         </h1>
-        <div className="bg-dimension border border-nebula rounded-card p-6 text-center shadow-card">
-          <p className="text-text-mid font-body mb-4">
+        <div className="bg-panel border border-elevated rounded-card p-6 text-center shadow-card">
+          <div className="text-[10px] font-mono text-text-ghost tracking-widest mb-1">準備プランなし</div>
+          <p className="text-text-secondary font-body mb-4">
             Нажмите чтобы сгенерировать план заготовок на основе меню недели
           </p>
           <button onClick={handleGenerate}
@@ -118,7 +142,6 @@ export default function PrepPage() {
     );
   }
 
-  // Plan exists — show task cards grouped by phase
   const phases = [1, 2, 3, 4] as const;
   const completedCount = plan.completedTasks.length;
   const totalCount = plan.tasks.length;
@@ -139,20 +162,20 @@ export default function PrepPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
-      <h1 className="font-heading text-2xl font-bold text-text-light mb-4 flex items-center" style={{ gap: '8px' }}>
+      <h1 className="font-heading text-2xl font-bold text-text-primary mb-4 flex items-center" style={{ gap: '8px' }}>
         <ChefHat className="w-6 h-6 text-portal" /> Заготовки выходного дня
       </h1>
 
-      {/* Summary card */}
-      <div className="bg-dimension border border-nebula rounded-card p-4 mb-4 shadow-card">
+      {/* Summary card with progress */}
+      <div className="bg-panel border border-elevated rounded-card p-4 mb-4 shadow-card">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-heading font-semibold text-text-light">Прогресс</span>
+          <span className="text-sm font-heading font-semibold text-text-primary">Прогресс</span>
           <span className="text-xs font-mono text-portal">{completedCount}/{totalCount}</span>
         </div>
         <div className="w-full h-3 bg-rift rounded-sm overflow-hidden mb-3">
           <div className="h-full bg-portal rounded-sm transition-all" style={{ width: `${progressPercent}%` }} />
         </div>
-        <div className="flex items-center text-xs font-body text-text-dim" style={{ gap: '16px' }}>
+        <div className="flex items-center text-xs font-body text-text-muted" style={{ gap: '16px' }}>
           <span className="flex items-center" style={{ gap: '4px' }}>
             <Clock className="w-3.5 h-3.5" /> ~{plan.totalTime} мин
           </span>
@@ -164,17 +187,17 @@ export default function PrepPage() {
       </div>
 
       {/* Equipment timeline */}
-      <div className="bg-dimension border border-nebula rounded-card p-4 mb-4 shadow-card">
+      <div className="bg-panel border border-elevated rounded-card p-4 mb-4 shadow-card">
         <div className="flex items-center mb-3" style={{ gap: '8px' }}>
           <BarChart3 className="w-4 h-4 text-portal" />
-          <span className="text-sm font-heading font-semibold text-text-light">Загрузка оборудования</span>
+          <span className="text-sm font-heading font-semibold text-text-primary">Загрузка оборудования</span>
         </div>
         <div className="space-y-1.5">
           {Array.from(equipmentUsage.values())
             .sort((a, b) => b.totalMinutes - a.totalMinutes)
             .map(e => (
               <div key={e.equipment} className="flex items-center" style={{ gap: '8px' }}>
-                <span className="text-xs font-body text-text-dim w-24 text-right">
+                <span className="text-xs font-body text-text-muted w-24 text-right">
                   {EQUIPMENT_LABELS[e.equipment as EquipmentId] || e.equipment}
                 </span>
                 <div className="flex-1 h-4 bg-rift rounded-sm overflow-hidden">
@@ -183,56 +206,90 @@ export default function PrepPage() {
                     style={{ width: `${(e.totalMinutes / maxEquipmentTime) * 100}%` }}
                   />
                 </div>
-                <span className="text-xs font-mono text-text-mid w-12 text-right">{e.totalMinutes} м</span>
+                <span className="text-xs font-mono text-text-secondary w-12 text-right">{e.totalMinutes} м</span>
               </div>
             ))}
         </div>
       </div>
 
-      {/* Task cards by phase */}
+      {/* Task cards by phase with sector labels */}
       {phases.map(phase => {
         const phaseTasks = plan.tasks.filter(t => t.phase === phase);
         if (phaseTasks.length === 0) return null;
         const phaseLabel = phaseTasks[0]?.phaseLabel || `Фаза ${phase}`;
+        const phaseCompleted = phaseTasks.filter(t => t.completed).length;
+
         return (
-          <div key={phase} className="mb-4">
-            <h2 className="font-heading font-semibold text-text-light text-sm mb-2">{phaseLabel}</h2>
+          <div key={phase} className="mb-5">
+            {/* Phase header with sector label + counter */}
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <span className="text-[10px] font-mono text-portal-dim tracking-[1.5px]">
+                  ЧАС {phase} · {PHASE_LABELS[phase] || 'ФАЗА'}
+                </span>
+                <h2 className="font-heading font-bold text-text-primary text-base">{phaseLabel}</h2>
+              </div>
+              <span className="text-xs font-mono bg-portal/12 text-portal px-2.5 py-1 rounded-pill border border-portal/20">
+                {phaseCompleted}/{phaseTasks.length}
+              </span>
+            </div>
+
+            {/* Phase progress bar */}
+            <div className="w-full h-1.5 bg-rift rounded-sm overflow-hidden mb-3">
+              <div
+                className="h-full bg-portal rounded-sm transition-all"
+                style={{ width: `${phaseTasks.length > 0 ? (phaseCompleted / phaseTasks.length) * 100 : 0}%` }}
+              />
+            </div>
+
             <div className="space-y-2">
-              {phaseTasks.map(task => (
-                <button
-                  key={task.id}
-                  onClick={() => toggleTask(task.id)}
-                  className={`w-full text-left p-3 rounded-card border transition-all ${
-                    task.completed
-                      ? 'bg-rift border-portal/30 opacity-60'
-                      : 'bg-dimension border-nebula hover:border-portal/30'
-                  }`}
-                >
-                  <div className="flex items-start" style={{ gap: '10px' }}>
-                    {task.completed ? (
-                      <CheckCircle2 className="w-5 h-5 text-portal flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-text-ghost flex-shrink-0 mt-0.5" />
+              {phaseTasks.map((task, taskIdx) => {
+                const isParallel = canRunParallel(taskIdx, phaseTasks);
+                const tip = generateTip(taskIdx, phaseTasks);
+
+                return (
+                  <div key={task.id}>
+                    <button
+                      onClick={() => toggleTask(task.id)}
+                      className={`w-full text-left p-3 rounded-card border transition-all ${
+                        task.completed
+                          ? 'bg-rift border-portal/30 opacity-50'
+                          : 'bg-card border-elevated hover:border-portal/30'
+                      }`}
+                    >
+                      <div className="flex items-start" style={{ gap: '10px' }}>
+                        {task.completed ? (
+                          <CheckCircle2 className="w-5 h-5 text-portal flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <div className="w-[22px] h-[22px] rounded-md border border-elevated flex-shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-sm font-heading font-medium ${task.completed ? 'text-text-muted line-through' : 'text-text-primary'}`}>
+                            {task.step}
+                          </span>
+                          <div className="flex flex-wrap items-center mt-1" style={{ gap: '6px' }}>
+                            <span className="text-[10px] font-mono text-text-muted">{task.recipeTitle}</span>
+                            <span className="text-[10px] font-mono text-accent-orange">{task.duration} мин</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 border rounded ${EQUIPMENT_COLORS[task.equipment] || 'bg-rift'} border-elevated text-text-secondary`}>
+                              {EQUIPMENT_LABELS[task.equipment] || task.equipment}
+                            </span>
+                            {isParallel && (
+                              <span className="text-[10px] font-mono text-accent-cyan">⚡ парал.</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Green tip block */}
+                    {tip && !task.completed && (
+                      <div className="ml-8 mt-1 px-3 py-2 bg-portal-soft border-l-2 border-portal rounded text-xs text-portal font-body">
+                        💡 {tip}
+                      </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center" style={{ gap: '6px' }}>
-                        <span className={`text-sm font-body ${task.completed ? 'text-text-dim line-through' : 'text-text-light'}`}>
-                          {task.step}
-                        </span>
-                      </div>
-                      <div className="flex items-center mt-1 text-[10px] font-body text-text-dim" style={{ gap: '10px' }}>
-                        <span>{task.recipeTitle}</span>
-                        <span className="font-mono">{task.duration} мин</span>
-                        <span>{task.portions} порц.</span>
-                        <span className={`px-1.5 py-0.5 border text-text-dim ${EQUIPMENT_COLORS[task.equipment] || 'bg-rift'} border-nebula`}
-                          style={{ borderRadius: '4px' }}>
-                          {EQUIPMENT_LABELS[task.equipment] || task.equipment}
-                        </span>
-                      </div>
-                    </div>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
