@@ -28,6 +28,13 @@ const MEMBER_SHORT: Record<string, string> = {
   both: 'Оба',
 };
 
+/** Explicit badge styles to avoid Tailwind opacity syntax issues */
+const MEMBER_BADGE_STYLES: Record<string, React.CSSProperties> = {
+  kolya: { background: 'rgba(0,229,255,0.10)', color: '#00E5FF', borderColor: 'rgba(0,229,255,0.25)' },
+  kristina: { background: 'rgba(255,107,157,0.10)', color: '#FF6B9D', borderColor: 'rgba(255,107,157,0.25)' },
+  both: { background: 'rgba(57,255,20,0.10)', color: '#39FF14', borderColor: 'rgba(57,255,20,0.25)' },
+};
+
 
 export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSlotProps) {
   const [showIngredientCheck, setShowIngredientCheck] = useState(false);
@@ -79,7 +86,9 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
     return () => { cancelled = true; };
   }, [JSON.stringify(recipeIds)]);
 
-  function handleSwapRecipe(index: number) {
+  function handleSwapRecipe(e: React.MouseEvent, index: number) {
+    e.stopPropagation();
+    e.preventDefault();
     console.log(`[MealSlot:${slot.mealType}] Opening swap for index ${index}`);
     setSwapIndex(index);
   }
@@ -116,183 +125,207 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
     return sum + (reheat ?? Math.min(r.totalTime, 15));
   }, 0);
 
-  // Collapsed header row
-  const headerRow = (
-    <button
-      onClick={onToggle}
-      className={`w-full flex items-center py-3 px-3 transition-all ${
-        onToggle ? 'cursor-pointer' : 'cursor-default'
-      }`}
-      style={{ gap: '10px', minHeight: '44px' }}
-      type="button"
-    >
-      <span className="text-base">{meal.icon}</span>
-      <span className="flex-1 text-left font-heading font-bold text-sm text-text-primary">
-        {meal.label}
-      </span>
-      {!isExpanded && recipes.length > 0 && (
-        <span className="text-[11px] font-mono text-text-muted">
-          {estimatedTime > 0 && `~${estimatedTime} мин`}
-        </span>
-      )}
-      {!isExpanded && recipes.length > 0 && (
-        <span className="text-[11px] font-mono text-text-muted">
-          {recipes.length} бл.
-        </span>
-      )}
-      {hasMissingIngredients && !isExpanded && (
-        <AlertTriangle className="w-3.5 h-3.5 text-ramen flex-shrink-0" />
-      )}
-      {onToggle && (
-        <ChevronDown
-          className={`w-4 h-4 text-text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-        />
-      )}
-    </button>
-  );
+  // Border color per family member
+  const BORDER_COLORS: Record<string, string> = {
+    kolya: '#00E5FF',
+    kristina: '#FF6B9D',
+    both: '#39FF14',
+  };
 
-  // Expanded content
-  const expandedContent = (
-    <div
-      className="px-3 pb-3 animate-slide-down"
-    >
-      {recipesLoading && recipeIds.length > 0 && (
-        <p className="text-sm font-body text-text-dim">Загрузка рецептов...</p>
-      )}
-      {recipesError && (
-        <p className="text-xs font-body text-ramen">{recipesError}</p>
-      )}
-      {!recipesLoading && recipes.length > 0 && (
-        <div className="space-y-1.5">
-          {recipes.map((recipe, index) => {
-            const entry = slot.recipes[index];
-            const isFrozen = entry?.usesFromFreezer && entry.usesFromFreezer.length > 0;
-            const isCoffeeOnly = entry?.coffeeOnly;
-            const forWhomSet = new Set([entry?.forWhom].filter(Boolean));
-            const borderClass =
-              forWhomSet.has('kolya') ? 'border-l-[3px] border-l-kolya/60'
-              : forWhomSet.has('kristina') ? 'border-l-[3px] border-l-kristina/60'
-              : forWhomSet.has('both') ? 'border-l-[3px] border-l-portal/60'
-              : '';
+  return (
+    <div className="border-b border-nebula last:border-b-0">
+      {/* Header row — clickable to toggle accordion */}
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center py-3 px-3 transition-all ${
+          onToggle ? 'cursor-pointer' : 'cursor-default'
+        }`}
+        style={{ gap: '10px', minHeight: '44px' }}
+        type="button"
+      >
+        <span className="text-base">{meal.icon}</span>
+        <span className="flex-1 text-left font-heading font-bold text-sm text-text-primary">
+          {meal.label}
+        </span>
+        {!isExpanded && recipes.length > 0 && (
+          <span className="text-[11px] font-mono text-text-muted">
+            {estimatedTime > 0 ? `разогрев ${estimatedTime} мин` : `${recipes.length} бл.`}
+          </span>
+        )}
+        {hasMissingIngredients && !isExpanded && (
+          <AlertTriangle className="w-3.5 h-3.5 text-ramen flex-shrink-0" />
+        )}
+        {onToggle && (
+          <ChevronDown
+            className={`w-4 h-4 text-text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          />
+        )}
+      </button>
 
-            return (
-              <div
-                key={`${recipe.id}-${index}`}
-                className={`flex items-center py-1.5 pl-3 ${borderClass}`}
-                style={{ gap: '8px' }}
-              >
-                <div className="flex-1 min-w-0">
-                  {isCoffeeOnly ? (
-                    <span className="text-sm font-body text-text-dim flex items-center" style={{ gap: '4px' }}>
-                      <Coffee className="w-3.5 h-3.5" /> Только кофе
-                    </span>
-                  ) : (
-                    <div>
-                      <Link
-                        to={`/recipe/${recipe.id}`}
-                        onClick={() => console.log(`[MealSlot] Navigate to recipe: ${recipe.title}`)}
-                        className="text-sm font-heading font-medium text-text-primary hover:text-portal transition-colors"
-                      >
-                        {recipe.title}
-                      </Link>
-                      {entry?.variation && (
-                        <span className="text-[11px] text-text-muted font-body ml-1">
-                          {entry.variation}
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="px-3 pb-3 animate-slide-down">
+          {recipesLoading && recipeIds.length > 0 && (
+            <p className="text-sm font-body text-text-muted">Загрузка рецептов...</p>
+          )}
+          {recipesError && (
+            <p className="text-xs font-body text-ramen">{recipesError}</p>
+          )}
+          {!recipesLoading && recipes.length > 0 && (
+            <div className="space-y-1">
+              {recipes.map((recipe, index) => {
+                const entry = slot.recipes[index];
+                const isFrozen = entry?.usesFromFreezer && entry.usesFromFreezer.length > 0;
+                const isCoffeeOnly = entry?.coffeeOnly;
+                const borderColor = entry?.forWhom ? BORDER_COLORS[entry.forWhom] : undefined;
+
+                return (
+                  <div
+                    key={`${recipe.id}-${index}`}
+                    className="flex items-center py-2 pl-3 pr-1"
+                    style={{
+                      gap: '8px',
+                      borderLeft: borderColor ? `3px solid ${borderColor}` : undefined,
+                      borderLeftColor: borderColor ? `color-mix(in srgb, ${borderColor} 60%, transparent)` : undefined,
+                    }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      {isCoffeeOnly ? (
+                        <span className="text-sm font-body text-text-muted flex items-center" style={{ gap: '4px' }}>
+                          <Coffee className="w-3.5 h-3.5" /> Только кофе
                         </span>
-                      )}
-                      {/* Subtitle row: ingredients hint */}
-                      {recipe.subtitle && (
-                        <div className="text-[11px] text-text-muted font-body">{recipe.subtitle}</div>
+                      ) : (
+                        <div>
+                          <Link
+                            to={`/recipe/${recipe.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-sm font-heading font-medium text-text-primary hover:text-portal transition-colors"
+                          >
+                            {recipe.title}
+                          </Link>
+                          {entry?.variation && (
+                            <span className="text-[11px] text-text-muted font-body ml-1">
+                              {entry.variation}
+                            </span>
+                          )}
+                          {recipe.subtitle && (
+                            <div className="text-[11px] text-text-muted font-body">{recipe.subtitle}</div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                {/* Frozen badge */}
-                {isFrozen && (
-                  <span title="Из морозилки"><Snowflake className="w-3.5 h-3.5 text-frost flex-shrink-0" /></span>
-                )}
+                    {/* Frozen badge */}
+                    {isFrozen && (
+                      <span title="Из морозилки"><Snowflake className="w-3.5 h-3.5 text-frost flex-shrink-0" /></span>
+                    )}
 
-                {/* Reheating hint */}
-                {isFrozen && recipe.reheating && entry?.forWhom && (
-                  (() => {
-                    const rh = recipe.reheating.find(r => r.forWhom === entry.forWhom || r.forWhom === 'both');
-                    return rh ? (
-                      <span className="text-[10px] font-mono text-frost flex-shrink-0">{rh.method}</span>
-                    ) : null;
-                  })()
-                )}
+                    {/* Reheating hint */}
+                    {isFrozen && recipe.reheating && entry?.forWhom && (
+                      (() => {
+                        const rh = recipe.reheating.find(r => r.forWhom === entry.forWhom || r.forWhom === 'both');
+                        return rh ? (
+                          <span className="text-[10px] font-mono text-frost flex-shrink-0">{rh.method}</span>
+                        ) : null;
+                      })()
+                    )}
 
-                {/* Member badge (compact) */}
-                {entry?.forWhom && (
-                  <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 font-heading font-semibold border rounded-pill ${
-                    entry.forWhom === 'kolya'
-                      ? 'bg-kolya/8 text-kolya border-kolya/20'
-                      : entry.forWhom === 'kristina'
-                      ? 'bg-kristina/8 text-kristina border-kristina/20'
-                      : 'bg-portal/8 text-portal border-portal/20'
-                  }`}>
-                    {MEMBER_SHORT[entry.forWhom]}
-                  </span>
-                )}
+                    {/* Member badge — explicit inline styles to avoid Tailwind opacity issues */}
+                    {entry?.forWhom && (
+                      <span
+                        className="flex-shrink-0 text-[10px] px-2 py-0.5 font-heading font-semibold border"
+                        style={{
+                          borderRadius: '9999px',
+                          ...MEMBER_BADGE_STYLES[entry.forWhom],
+                        }}
+                      >
+                        {MEMBER_SHORT[entry.forWhom]}
+                      </span>
+                    )}
 
-                {/* Packable icon */}
-                {slot.mealType === 'lunch' && recipe.tags?.includes('packable') && (
-                  <span className="text-[10px] text-miso flex-shrink-0" title="Можно взять с собой">🥡</span>
-                )}
+                    {/* Packable icon */}
+                    {slot.mealType === 'lunch' && recipe.tags?.includes('packable') && (
+                      <span className="text-[10px] text-miso flex-shrink-0" title="Можно взять с собой">🥡</span>
+                    )}
 
-                {/* Swap button — 28x28 min */}
-                {onUpdate && (
-                  <button
-                    onClick={() => handleSwapRecipe(index)}
-                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md border border-elevated bg-void text-text-muted hover:text-portal hover:border-portal/30 transition-colors"
-                    title="Заменить блюдо"
-                  >
-                    <ArrowLeftRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                    {/* Swap button — clearly visible with explicit styles */}
+                    {onUpdate && (
+                      <button
+                        onClick={(e) => handleSwapRecipe(e, index)}
+                        className="flex-shrink-0 flex items-center justify-center transition-colors"
+                        title="Заменить блюдо"
+                        type="button"
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '8px',
+                          border: '1px solid #252D3B',
+                          background: '#0B0E14',
+                          color: '#525D72',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(57,255,20,0.3)';
+                          e.currentTarget.style.color = '#39FF14';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = '#252D3B';
+                          e.currentTarget.style.color = '#525D72';
+                        }}
+                      >
+                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {slot.recipes.length > recipes.length && (
+                <p className="text-xs font-body text-text-muted">Рецепт не найден</p>
+              )}
+            </div>
+          )}
+
+          {hasMissingIngredients && (
+            <div className="flex items-center text-ramen mt-2" style={{ gap: '4px' }}>
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-xs font-body">Не хватает ингредиентов</span>
+            </div>
+          )}
+
+          {!showIngredientCheck && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowIngredientCheck(true); }}
+              className="w-full mt-3 text-text-secondary font-heading font-semibold text-xs py-2 px-3 transition-colors"
+              type="button"
+              style={{
+                background: '#1C2230',
+                border: '1px solid #252D3B',
+                borderRadius: '10px',
+              }}
+            >
+              Проверить ингредиенты
+            </button>
+          )}
+
+          {showIngredientCheck && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-heading font-semibold text-text-muted">Ингредиенты для {meal.label.toLowerCase()}а</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowIngredientCheck(false); }}
+                  className="flex items-center px-2 py-1 text-xs font-heading font-semibold text-text-secondary transition-colors"
+                  style={{ gap: '4px', background: '#1C2230', border: '1px solid #252D3B', borderRadius: '10px' }}
+                  type="button"
+                >
+                  <X className="w-3.5 h-3.5" /> Закрыть
+                </button>
               </div>
-            );
-          })}
-          {slot.recipes.length > recipes.length && (
-            <p className="text-xs font-body text-text-dim">Рецепт не найден</p>
+              <IngredientCheck recipeIds={recipeIds} onComplete={handleIngredientCheckComplete} />
+            </div>
           )}
         </div>
       )}
 
-      {hasMissingIngredients && isExpanded && (
-        <div className="flex items-center text-ramen mt-2" style={{ gap: '4px' }}>
-          <AlertTriangle className="w-4 h-4" />
-          <span className="text-xs font-body">Не хватает ингредиентов</span>
-        </div>
-      )}
-
-      {!showIngredientCheck && isExpanded && (
-        <button
-          onClick={() => { console.log(`[MealSlot:${slot.mealType}] Opening ingredient check`); setShowIngredientCheck(true); }}
-          className="w-full mt-3 bg-rift border border-nebula text-text-secondary font-heading font-semibold text-xs py-2 px-3 rounded-button hover:bg-nebula hover:border-portal/30 transition-colors"
-        >
-          Проверить ингредиенты
-        </button>
-      )}
-
-      {showIngredientCheck && (
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-heading font-semibold text-text-muted">Ингредиенты для {meal.label.toLowerCase()}а</span>
-            <button
-              onClick={() => { console.log(`[MealSlot:${slot.mealType}] Closing ingredient check`); setShowIngredientCheck(false); }}
-              className="flex items-center px-2 py-1 text-xs font-heading font-semibold text-text-secondary bg-rift border border-nebula rounded-button hover:bg-nebula hover:text-ramen hover:border-ramen/30 transition-colors"
-              style={{ gap: '4px' }}
-            >
-              <X className="w-3.5 h-3.5" /> Закрыть
-            </button>
-          </div>
-          <IngredientCheck recipeIds={recipeIds} onComplete={handleIngredientCheckComplete} />
-        </div>
-      )}
-
-      {/* Swap modal */}
+      {/* Swap modal — rendered at component root (outside expandedContent) so portal is always stable */}
       {swapIndex !== null && (
         <SwapModal
           isOpen={true}
@@ -303,13 +336,6 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
           filterMealType={slot.mealType}
         />
       )}
-    </div>
-  );
-
-  return (
-    <div className="border-b border-nebula last:border-b-0">
-      {headerRow}
-      {isExpanded && expandedContent}
     </div>
   );
 }

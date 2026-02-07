@@ -36,25 +36,32 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
 
   const modal = (
     <div
-      className="fixed inset-0 bg-void/80 backdrop-blur-sm flex items-center justify-center p-4"
-      style={{ zIndex: 9999 }}
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ zIndex: 9999, background: 'rgba(11,14,20,0.85)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       <div
-        className="bg-rift border border-nebula rounded-modal shadow-elevate max-w-md w-full p-6 animate-fade-in"
+        className="max-w-md w-full p-6 animate-fade-in"
+        style={{
+          background: '#1C2230',
+          border: '1px solid #252D3B',
+          borderRadius: '20px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-heading text-xl font-bold text-text-light">{title}</h2>
+          <h2 className="font-heading text-xl font-bold" style={{ color: '#F0EDE8' }}>{title}</h2>
           <button
             onClick={onClose}
-            className="text-text-dim hover:text-text-light transition-colors"
+            className="transition-colors"
+            style={{ color: '#5A6270' }}
             aria-label="Закрыть"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="text-text-mid font-body mb-6">{children}</div>
+        <div className="font-body mb-6" style={{ color: '#9BA3B2' }}>{children}</div>
         {footer && <div className="flex gap-3 justify-end">{footer}</div>}
       </div>
     </div>

@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
+import type React from 'react';
 import { db } from '../../lib/db';
 import type { Recipe, FamilyMember, MealType } from '../../data/schema';
 import { Modal } from '../ui/Modal';
 import { Search } from 'lucide-react';
+
+const MEMBER_BADGE: Record<string, React.CSSProperties> = {
+  kolya: { background: 'rgba(0,229,255,0.10)', color: '#00E5FF', borderColor: 'rgba(0,229,255,0.25)' },
+  kristina: { background: 'rgba(255,107,157,0.10)', color: '#FF6B9D', borderColor: 'rgba(255,107,157,0.25)' },
+  both: { background: 'rgba(57,255,20,0.10)', color: '#39FF14', borderColor: 'rgba(57,255,20,0.25)' },
+};
 
 interface SwapModalProps {
   isOpen: boolean;
@@ -79,11 +86,10 @@ export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterFo
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-body text-text-light">{r.title}</span>
-                  <span className={`text-[10px] px-2 py-0.5 font-heading font-semibold border ${
-                    r.suitableFor === 'kolya' ? 'bg-kolya/8 text-kolya border-kolya/20'
-                    : r.suitableFor === 'kristina' ? 'bg-kristina/8 text-kristina border-kristina/20'
-                    : 'bg-portal/8 text-portal border-portal/20'
-                  }`} style={{ borderRadius: '9999px' }}>
+                  <span
+                    className="text-[10px] px-2 py-0.5 font-heading font-semibold border"
+                    style={{ borderRadius: '9999px', ...MEMBER_BADGE[r.suitableFor] }}
+                  >
                     {r.suitableFor === 'kolya' ? 'Коля' : r.suitableFor === 'kristina' ? 'Кристина' : 'Оба'}
                   </span>
                 </div>

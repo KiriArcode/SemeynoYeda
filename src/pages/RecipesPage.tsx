@@ -22,6 +22,12 @@ const MEMBER_LABELS: Record<FamilyMember, string> = {
   both: 'Оба',
 };
 
+const MEMBER_BADGE: Record<string, React.CSSProperties> = {
+  kolya: { background: 'rgba(0,229,255,0.10)', color: '#00E5FF', borderColor: 'rgba(0,229,255,0.25)' },
+  kristina: { background: 'rgba(255,107,157,0.10)', color: '#FF6B9D', borderColor: 'rgba(255,107,157,0.25)' },
+  both: { background: 'rgba(57,255,20,0.10)', color: '#39FF14', borderColor: 'rgba(57,255,20,0.25)' },
+};
+
 function getTagStyle(tag: DietTag): string {
   switch (tag) {
     case 'gastritis-safe': return 'bg-[#0D2818] text-portal border-[#1A4030]';
@@ -238,13 +244,10 @@ export default function RecipesPage() {
                 <h3 className="font-heading font-semibold text-text-light">
                   {recipe.title}
                 </h3>
-                <span className={`flex-shrink-0 text-xs px-3 py-1 font-heading font-semibold border ${
-                  recipe.suitableFor === 'kolya'
-                    ? 'bg-kolya/8 text-kolya border-kolya/20'
-                    : recipe.suitableFor === 'kristina'
-                    ? 'bg-kristina/8 text-kristina border-kristina/20'
-                    : 'bg-portal/8 text-portal border-portal/20'
-                }`} style={{ borderRadius: '9999px' }}>
+                <span
+                  className="flex-shrink-0 text-xs px-3 py-1 font-heading font-semibold border"
+                  style={{ borderRadius: '9999px', ...MEMBER_BADGE[recipe.suitableFor] }}
+                >
                   {MEMBER_LABELS[recipe.suitableFor]}
                 </span>
               </div>

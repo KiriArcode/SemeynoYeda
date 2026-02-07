@@ -23,6 +23,12 @@ const MEMBER_LABELS: Record<FamilyMember, string> = {
   both: 'Оба',
 };
 
+const MEMBER_BADGE: Record<string, React.CSSProperties> = {
+  kolya: { background: 'rgba(0,229,255,0.10)', color: '#00E5FF', borderColor: 'rgba(0,229,255,0.25)' },
+  kristina: { background: 'rgba(255,107,157,0.10)', color: '#FF6B9D', borderColor: 'rgba(255,107,157,0.25)' },
+  both: { background: 'rgba(57,255,20,0.10)', color: '#39FF14', borderColor: 'rgba(57,255,20,0.25)' },
+};
+
 const EQUIPMENT_LABELS: Record<EquipmentId, string> = {
   stove: 'Плита',
   oven: 'Духовка',
@@ -145,13 +151,10 @@ export default function RecipeDetailPage() {
 
       {/* Для кого и теги */}
       <div className="flex flex-wrap items-center mb-4" style={{ gap: '10px' }}>
-        <span className={`text-xs px-3 py-1 font-heading font-semibold border ${
-          recipe.suitableFor === 'kolya'
-            ? 'bg-kolya/8 text-kolya border-kolya/20'
-            : recipe.suitableFor === 'kristina'
-            ? 'bg-kristina/8 text-kristina border-kristina/20'
-            : 'bg-portal/8 text-portal border-portal/20'
-        }`} style={{ borderRadius: '9999px' }}>
+        <span
+          className="text-xs px-3 py-1 font-heading font-semibold border"
+          style={{ borderRadius: '9999px', ...MEMBER_BADGE[recipe.suitableFor] }}
+        >
           {MEMBER_LABELS[recipe.suitableFor]}
         </span>
         {recipe.tags.map((tag) => (
@@ -228,11 +231,10 @@ export default function RecipeDetailPage() {
           <div className="space-y-2">
             {recipe.reheating.map((rh, i) => (
               <div key={i} className="flex items-center text-xs font-body text-text-secondary" style={{ gap: '8px' }}>
-                <span className={`px-2 py-0.5 font-heading font-semibold border ${
-                  rh.forWhom === 'kolya' ? 'bg-kolya/8 text-kolya border-kolya/20'
-                  : rh.forWhom === 'kristina' ? 'bg-kristina/8 text-kristina border-kristina/20'
-                  : 'bg-portal/8 text-portal border-portal/20'
-                }`} style={{ borderRadius: '9999px' }}>
+                <span
+                  className="px-2 py-0.5 font-heading font-semibold border"
+                  style={{ borderRadius: '9999px', ...MEMBER_BADGE[rh.forWhom] }}
+                >
                   {MEMBER_LABELS[rh.forWhom]}
                 </span>
                 <span>{rh.method}</span>
