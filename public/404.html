@@ -5,24 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SemeynoYeda — Семейная еда</title>
     <script>
-      // GitHub Pages fallback для SPA
-      // Сохраняем оригинальный путь перед редиректом на index.html
+      // SPA fallback: сохраняем путь и редиректим на index (Vercel / GitHub Pages)
       var path = window.location.pathname;
       var search = window.location.search;
       var hash = window.location.hash;
-      
-      var basePath = '/SemeynoYeda';
-      
-      // Сохраняем оригинальный путь в sessionStorage для восстановления после редиректа
-      // Это нужно потому что после редиректа на index.html путь изменится
-      if (path !== basePath + '/index.html' && path !== basePath + '/') {
+      var basePath = '';
+      if (path !== '/index.html' && path !== '/') {
         sessionStorage.setItem('404-redirect-path', path + search + hash);
       }
-      
-      // Редиректим на index.html
-      // React Router восстановит путь из sessionStorage или использует текущий путь
-      var redirectUrl = basePath + '/index.html';
-      window.location.replace(redirectUrl);
+      window.location.replace(basePath + '/index.html');
     </script>
   </head>
   <body>

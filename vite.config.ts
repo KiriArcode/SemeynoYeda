@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: '/SemeynoYeda/',
+  base: '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -18,7 +18,7 @@ export default defineConfig({
         theme_color: '#39FF14',
         background_color: '#0B0E14',
         display: 'standalone',
-        start_url: '/SemeynoYeda/',
+        start_url: '/',
         icons: [
           { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
         ],

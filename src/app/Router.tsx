@@ -23,17 +23,9 @@ function LoadingFallback() {
   );
 }
 
-const getBasename = () => {
-  if (typeof window !== 'undefined') {
-    const pathname = window.location.pathname;
-    if (pathname.startsWith('/SemeynoYeda')) {
-      return '/SemeynoYeda';
-    }
-  }
-  const isProd = (import.meta as any).env?.PROD || (import.meta as any).env?.MODE === 'production';
-  return isProd ? '/SemeynoYeda' : '';
-};
-const basename = getBasename();
+// Vite BASE_URL: '/' for Vercel, '/SemeynoYeda/' for GitHub Pages if needed later
+const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
+const basename = base || '';
 
 const router = createBrowserRouter([
   {

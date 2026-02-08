@@ -9,11 +9,7 @@ import './styles/globals.css';
 const savedPath = sessionStorage.getItem('404-redirect-path');
 if (savedPath) {
   sessionStorage.removeItem('404-redirect-path');
-  // Восстанавливаем оригинальный путь через history API
-  // React Router определит маршрут из window.location.pathname
-  if (savedPath.startsWith('/SemeynoYeda')) {
-    window.history.replaceState(null, '', savedPath);
-  }
+  window.history.replaceState(null, '', savedPath);
 }
 
 // Инициализируем базу данных при загрузке приложения
