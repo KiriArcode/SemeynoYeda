@@ -1,0 +1,106 @@
+---
+description: Parse raw recipe text and add to seedRecipes.ts. Use when user pastes recipe text or says "добавь рецепт", "парсить рецепт", "загрузи рецепты".
+globs: src/data/seedRecipes.ts
+alwaysApply: false
+---
+
+# Parse and Load Recipes into seedRecipes.ts
+
+When the user pastes raw recipe text, parse ALL recipes and insert them into `src/data/seedRecipes.ts`.
+
+## Steps
+
+1. Read `src/data/seedRecipes.ts` to get current SEED_RECIPE_IDS and recipe count
+2. Parse each recipe from the user's text
+3. Add new IDs to `SEED_RECIPE_IDS` object
+4. Add `seedRecipe({...})` calls before the closing `];` of `getSeedRecipes()`
+5. Run `npx tsc --noEmit` to verify
+6. Report how many recipes were added
+
+## Family Context for suitableFor
+
+- **kolya**: gastritis — no spicy, acidic, fried, very fatty food
+- **kristina**: can eat everything, prefers rich/diverse flavors
+- **both**: neutral, mild recipes suitable for both
+
+## Tag Assignment Rules
+
+| Condition | Tag |
+|-----------|-----|
+| No spicy/acidic/fried ingredients | `gastritis-safe` |
+| Pureed, soft, creamy texture | `soft-texture` |
+| Hearty, filling, rich | `rich-feel` |
+| Can be frozen (soups, sauces, meatballs) | `freezable` |
+| totalTime ≤ 15 min | `quick` |
+| Batch-cookable for weekend prep | `prep-day` |
+| Can prepare night before | `overnight` |
+| Portable for office lunch | `packable` |
+| Low calorie / diet recipe | `low-calorie` |
+
+## ID Convention
+
+Title "Медово-горчичный ПП соус" →
+- camelCase key: `medovoGorchichnyjSous`
+- id value: `'seed-medovo-gorchichnyj-sous'`
+- slug: `'medovo-gorchichnyj-sous'`
+
+Remove "ПП" and filler words from slug. Transliterate Cyrillic to Latin.
+
+## Ingredient Parsing
+
+- "2 ст. л. мёда" → `{ name: 'мёд', amount: 2, unit: 'ст.л.' }`
+- "200 г йогурта" → `{ name: 'йогурт', amount: 200, unit: 'г' }`
+- "1 стакан" → `unit: 'стакан'`
+- "соль по вкусу" → `{ name: 'соль', amount: 1, unit: 'по вкусу', optional: true }`
+- "1-2 шт" → use max value, `unit: 'шт'`
+
+Only these units: `'г' | 'кг' | 'мл' | 'л' | 'шт' | 'ст.л.' | 'ч.л.' | 'стакан' | 'щепотка' | 'по вкусу'`
+
+## Equipment Detection
+
+Map step text to equipment:
+- плита/сковорода/кастрюля/варить/жарить/тушить → `stove`
+- духовка/запекать → `oven`
+- блендер/взбить/измельчить до однородности → `blender`
+- миксер → `mixer`
+- пароварка → `steamer`
+- Only `bowls` if just mixing by hand
+
+## Storage Estimation
+
+- Sauces without dairy: `fridge: 5, freezer: 2`
+- Sauces with dairy/yogurt: `fridge: 3`
+- Sauces with vinegar/honey: `fridge: 7`
+- Meat dishes: `fridge: 2, freezer: 3`
+- Default: `fridge: 3`
+
+## Example Output Shape
+
+```typescript
+// In SEED_RECIPE_IDS:
+medovoGorchichnyjSous: 'seed-medovo-gorchichnyj-sous',
+
+// In getSeedRecipes() array:
+seedRecipe({
+  id: SEED_RECIPE_IDS.medovoGorchichnyjSous,
+  slug: 'medovo-gorchichnyj-sous',
+  title: 'Медово-горчичный соус',
+  category: 'sauce',
+  tags: ['quick', 'low-calorie'],
+  suitableFor: 'kristina',
+  prepTime: 5,
+  cookTime: 0,
+  totalTime: 5,
+  servings: 4,
+  ingredients: [
+    { name: 'горчица', amount: 1, unit: 'ст.л.' },
+    { name: 'мёд', amount: 2, unit: 'ст.л.' },
+  ],
+  steps: [
+    { order: 1, text: 'Все компоненты смешать', duration: 3 },
+    { order: 2, text: 'Дать постоять несколько часов', duration: 2 },
+  ],
+  equipment: ['bowls'],
+  storage: { fridge: 7 },
+}),
+```

@@ -107,7 +107,7 @@ export function WeekStats({ weekMenu }: WeekStatsProps) {
     <div className="bg-dimension border border-nebula rounded-card p-4 mb-4 shadow-card">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between text-left"
+        className="w-full flex items-center justify-between text-left bg-card rounded-md py-2.5 px-3 border border-nebula/60"
       >
         <div className="flex items-center" style={{ gap: '8px' }}>
           <BarChart3 className="w-4 h-4 text-portal" />
