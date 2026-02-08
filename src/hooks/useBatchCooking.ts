@@ -59,7 +59,7 @@ export function useBatchCooking() {
 
       // 3. Filter to freezable recipes
       const freezableRecipes = Array.from(recipeMap.values()).filter(
-        r => r.tags.includes('freezable') || r.tags.includes('prep-day')
+        r => r.tags.includes('freezable') || r.tags.includes('prep-day') || r.tags.includes('batch-cooking')
       );
 
       if (freezableRecipes.length === 0) {

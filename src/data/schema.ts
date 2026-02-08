@@ -9,6 +9,7 @@ export type DietTag =
   | 'freezable'         // можно заморозить
   | 'quick'             // <15 минут
   | 'prep-day'          // заготовка выходного дня
+  | 'batch-cooking'     // массовая готовка в выходной + фасовка (Main/Side)
   | 'overnight'         // можно приготовить с вечера
   | 'packable'          // можно взять с собой
   | 'low-calorie';      // низкокалорийное

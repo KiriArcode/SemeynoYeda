@@ -11,6 +11,7 @@ const TAG_LABELS: Record<DietTag, string> = {
   'freezable': 'Можно заморозить',
   'quick': 'Быстро',
   'prep-day': 'Заготовка',
+  'batch-cooking': 'Массовая готовка',
   'overnight': 'С вечера',
   'packable': 'С собой',
   'low-calorie': 'Низкокалорийное',
@@ -34,6 +35,7 @@ function getTagStyle(tag: DietTag): string {
     case 'freezable': return 'bg-[#0D1B28] text-frost border-[#1A3040]';
     case 'quick': return 'bg-[#281A0D] text-accent-orange border-[#403020]';
     case 'prep-day': return 'bg-[#1A0D28] text-plasma border-[#2D1A40]';
+    case 'batch-cooking': return 'bg-[#1A1A28] text-plasma border-[#2D2D40]';
     case 'overnight': return 'bg-[#1A0D28] text-plasma border-[#2D1A40]';
     case 'packable': return 'bg-[#281A0D] text-accent-orange border-[#403020]';
     case 'rich-feel': return 'bg-[#280D1A] text-kristina border-[#401A2D]';
@@ -84,7 +86,7 @@ export default function RecipesPage() {
 
     // Tag filter from URL
     if (selectedTag) {
-      const validTags: DietTag[] = ['gastritis-safe', 'soft-texture', 'rich-feel', 'freezable', 'quick', 'prep-day', 'overnight', 'packable', 'low-calorie'];
+      const validTags: DietTag[] = ['gastritis-safe', 'soft-texture', 'rich-feel', 'freezable', 'quick', 'prep-day', 'batch-cooking', 'overnight', 'packable', 'low-calorie'];
       if (validTags.includes(selectedTag as DietTag)) {
         filtered = filtered.filter((recipe) => recipe.tags.includes(selectedTag as DietTag));
       }

@@ -39,6 +39,7 @@ Tailwind: `text-kolya bg-kolya/8 border-kolya/20`, `text-kristina bg-kristina/8 
 - freezable: bg `#0D1B28`, text `#00E5FF`, border `#1A3040`
 - quick: bg `#281A0D`, text `#FF9100`, border `#403020`
 - prep-day: bg `#1A0D28`, text `#B388FF`, border `#2D1A40`
+- batch-cooking: bg `#1A1A28`, text `#B388FF`, border `#2D2D40` (массовая готовка + фасовка)
 - rich-feel: bg `#280D1A`, text `#FF6B9D`, border `#401A2D`
 
 ## ШРИФТЫ

@@ -26,6 +26,7 @@ const TAG_OPTIONS: { value: DietTag; label: string }[] = [
   { value: 'freezable', label: 'Можно заморозить' },
   { value: 'quick', label: 'Быстро' },
   { value: 'prep-day', label: 'Заготовка' },
+  { value: 'batch-cooking', label: 'Массовая готовка' },
   { value: 'overnight', label: 'С вечера' },
   { value: 'packable', label: 'С собой' },
   { value: 'low-calorie', label: 'Низкокалорийное' },
