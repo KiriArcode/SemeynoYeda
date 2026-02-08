@@ -24,7 +24,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
+        // Не кэшируем index.html — иначе после деплоя SW отдаёт старый HTML
+        // со ссылками на удалённые чанки → 404 на RecipesPage, FreezerPage и т.д.
+        globPatterns: ['**/*.{js,css,ico,png,svg,json,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

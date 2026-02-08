@@ -1,0 +1,22 @@
+{
+  "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "max-age=0, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "max-age=0, no-cache, must-revalidate" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!assets/|icons/|manifest\\.webmanifest|sw\\.js|registerSW\\.js|workbox-).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

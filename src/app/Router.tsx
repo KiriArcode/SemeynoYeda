@@ -1,8 +1,40 @@
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, useRouteError, isRouteErrorResponse } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { PageShell } from '../components/layout/PageShell';
 import { BottomNav } from '../components/layout/BottomNav';
 import { ChefModeProvider } from '../contexts/ChefModeContext';
+
+function ChunkErrorBoundary() {
+  const error = useRouteError();
+  const message = error instanceof Error ? error.message : String(error);
+  const isChunkError = message.includes('Failed to fetch dynamically imported module') || message.includes('Loading chunk');
+
+  if (isChunkError) {
+    // Устаревший кэш после деплоя — снимаем старый SW и перезагружаем
+    if (navigator.serviceWorker?.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister());
+        window.location.reload();
+      }).catch(() => window.location.reload());
+    } else {
+      window.location.reload();
+    }
+    return (
+      <div className="min-h-screen bg-void flex items-center justify-center">
+        <div className="text-portal font-heading">Обновление...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-void flex flex-col items-center justify-center gap-4 p-4">
+      <h2 className="text-portal font-heading text-xl">Ошибка</h2>
+      <pre className="text-muted text-sm max-w-full overflow-auto">
+        {isRouteErrorResponse(error) ? error.statusText : message}
+      </pre>
+    </div>
+  );
+}
 
 const MenuPage = lazy(() => import('../pages/MenuPage'));
 const RecipesPage = lazy(() => import('../pages/RecipesPage'));
@@ -29,6 +61,7 @@ const basename = base || '';
 
 const router = createBrowserRouter([
   {
+    errorElement: <ChunkErrorBoundary />,
     element: (
       <ChefModeProvider>
         <PageShell>
