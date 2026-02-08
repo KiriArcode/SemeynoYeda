@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid';
 
 export function useCookingTimers() {
   const [timers, setTimers] = useState<CookingTimer[]>([]);
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     loadActiveTimers();

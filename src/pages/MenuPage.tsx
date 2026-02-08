@@ -23,9 +23,11 @@ const DAY_SHORT_CODES: Record<string, string> = {
 const MEAL_FILTERS: { value: MealType | 'all'; label: string }[] = [
   { value: 'all', label: 'Все' },
   { value: 'breakfast', label: '🌅 Завтрак' },
+  { value: 'second_breakfast', label: '🍎 Второй завтрак' },
   { value: 'lunch', label: '☀️ Обед' },
   { value: 'snack', label: '🍵 Полдник' },
   { value: 'dinner', label: '🌙 Ужин' },
+  { value: 'late_snack', label: '🥛 Второй ужин' },
 ];
 
 export default function MenuPage() {

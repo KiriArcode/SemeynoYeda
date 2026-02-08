@@ -36,6 +36,7 @@ When the user pastes raw recipe text, parse ALL recipes and insert them into `sr
 | Can prepare night before | `overnight` |
 | Portable for office lunch | `packable` |
 | Low calorie / diet recipe | `low-calorie` |
+| Raw/semi-raw vegetables frozen with vacuum | `blanch-before-freeze` (steps: blanch → cool → vacuum) |
 
 ## ID Convention
 

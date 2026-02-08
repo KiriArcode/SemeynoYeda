@@ -71,29 +71,50 @@ export default function PrepPage() {
   async function handleFreezeCompleted() {
     if (!plan) return;
     const packagingTasks = plan.tasks.filter(t => t.completed && t.phase === 4);
+    const recipes = await db.table('recipes').bulkGet(packagingTasks.map(t => t.recipeId));
+    const recipeMap = new Map(recipes.filter(Boolean).map(r => [r!.id, r!]));
+
     for (const task of packagingTasks) {
-      const existing = await db.table('freezer').where('recipeId').equals(task.recipeId).first();
-      if (existing) {
-        await db.table('freezer').update(existing.id, {
-          portionsRemaining: existing.portionsRemaining + task.portions,
-          portionsOriginal: existing.portionsOriginal + task.portions,
-        });
+      const recipe = recipeMap.get(task.recipeId);
+      const freezerMonths = recipe?.storage?.freezer ?? 3;
+      const now = new Date();
+      const expiry = new Date(now);
+      expiry.setMonth(expiry.getMonth() + freezerMonths);
+
+      const createFreezerItem = (portions: number, forWhom?: 'kolya' | 'kristina' | 'both'): FreezerItem => ({
+        id: nanoid(),
+        recipeId: task.recipeId,
+        name: task.recipeTitle,
+        portions,
+        portionsRemaining: portions,
+        portionsOriginal: portions,
+        batchId: plan.id,
+        frozenDate: now.toISOString().split('T')[0],
+        expiryDate: expiry.toISOString().split('T')[0],
+        ...(forWhom && { forWhom }),
+      });
+
+      if (task.portionsByMember && (task.portionsByMember.kolya > 0 || task.portionsByMember.kristina > 0)) {
+        // Create personalized packets
+        if (task.portionsByMember.kolya > 0) {
+          const item = createFreezerItem(task.portionsByMember.kolya, 'kolya');
+          await db.table('freezer').add(item);
+        }
+        if (task.portionsByMember.kristina > 0) {
+          const item = createFreezerItem(task.portionsByMember.kristina, 'kristina');
+          await db.table('freezer').add(item);
+        }
       } else {
-        const now = new Date();
-        const expiry = new Date(now);
-        expiry.setMonth(expiry.getMonth() + 3);
-        const newItem: FreezerItem = {
-          id: nanoid(),
-          recipeId: task.recipeId,
-          name: task.recipeTitle,
-          portions: task.portions,
-          portionsRemaining: task.portions,
-          portionsOriginal: task.portions,
-          batchId: plan.id,
-          frozenDate: now.toISOString().split('T')[0],
-          expiryDate: expiry.toISOString().split('T')[0],
-        };
-        await db.table('freezer').add(newItem);
+        const existing = await db.table('freezer').where('recipeId').equals(task.recipeId).first() as FreezerItem | undefined;
+        if (existing && !existing.forWhom) {
+          await db.table('freezer').update(existing.id, {
+            portionsRemaining: existing.portionsRemaining + task.portions,
+            portionsOriginal: existing.portionsOriginal + task.portions,
+          });
+        } else {
+          const newItem = createFreezerItem(task.portions, 'both');
+          await db.table('freezer').add(newItem);
+        }
       }
     }
     console.log(`[PrepPage] Frozen ${packagingTasks.length} items`);

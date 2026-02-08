@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../lib/db';
-import type { Recipe, MealType } from '../../data/schema';
+import type { Recipe, MealType, Ingredient } from '../../data/schema';
 import { useCookingTimers } from '../../hooks/useCookingTimers';
 import { IngredientCheck } from './IngredientCheck';
 import { ParallelCooking } from './ParallelCooking';
@@ -9,10 +9,11 @@ import { CheckCircle2, ChefHat } from 'lucide-react';
 interface CookingSessionProps {
   recipeIds: string[];
   mealType?: MealType;
+  portionsPerRecipe?: Record<string, number>;
   onComplete?: () => void;
 }
 
-export function CookingSession({ recipeIds, onComplete }: CookingSessionProps) {
+export function CookingSession({ recipeIds, portionsPerRecipe = {}, onComplete }: CookingSessionProps) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [step, setStep] = useState<'check' | 'cooking' | 'complete'>('check');
   const { startTimer } = useCookingTimers();
@@ -86,13 +87,47 @@ export function CookingSession({ recipeIds, onComplete }: CookingSessionProps) {
 
       {step === 'check' && (
         <div>
-          <IngredientCheck recipeIds={recipeIds} onComplete={handleIngredientsChecked} />
+          <IngredientCheck
+            recipeIds={recipeIds}
+            portionsPerRecipe={portionsPerRecipe}
+            onComplete={handleIngredientsChecked}
+          />
         </div>
       )}
 
       {step === 'cooking' && (
         <div className="space-y-6">
           <ParallelCooking />
+
+          {recipes.some((r) => portionsPerRecipe[r.id]) && (
+            <div className="bg-portal-soft border border-portal/30 rounded-card p-4">
+              <h4 className="text-xs font-mono text-portal-dim tracking-widest mb-2">НА ЭТИ ПОРЦИИ (вес)</h4>
+              <p className="text-xs text-text-muted font-body mb-2">
+                Готовить ровно столько — не на потом
+              </p>
+              <ul className="space-y-1 text-sm font-body text-text-light">
+                {recipes
+                  .filter((r) => portionsPerRecipe[r.id] && r.servings > 0)
+                  .flatMap((r) => {
+                    const portions = portionsPerRecipe[r.id];
+                    const factor = portions / r.servings;
+                    return r.ingredients
+                      .filter((ing) => ing.unit === 'г' || ing.unit === 'мл' || ing.unit === 'кг' || ing.unit === 'л')
+                      .map((ing: Ingredient) => ({
+                        ...ing,
+                        scaled: Math.round(ing.amount * factor),
+                        recipeTitle: r.title,
+                      }));
+                  })
+                  .map((item, i) => (
+                    <li key={i}>
+                      {item.scaled} {item.unit} {item.name}
+                      <span className="text-text-muted ml-1">· {item.recipeTitle}</span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
 
           <div className="bg-dimension border border-nebula rounded-card p-5">
             <h3 className="font-heading text-lg font-bold text-text-light mb-4">

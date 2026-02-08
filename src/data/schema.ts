@@ -12,10 +12,17 @@ export type DietTag =
   | 'batch-cooking'     // массовая готовка в выходной + фасовка (Main/Side)
   | 'overnight'         // можно приготовить с вечера
   | 'packable'          // можно взять с собой
-  | 'low-calorie';      // низкокалорийное
+  | 'low-calorie'       // низкокалорийное
+  | 'blanch-before-freeze';  // бланширование перед заморозкой
 
 /** Приём пищи */
-export type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner';
+export type MealType =
+  | 'breakfast'
+  | 'second_breakfast'  // второй завтрак (5-6 приёмов)
+  | 'lunch'
+  | 'snack'
+  | 'dinner'
+  | 'late_snack';      // второй ужин (5-6 приёмов)
 
 /** Единица измерения */
 export type Unit = 'г' | 'кг' | 'мл' | 'л' | 'шт' | 'ст.л.' | 'ч.л.' | 'стакан' | 'щепотка' | 'по вкусу';
@@ -177,6 +184,7 @@ export interface FreezerItem {
   frozenDate: string;
   expiryDate: string;
   location?: string;          // "верхняя полка", "ящик 2"
+  forWhom?: FamilyMember;     // персонализированный пакет: для Коли / Кристины / обоих
   reheating?: ReheatingInstruction[];
 }
 
@@ -206,6 +214,7 @@ export interface BatchTask {
   step: string;                 // описание задачи
   duration: number;             // минуты
   portions: number;             // сколько порций заготавливаем
+  portionsByMember?: { kolya: number; kristina: number };  // персональные пакеты
   completed: boolean;
 }
 
@@ -258,4 +267,5 @@ export interface ChefModeSettings {
   showPrepBlock: boolean;
   showParallelCooking: boolean;
   defaultPrepTime: number;  // минут до готовки для подготовки
+  kolyaMealsMode?: '4' | '5-6';  // 4 приёма или 5-6 (second_breakfast, late_snack)
 }

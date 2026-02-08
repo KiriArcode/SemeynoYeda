@@ -1,20 +1,32 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import type { Recipe, WeekMenu } from '../data/schema';
+import type { Recipe, WeekMenu, MealType } from '../data/schema';
 import { CookingSession } from '../components/cooking/CookingSession';
 import { ParallelCooking } from '../components/cooking/ParallelCooking';
 import { ChefHat } from 'lucide-react';
 
 export default function CookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'snack' | 'dinner' | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
+  const [kolyaMealsMode, setKolyaMealsMode] = useState<'4' | '5-6'>('4');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [portionsPerRecipe, setPortionsPerRecipe] = useState<Record<string, number>>({});
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
   const [sessionStarted, setSessionStarted] = useState(false);
 
   useEffect(() => {
     loadWeekMenu();
+    loadChefSettings();
   }, []);
+
+  async function loadChefSettings() {
+    try {
+      const s = await db.table('chefSettings').get('default');
+      if (s?.kolyaMealsMode === '5-6') setKolyaMealsMode('5-6');
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     if (selectedDate && selectedMealType && weekMenu) {
@@ -42,7 +54,12 @@ export default function CookingPage() {
     const meal = day.meals.find((m) => m.mealType === selectedMealType);
     if (!meal) return;
 
-    const recipeIds = meal.recipes.map((r) => r.recipeId);
+    const recipeIds = [...new Set(meal.recipes.map((r) => r.recipeId))];
+    const portions: Record<string, number> = {};
+    for (const entry of meal.recipes) {
+      portions[entry.recipeId] = (portions[entry.recipeId] || 0) + 1;
+    }
+    setPortionsPerRecipe(portions);
     const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
     const validRecipes = loadedRecipes.filter((r): r is Recipe => r !== undefined);
     setRecipes(validRecipes);
@@ -59,12 +76,22 @@ export default function CookingPage() {
     setSelectedMealType(null);
   }
 
-  const mealTypes = [
-    { value: 'breakfast', label: 'Завтрак', icon: '🌅' },
-    { value: 'lunch', label: 'Обед', icon: '🍽️' },
-    { value: 'snack', label: 'Полдник', icon: '🍎' },
-    { value: 'dinner', label: 'Ужин', icon: '🌙' },
-  ] as const;
+  const baseMealTypes = [
+    { value: 'breakfast' as const, label: 'Завтрак', icon: '🌅' },
+    { value: 'lunch' as const, label: 'Обед', icon: '🍽️' },
+    { value: 'snack' as const, label: 'Полдник', icon: '🍎' },
+    { value: 'dinner' as const, label: 'Ужин', icon: '🌙' },
+  ];
+  const mealTypes = kolyaMealsMode === '5-6'
+    ? [
+        { value: 'breakfast' as const, label: 'Завтрак', icon: '🌅' },
+        { value: 'second_breakfast' as const, label: 'Второй завтрак', icon: '🍎' },
+        { value: 'lunch' as const, label: 'Обед', icon: '🍽️' },
+        { value: 'snack' as const, label: 'Полдник', icon: '🍎' },
+        { value: 'dinner' as const, label: 'Ужин', icon: '🌙' },
+        { value: 'late_snack' as const, label: 'Второй ужин', icon: '🥛' },
+      ]
+    : baseMealTypes;
 
   if (sessionStarted && recipes.length > 0) {
     return (
@@ -72,6 +99,7 @@ export default function CookingPage() {
         <CookingSession
           recipeIds={recipes.map((r) => r.id)}
           mealType={selectedMealType || 'dinner'}
+          portionsPerRecipe={portionsPerRecipe}
           onComplete={handleCompleteSession}
         />
       </div>
@@ -143,7 +171,14 @@ export default function CookingPage() {
           <div className="space-y-2 mb-4">
             {recipes.map((recipe) => (
               <div key={recipe.id} className="flex items-center justify-between p-2 bg-rift rounded-button">
-                <span className="text-sm font-body text-text-light">{recipe.title}</span>
+                <div>
+                  <span className="text-sm font-body text-text-light">{recipe.title}</span>
+                  {portionsPerRecipe[recipe.id] != null && (
+                    <span className="ml-2 text-xs font-mono text-portal">
+                      · {portionsPerRecipe[recipe.id]} порц.
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs font-mono text-text-dim">{recipe.totalTime} мин</span>
               </div>
             ))}

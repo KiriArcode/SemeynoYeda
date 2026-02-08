@@ -25,9 +25,20 @@ function toISODate(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
+/** Порядок приёмов: 4 основных + опционально второй завтрак и второй ужин */
+const MEAL_ORDER: MealSlot['mealType'][] = [
+  'breakfast',
+  'second_breakfast',
+  'lunch',
+  'snack',
+  'dinner',
+  'late_snack',
+];
+
 /**
- * Создаёт начальное недельное меню по документу (Пн–Вс, 4 приёма).
- * Пн–Пт заполнены по расписанию; Сб–Вс — пустые слоты (повторы + разморозка).
+ * Создаёт начальное недельное меню по документу (Пн–Вс).
+ * Поддерживает 6 приёмов: second_breakfast и late_snack для режима 5–6 (Коля).
+ * Пн–Пт заполнены; Сб–Вс — пустые слоты (повторы + разморозка).
  */
 export function getSeedWeekMenu(): WeekMenu {
   const today = new Date();
@@ -82,6 +93,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.slivkovoJogurtovyjSous, forWhom: 'both' },
             ],
           },
+          { mealType: 'late_snack', recipes: [{ recipeId: ids.jogurtSyr, forWhom: 'kolya' }] },
         ];
         break;
       case 1: // Вторник
@@ -93,6 +105,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.parovojOmlet, forWhom: 'kolya', variation: 'с кабачковым соусом' },
             ],
           },
+          { mealType: 'second_breakfast', recipes: [{ recipeId: ids.tvorozhnyjKrem, forWhom: 'kolya' }] },
           {
             mealType: 'lunch',
             recipes: [
@@ -119,6 +132,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.syrnyjSous, forWhom: 'both' },
             ],
           },
+          { mealType: 'late_snack', recipes: [] },
         ];
         break;
       case 2: // Среда
@@ -129,6 +143,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.overnightOvsjanka, forWhom: 'both' },
             ],
           },
+          { mealType: 'second_breakfast', recipes: [{ recipeId: ids.jogurtPechjonojeJabloko, forWhom: 'kolya' }] },
           {
             mealType: 'lunch',
             recipes: [
@@ -154,6 +169,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.jogurtovyjSous, forWhom: 'both' },
             ],
           },
+          { mealType: 'late_snack', recipes: [{ recipeId: ids.syrJogurt, forWhom: 'kolya' }] },
         ];
         break;
       case 3: // Четверг
@@ -165,6 +181,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.ovsjanka, forWhom: 'kolya' },
             ],
           },
+          { mealType: 'second_breakfast', recipes: [] },
           {
             mealType: 'lunch',
             recipes: [
@@ -187,6 +204,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.syrnyjSous, forWhom: 'both' },
             ],
           },
+          { mealType: 'late_snack', recipes: [] },
         ];
         break;
       case 4: // Пятница
@@ -197,6 +215,7 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.overnightOvsjanka, forWhom: 'both' },
             ],
           },
+          { mealType: 'second_breakfast', recipes: [{ recipeId: ids.bananJogurt, forWhom: 'kolya' }] },
           {
             mealType: 'lunch',
             recipes: [
@@ -221,15 +240,11 @@ export function getSeedWeekMenu(): WeekMenu {
               { recipeId: ids.gorjachijButerbrod, forWhom: 'both', variation: 'тост' },
             ],
           },
+          { mealType: 'late_snack', recipes: [] },
         ];
         break;
       default: // Суббота, Воскресенье — пустые слоты (повторы + разморозка)
-        meals = [
-          { mealType: 'breakfast', recipes: [] },
-          { mealType: 'lunch', recipes: [] },
-          { mealType: 'snack', recipes: [] },
-          { mealType: 'dinner', recipes: [] },
-        ];
+        meals = MEAL_ORDER.map((mt) => ({ mealType: mt, recipes: [] }));
     }
 
     days.push({

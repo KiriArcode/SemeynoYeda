@@ -77,12 +77,22 @@ export function useBatchCooking() {
         }
       }
 
-      // 5. Calculate needed portions (count how many times each recipe appears in menu)
+      // 5. Calculate needed portions and portions by member (for personalized packets)
       const recipeUsageCount = new Map<string, number>();
+      const recipeUsageByMember = new Map<string, { kolya: number; kristina: number }>();
       for (const day of weekMenu.days) {
         for (const meal of day.meals) {
           for (const entry of meal.recipes) {
-            recipeUsageCount.set(entry.recipeId, (recipeUsageCount.get(entry.recipeId) || 0) + 1);
+            const rid = entry.recipeId;
+            recipeUsageCount.set(rid, (recipeUsageCount.get(rid) || 0) + 1);
+            const byMember = recipeUsageByMember.get(rid) || { kolya: 0, kristina: 0 };
+            if (entry.forWhom === 'kolya') byMember.kolya += 1;
+            else if (entry.forWhom === 'kristina') byMember.kristina += 1;
+            else if (entry.forWhom === 'both') {
+              byMember.kolya += 1;
+              byMember.kristina += 1;
+            }
+            recipeUsageByMember.set(rid, byMember);
           }
         }
       }
@@ -117,7 +127,20 @@ export function useBatchCooking() {
           });
         }
 
-        // Add packaging step
+        // Add packaging step (with blanch reminder for vegetable prep)
+        const needsBlanchCool = recipe.tags.includes('blanch-before-freeze') && recipe.storage.vacuumSealed;
+        const packagingStep = needsBlanchCool
+          ? `Охладить полностью! Упаковать ${recipe.title} по порциям (Коля/Кристина) и заморозить`
+          : `Упаковать ${recipe.title} по ${neededPortions} порций и заморозить`;
+        const byMember = recipeUsageByMember.get(recipe.id);
+        const totalMemberSlots = byMember ? byMember.kolya + byMember.kristina : 0;
+        const portionsByMember =
+          byMember && totalMemberSlots > 0
+            ? {
+                kolya: Math.round(neededPortions * byMember.kolya / totalMemberSlots),
+                kristina: neededPortions - Math.round(neededPortions * byMember.kolya / totalMemberSlots),
+              }
+            : undefined;
         tasks.push({
           id: nanoid(),
           recipeId: recipe.id,
@@ -125,9 +148,10 @@ export function useBatchCooking() {
           phase: 4,
           phaseLabel: PHASE_LABELS[4],
           equipment: recipe.storage.vacuumSealed ? 'vacuum' : 'bowls',
-          step: `Упаковать ${recipe.title} по ${neededPortions} порций и заморозить`,
-          duration: 5,
+          step: packagingStep,
+          duration: needsBlanchCool ? 10 : 5,
           portions: neededPortions,
+          portionsByMember,
           completed: false,
         });
       }

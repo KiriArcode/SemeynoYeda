@@ -6,10 +6,11 @@ import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 
 interface IngredientCheckProps {
   recipeIds: string[];
+  portionsPerRecipe?: Record<string, number>;
   onComplete?: (missing: string[]) => void;
 }
 
-export function IngredientCheck({ recipeIds, onComplete }: IngredientCheckProps) {
+export function IngredientCheck({ recipeIds, portionsPerRecipe = {}, onComplete }: IngredientCheckProps) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Map<string, Ingredient & { availability: IngredientAvailability; recipeTitles: string[] }>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -29,19 +30,24 @@ export function IngredientCheck({ recipeIds, onComplete }: IngredientCheckProps)
       const validRecipes = loadedRecipes.filter((r): r is Recipe => r !== undefined);
       setRecipes(validRecipes);
 
-      // Собрать все уникальные ингредиенты
+      // Собрать все уникальные ингредиенты (с учётом масштаба порций)
       const ingredientMap = new Map<string, Ingredient & { recipeTitles: string[] }>();
       validRecipes.forEach((recipe) => {
+        const portions = portionsPerRecipe[recipe.id] ?? recipe.servings;
+        const factor = recipe.servings > 0 ? portions / recipe.servings : 1;
         recipe.ingredients.forEach((ingredient) => {
           const key = ingredient.name;
+          const scaledAmount = Math.round(ingredient.amount * factor * 100) / 100;
           if (ingredientMap.has(key)) {
             const existing = ingredientMap.get(key)!;
+            existing.amount += scaledAmount;
             if (!existing.recipeTitles.includes(recipe.title)) {
               existing.recipeTitles.push(recipe.title);
             }
           } else {
             ingredientMap.set(key, {
               ...ingredient,
+              amount: scaledAmount,
               recipeTitles: [recipe.title],
             });
           }

@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS: ChefModeSettings = {
   showPrepBlock: true,
   showParallelCooking: true,
   defaultPrepTime: 60,
+  kolyaMealsMode: '4',
 };
 
 export default function ChefSettingsPage() {
@@ -160,6 +161,38 @@ export default function ChefSettingsPage() {
                   settings.showParallelCooking ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
+            </button>
+          </div>
+        </div>
+
+        {/* Режим питания Коли: 4 или 5–6 приёмов */}
+        <div className="bg-dimension border border-nebula rounded-card p-5 shadow-card">
+          <h3 className="font-heading font-semibold text-text-light mb-2">
+            Режим питания Коли
+          </h3>
+          <p className="text-sm text-text-dim font-body mb-3">
+            5–6 приёмов добавляет второй завтрак и второй ужин
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => updateSettings({ kolyaMealsMode: '4' })}
+              className={`flex-1 px-4 py-2 rounded-button font-heading font-semibold text-sm transition-all ${
+                (settings.kolyaMealsMode ?? '4') === '4'
+                  ? 'bg-portal text-void shadow-glow'
+                  : 'bg-rift text-text-mid hover:bg-nebula border border-nebula'
+              }`}
+            >
+              4 приёма
+            </button>
+            <button
+              onClick={() => updateSettings({ kolyaMealsMode: '5-6' })}
+              className={`flex-1 px-4 py-2 rounded-button font-heading font-semibold text-sm transition-all ${
+                settings.kolyaMealsMode === '5-6'
+                  ? 'bg-portal text-void shadow-glow'
+                  : 'bg-rift text-text-mid hover:bg-nebula border border-nebula'
+              }`}
+            >
+              5–6 приёмов
             </button>
           </div>
         </div>

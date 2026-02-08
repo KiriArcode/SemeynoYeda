@@ -30,6 +30,7 @@ const TAG_OPTIONS: { value: DietTag; label: string }[] = [
   { value: 'overnight', label: 'С вечера' },
   { value: 'packable', label: 'С собой' },
   { value: 'low-calorie', label: 'Низкокалорийное' },
+  { value: 'blanch-before-freeze', label: 'Бланширование перед заморозкой' },
 ];
 
 const MEMBER_OPTIONS: { value: FamilyMember; label: string }[] = [

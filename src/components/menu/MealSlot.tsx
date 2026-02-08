@@ -17,9 +17,11 @@ interface MealSlotProps {
 
 const MEAL_LABELS: Record<string, { label: string; icon: string }> = {
   breakfast: { label: 'Завтрак', icon: '🌅' },
+  second_breakfast: { label: 'Второй завтрак', icon: '🍎' },
   lunch: { label: 'Обед', icon: '☀️' },
   snack: { label: 'Полдник', icon: '🍵' },
   dinner: { label: 'Ужин', icon: '🌙' },
+  late_snack: { label: 'Второй ужин', icon: '🥛' },
 };
 
 const MEMBER_SHORT: Record<string, string> = {

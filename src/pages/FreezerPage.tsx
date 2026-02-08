@@ -18,6 +18,7 @@ export default function FreezerPage() {
   const [formName, setFormName] = useState('');
   const [formPortions, setFormPortions] = useState(4);
   const [formLocation, setFormLocation] = useState('');
+  const [formForWhom, setFormForWhom] = useState<'kolya' | 'kristina' | 'both'>('both');
 
   useEffect(() => {
     loadData();
@@ -55,6 +56,7 @@ export default function FreezerPage() {
       frozenDate: now.toISOString().split('T')[0],
       expiryDate: expiryDate.toISOString().split('T')[0],
       location: formLocation || undefined,
+      forWhom: formForWhom,
     };
 
     console.log('[FreezerPage] Adding item:', name, formPortions, 'portions');
@@ -85,7 +87,14 @@ export default function FreezerPage() {
     setFormName('');
     setFormPortions(4);
     setFormLocation('');
+    setFormForWhom('both');
   }
+
+  const FOR_WHOM_LABELS: Record<string, string> = {
+    kolya: 'Коля',
+    kristina: 'Кристина',
+    both: 'Оба',
+  };
 
   function getExpiryStatus(expiryDate: string): { label: string; color: string } {
     const now = new Date();
@@ -159,6 +168,14 @@ export default function FreezerPage() {
               <label className={labelClass}>Название *</label>
               <input value={formName} onChange={e => setFormName(e.target.value)} className={inputClass} placeholder="Котлеты куриные" />
             </div>
+            <div>
+              <label className={labelClass}>Для кого</label>
+              <select value={formForWhom} onChange={e => setFormForWhom(e.target.value as 'kolya' | 'kristina' | 'both')} className={inputClass}>
+                <option value="both">Оба</option>
+                <option value="kolya">Коля</option>
+                <option value="kristina">Кристина</option>
+              </select>
+            </div>
             <div className="grid grid-cols-2" style={{ gap: '12px' }}>
               <div>
                 <label className={labelClass}>Порции</label>
@@ -194,8 +211,20 @@ export default function FreezerPage() {
               <div key={item.id} className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="flex items-center" style={{ gap: '8px' }}>
+                    <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
                       <h3 className="text-sm font-heading font-semibold text-text-light">{item.name}</h3>
+                      {item.forWhom && (
+                        <span
+                          className="text-[10px] px-2 py-0.5 font-heading font-semibold border rounded-pill"
+                          style={{
+                            background: item.forWhom === 'kolya' ? 'rgba(0,229,255,0.10)' : item.forWhom === 'kristina' ? 'rgba(255,107,157,0.10)' : 'rgba(57,255,20,0.10)',
+                            color: item.forWhom === 'kolya' ? '#00E5FF' : item.forWhom === 'kristina' ? '#FF6B9D' : '#39FF14',
+                            borderColor: item.forWhom === 'kolya' ? 'rgba(0,229,255,0.25)' : item.forWhom === 'kristina' ? 'rgba(255,107,157,0.25)' : 'rgba(57,255,20,0.25)',
+                          }}
+                        >
+                          {FOR_WHOM_LABELS[item.forWhom]}
+                        </span>
+                      )}
                       {item.location && (
                         <span className="text-[10px] px-2 py-0.5 bg-rift border border-nebula text-text-dim font-body" style={{ borderRadius: '9999px' }}>
                           {item.location}
