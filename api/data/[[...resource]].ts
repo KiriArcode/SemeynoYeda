@@ -5,18 +5,18 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as recipeRepo from '../_lib/repositories/recipeRepo';
-import * as menuRepo from '../_lib/repositories/menuRepo';
-import * as freezerRepo from '../_lib/repositories/freezerRepo';
-import * as cookingSessionRepo from '../_lib/repositories/cookingSessionRepo';
-import * as chefSettingsRepo from '../_lib/repositories/chefSettingsRepo';
+import * as recipeRepo from '../_lib/repositories/recipeRepo.js';
+import * as menuRepo from '../_lib/repositories/menuRepo.js';
+import * as freezerRepo from '../_lib/repositories/freezerRepo.js';
+import * as cookingSessionRepo from '../_lib/repositories/cookingSessionRepo.js';
+import * as chefSettingsRepo from '../_lib/repositories/chefSettingsRepo.js';
 import type {
   Recipe,
   WeekMenu,
   FreezerItem,
   CookingSession,
   ChefModeSettings,
-} from '../../src/data/schema';
+} from '../../src/data/schema.js';
 
 type ResourceType = 'recipes' | 'menus' | 'freezer' | 'cooking-sessions' | 'chef-settings';
 

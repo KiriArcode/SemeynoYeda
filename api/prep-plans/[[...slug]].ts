@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as prepPlanRepo from '../_lib/repositories/prepPlanRepo';
+import * as prepPlanRepo from '../_lib/repositories/prepPlanRepo.js';
 
 /**
  * Единый обработчик /api/prep-plans и /api/prep-plans/:id (лимит 12 функций на Hobby).

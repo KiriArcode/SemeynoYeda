@@ -1,6 +1,6 @@
-import { getDb } from '../db';
-import { dbToApp, appToDb } from '../mappers';
-import type { ChefModeSettings } from '../../../src/data/schema';
+import { getDb } from '../db.js';
+import { dbToApp, appToDb } from '../mappers.js';
+import type { ChefModeSettings } from '../../../src/data/schema.js';
 
 export async function getChefSettings(id: string = 'default'): Promise<ChefModeSettings | null> {
   try {

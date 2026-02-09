@@ -1,6 +1,6 @@
-import { getDb } from '../db';
-import { dbToApp, appToDb } from '../mappers';
-import type { ShoppingItem } from '../../../src/data/schema';
+import { getDb } from '../db.js';
+import { dbToApp, appToDb } from '../mappers.js';
+import type { ShoppingItem } from '../../../src/data/schema.js';
 
 interface ShoppingDbRow {
   ingredient: string;

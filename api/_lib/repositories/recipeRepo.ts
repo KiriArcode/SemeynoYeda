@@ -1,6 +1,6 @@
-import { getDb } from '../db';
-import { dbToApp, appToDb } from '../mappers';
-import type { Recipe } from '../../../src/data/schema';
+import { getDb } from '../db.js';
+import { dbToApp, appToDb } from '../mappers.js';
+import type { Recipe } from '../../../src/data/schema.js';
 
 export async function getRecipes(filters?: {
   category?: string;

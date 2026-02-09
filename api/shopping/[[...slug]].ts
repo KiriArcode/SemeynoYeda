@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as shoppingRepo from '../_lib/repositories/shoppingRepo';
+import * as shoppingRepo from '../_lib/repositories/shoppingRepo.js';
 
 /**
  * Единый обработчик /api/shopping и /api/shopping/:ingredient (лимит 12 функций на Hobby).
