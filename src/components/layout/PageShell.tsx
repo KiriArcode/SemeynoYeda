@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChefModeToggle } from './ChefModeToggle';
 import { Breadcrumbs } from './Breadcrumbs';
+import { SyncStatus } from '../ui/SyncStatus';
 import { useChefMode } from '../../contexts/ChefModeContext';
 
 interface PageShellProps {
@@ -57,7 +58,10 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
             <Link to="/" className="font-heading text-base font-extrabold text-text-light hover:text-portal transition-colors">
               SemeynoYeda
             </Link>
-            <ChefModeToggle />
+            <div className="flex items-center" style={{ gap: '12px' }}>
+              <SyncStatus />
+              <ChefModeToggle />
+            </div>
           </div>
 
           {/* Permanent section navigation */}

@@ -1,14 +1,73 @@
-# Спецификация: Vercel, Supabase, закрытый доступ, Notebook LM
+# Спецификация: Vercel, Neon PostgreSQL, закрытый доступ, Notebook LM
 
-Цели: перенести деплой на Vercel, подключить базу Supabase с invite-only авторизацией (только для членов семьи), обеспечить offline-first синхронизацию; ручная интеграция с Notebook LM как семейной базой знаний через папку «рецепты» в Google Drive; возможность загрузки текстовых рецептов с очисткой и разметкой.
+Цели: перенести деплой на Vercel, подключить базу Neon PostgreSQL с invite-only авторизацией (только для членов семьи), обеспечить offline-first синхронизацию; ручная интеграция с Notebook LM как семейной базой знаний через папку «рецепты» в Google Drive; возможность загрузки текстовых рецептов с очисткой и разметкой.
 
 ---
 
-## 1. Текущее состояние
+## 1. Текущее состояние архитектуры
 
-- **Деплой:** GitHub Actions → GitHub Pages, `base: '/SemeynoYeda/'` в vite.config.ts.
-- **Данные:** только клиент — Dexie (IndexedDB), таблицы: `recipes`, `menus`, `freezer`, `shopping`, `prepPlans`, `cookingSessions`, `chefSettings`. Схема в `src/data/schema.ts`, сиды в `src/data/seedRecipes.ts` и seedMenu.
-- **Авторизация:** отсутствует.
+### 1.1 Деплой
+- **Платформа:** Vercel (serverless functions + static hosting)
+- **Build:** `npm run build`, output directory `dist`
+- **Base path:** `/` (убрано `base: '/SemeynoYeda/'` для Vercel)
+
+### 1.2 База данных
+- **Основная БД:** **Neon PostgreSQL** (serverless Postgres)
+  - Connection: через `DATABASE_URL` environment variable
+  - Клиент: `@neondatabase/serverless` в `api/_lib/db.ts`
+  - Схема: `supabase/migrations/20250208000001_initial_schema.sql`
+  - Seed скрипты: `scripts/seedNeon.ts` (используется для загрузки данных)
+
+- **Локальный кэш:** Dexie (IndexedDB) — **НЕ ИСПОЛЬЗУЕТСЯ** в текущей реализации
+  - Таблицы определены в `src/lib/db.ts`, но данные загружаются через API
+  - Seed инициализация: `src/lib/initDb.ts` — синхронизирует seed-данные в IndexedDB (legacy)
+
+### 1.3 API Layer
+- **Vercel Serverless Functions:** папка `api/`
+  - Главный endpoint: `api/data/[[...resource]].ts` — унифицированный REST API
+  - Репозитории: `api/_lib/repositories/*.ts` — работа с Neon через SQL
+  - Мапперы: `api/_lib/mappers.ts` — преобразование camelCase ↔ snake_case
+
+### 1.4 Фронтенд
+- **Data Service:** `src/lib/dataService.ts` — единая точка доступа к API
+  - Все запросы идут через `dataService.recipes.list()`, `dataService.recipes.get(id)` и т.д.
+  - API URL: `import.meta.env.VITE_API_URL` (по умолчанию пустая строка — относительные пути)
+
+### 1.5 Авторизация
+- **Текущий статус:** отсутствует (планируется Supabase Auth или Neon Auth)
+
+---
+
+## 1.6 Известные проблемы архитектуры
+
+### Проблема 1: Потеря данных в JSONB полях (steps, ingredients)
+**Симптомы:**
+- Рецепты загружаются, но поле `steps` (процесс приготовления) пустое или отсутствует
+- Маппинг между camelCase (app) и snake_case (DB) может неправильно обрабатывать JSONB поля
+
+**Причина:**
+- Маппер `dbToApp` в `api/_lib/mappers.ts` рекурсивно преобразует все объекты
+- JSONB поля (`steps`, `ingredients`) приходят из PostgreSQL уже как объекты JavaScript
+- При записи в БД JSONB поля сериализуются через `JSON.stringify()`, но при чтении могут теряться при маппинге
+
+**Решение:**
+- Проверить обработку JSONB полей в `recipeRepo.ts` — убедиться что они правильно парсятся из БД
+- Возможно нужно исключить JSONB поля из рекурсивного маппинга или обрабатывать их отдельно
+
+### Проблема 2: Маппинг внутренних ссылок
+**Симптомы:**
+- Не работают внутренние ссылки между рецептами (например, ссылки на связанные рецепты)
+
+**Причина:**
+- Возможно проблема в роутинге или в том, как формируются ссылки
+
+### Проблема 3: Двойная архитектура данных
+**Текущая ситуация:**
+- Есть и Neon PostgreSQL (основная БД), и IndexedDB (legacy, не используется)
+- `initDb.ts` пытается синхронизировать seed-данные в IndexedDB, но приложение использует API → Neon
+
+**Рекомендация:**
+- Убрать использование IndexedDB или реализовать полноценную синхронизацию Neon ↔ IndexedDB для offline-first
 
 ---
 
@@ -22,45 +81,85 @@
 
 ---
 
-## 3. База данных Supabase
+## 3. База данных Neon PostgreSQL
 
-- Создать проект на [supabase.com](https://supabase.com/).
-- Таблицы в Postgres — зеркало текущей схемы Dexie (с учётом RLS при необходимости):
+### 3.1 Текущая реализация
+- **Провайдер:** Neon Serverless PostgreSQL
+- **Подключение:** через `DATABASE_URL` environment variable в Vercel
+- **Клиент:** `@neondatabase/serverless` в `api/_lib/db.ts`
+- **Схема:** определена в `supabase/migrations/20250208000001_initial_schema.sql`
 
-| Таблица            | Ключ               | Индексы / примечания                       |
-| ------------------ | ------------------ | ------------------------------------------ |
-| `recipes`          | `id` (PK)          | slug, category, tags (array), suitable_for |
-| `menus`            | `id` (PK)          | week_start, created_at                     |
-| `freezer`          | `id` (PK)          | recipe_id, expiry_date                     |
-| `shopping`         | составной или `id` | ingredient, category, checked              |
-| `prep_plans`       | `id` (PK)          | date                                       |
-| `cooking_sessions` | `id` (PK)          | date, meal_type                            |
-| `chef_settings`    | `id` (PK)          | —                                          |
+### 3.2 Структура таблиц
 
-- Имена колонок в snake_case для Postgres; в приложении — маппинг к текущим типам из `schema.ts`.
-- Seed: один раз загрузить текущие рецепты и seed-меню (миграция или SQL/скрипт).
+| Таблица            | Ключ               | JSONB поля | Индексы / примечания                       |
+| ------------------ | ------------------ | --------- | ------------------------------------------ |
+| `recipes`          | `id` (PK)          | `ingredients`, `steps`, `storage`, `reheating` | slug, category, tags (array), suitable_for |
+| `menus`            | `id` (PK)          | `days`, `shopping_settings` | week_start, created_at                     |
+| `freezer`          | `id` (PK)          | `reheating` | recipe_id, expiry_date                     |
+| `shopping`         | `id` (PK)          | —         | ingredient, category, checked              |
+| `prep_plans`       | `id` (PK)          | `tasks`   | date                                       |
+| `cooking_sessions` | `id` (PK)          | `timers`  | date, meal_type                            |
+| `chef_settings`    | `id` (PK)          | —         | —                                          |
+
+### 3.3 Маппинг данных
+- **Имена колонок:** snake_case в PostgreSQL (например, `suitable_for`, `prep_time`)
+- **App schema:** camelCase в TypeScript (`suitableFor`, `prepTime`)
+- **Мапперы:** `api/_lib/mappers.ts` — функции `appToDb()` и `dbToApp()` для преобразования
+- **JSONB поля:** сериализуются через `JSON.stringify()` при записи, парсятся автоматически при чтении через Neon
+
+### 3.4 Seed данных
+- **Скрипт:** `scripts/seedNeon.ts` — загружает seed-рецепты и меню в Neon
+- **Запуск:** `npm run seed:neon` (требует `DATABASE_URL`)
+- **Формат:** использует `appToDb()` для преобразования перед записью в БД
 
 ---
 
 ## 4. Закрытый доступ (только семья)
 
-- **Supabase Auth, invite-only:** отключить публичную регистрацию; вход только по приглашению.
-- Реализация:
-  - В Supabase Dashboard: Auth → Providers → Email: включить Email; регистрацию закрыть (только инвайты).
-  - Приглашения: через Dashboard (Auth → Users → Invite) или через Edge Function / админ-скрипт с `supabase.auth.admin.inviteUserByEmail()`.
-  - В приложении: при незалогиненном пользователе — редирект на страницу входа; после входа — доступ ко всем страницам.
-- RLS: политики на все таблицы с проверкой `auth.uid() IS NOT NULL`. При одной семье без разграничения по пользователям этого достаточно; при необходимости позже — `family_id`.
+### 4.1 Планируемая реализация
+- **Вариант 1: Neon Auth** (рекомендуется для Neon PostgreSQL)
+  - Использовать `@neondatabase/auth` для аутентификации
+  - Интеграция с Neon Data API для JWT-валидации
+  - RLS политики на уровне PostgreSQL
+
+- **Вариант 2: Supabase Auth** (альтернатива)
+  - Использовать Supabase только для Auth, данные в Neon
+  - Supabase Auth → JWT → проверка в Neon через RLS
+  - Более сложная архитектура, но проверенное решение
+
+### 4.2 Invite-only доступ
+- Отключить публичную регистрацию
+- Вход только по приглашению (invite links)
+- В приложении: при незалогиненном пользователе — редирект на страницу входа
+- После входа — доступ ко всем страницам
+
+### 4.3 Row Level Security (RLS)
+- Политики на все таблицы с проверкой `auth.uid() IS NOT NULL`
+- При одной семье без разграничения по пользователям этого достаточно
+- При необходимости позже — добавить `family_id` для мульти-семейной поддержки
 
 ---
 
 ## 5. Offline-first и синхронизация
 
-- **Цель:** работа без интернета по возможности; Supabase — источник истины при наличии сети.
-- Подход:
-  - Оставить Dexie и текущие таблицы в `src/lib/db.ts` как локальный кэш.
-  - Слой синхронизации: при старте и по таймеру/событиям — чтение из Supabase в IndexedDB; локальные изменения — сначала в IndexedDB (optimistic), затем push в Supabase. При конфликтах — «last write wins» или по `updated_at`.
-  - Инициализация: при доступном Supabase — подтянуть данные в IndexedDB; иначе — только из кэша; seed-рецепты по-прежнему мержить из initDb при первом запуске или при пустой БД.
-- Зависимости: `@supabase/supabase-js`.
+### 5.1 Текущее состояние
+- **Текущая реализация:** НЕТ offline-first — все данные загружаются через API из Neon
+- **IndexedDB:** определен в `src/lib/db.ts`, но НЕ используется для runtime данных
+- **initDb.ts:** синхронизирует только seed-данные в IndexedDB (legacy функциональность)
+
+### 5.2 Планируемая архитектура offline-first
+- **Цель:** работа без интернета по возможности; Neon PostgreSQL — источник истины при наличии сети.
+- **Подход:**
+  - Использовать Dexie (IndexedDB) как локальный кэш
+  - Слой синхронизации:
+    - При старте: чтение из Neon → IndexedDB (если есть сеть)
+    - Локальные изменения: сначала в IndexedDB (optimistic), затем push в Neon
+    - При конфликтах: «last write wins» или по `updated_at`
+  - Инициализация:
+    - При доступном Neon — подтянуть данные в IndexedDB
+    - Иначе — только из IndexedDB кэша
+    - Seed-рецепты мержить из `initDb.ts` при первом запуске или при пустой БД
+- **Зависимости:** `@neondatabase/serverless` для API, `dexie` для локального кэша
 
 ---
 
@@ -96,28 +195,97 @@
 
 ## 7. Переменные окружения
 
-- В Vercel задать:
-  - `VITE_SUPABASE_URL` — URL проекта Supabase.
-  - `VITE_SUPABASE_ANON_KEY` — anon (public) key для клиента.
-- Секреты (admin, service role) не использовать во фронтенде; инвайты и админ-операции — через Dashboard или Edge Functions.
+### 7.1 Vercel Environment Variables
+- **`DATABASE_URL`** (обязательно) — connection string для Neon PostgreSQL
+  - Формат: `postgresql://user:password@host.tld/dbname?sslmode=require`
+  - Используется в serverless functions (`api/_lib/db.ts`)
+  - НЕ должен быть доступен во фронтенде (только в serverless functions)
+
+- **`VITE_API_URL`** (опционально) — базовый URL для API endpoints
+  - По умолчанию: пустая строка (относительные пути `/api/...`)
+  - Используется в `src/lib/dataService.ts`
+  - Если не задан, используется относительный путь
+
+### 7.2 Будущие переменные (для Auth)
+- **`VITE_NEON_AUTH_URL`** — URL Neon Auth (если используется Neon Auth)
+- **`VITE_SUPABASE_URL`** и **`VITE_SUPABASE_ANON_KEY`** — если используется Supabase Auth
+
+### 7.3 Секреты
+- Секреты (admin keys, service role) НЕ использовать во фронтенде
+- Инвайты и админ-операции — через Dashboard или Edge Functions
 
 ---
 
 ## 8. Порядок внедрения (рекомендуемый)
 
-1. Создать проект Supabase, схему таблиц и RLS.
-2. Добавить Supabase client и Auth (экран логина, защита маршрутов).
-3. Включить invite-only, пригласить тестовые email.
-4. Реализовать синхронизацию Supabase ↔ IndexedDB (offline-first).
-5. Перенести деплой на Vercel (`base: '/'`, env, отключить GitHub Pages workflow).
-6. **Notebook LM:** экспорт рецептов (и при необходимости морозилки) в один Google Doc в папке «рецепты» в Google Drive; кнопка/экран «Выгрузить в Google Drive» с OAuth Google Drive API.
-7. **Текстовые рецепты:** экран «Добавить рецепт из текста» → парсер (очистка, извлечение названия, шагов, времени) → предзаполненная форма рецепта → сохранение в базу.
+### 8.1 Критические исправления (приоритет 1)
+1. **Исправить проблему с JSONB полями (steps, ingredients)**
+   - Проверить обработку JSONB в `api/_lib/repositories/recipeRepo.ts`
+   - Убедиться что JSONB поля правильно парсятся при чтении из БД
+   - Возможно исключить JSONB поля из рекурсивного маппинга в `mappers.ts`
+
+2. **Исправить маппинг внутренних ссылок**
+   - Проверить как формируются ссылки на рецепты
+   - Убедиться что роутинг работает корректно
+
+3. **Проверить seed данных**
+   - Убедиться что `scripts/seedNeon.ts` правильно сохраняет все поля включая `steps`
+   - Проверить что данные в БД содержат полные рецепты с шагами
+
+### 8.2 Дальнейшее развитие (приоритет 2)
+4. Создать проект Neon PostgreSQL (если еще не создан), применить схему из миграций
+5. Настроить `DATABASE_URL` в Vercel
+6. Добавить Auth (Neon Auth или Supabase Auth) — экран логина, защита маршрутов
+7. Включить invite-only, пригласить тестовые email
+8. Реализовать синхронизацию Neon ↔ IndexedDB (offline-first)
+9. **Notebook LM:** экспорт рецептов в Google Drive
+10. **Текстовые рецепты:** экран «Добавить рецепт из текста» → парсер → сохранение в базу
 
 ---
 
+## 9. Архитектурная схема
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Фронтенд (React)                         │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  dataService.ts → API calls → /api/data/recipes      │  │
+│  └──────────────────────────────────────────────────────┘  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTP
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Vercel Serverless Functions                    │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  api/data/[[...resource]].ts                         │  │
+│  │  └─→ recipeRepo.ts → getDb() → Neon PostgreSQL     │  │
+│  └──────────────────────────────────────────────────────┘  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ SQL (DATABASE_URL)
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Neon PostgreSQL (Serverless)                   │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  recipes table (JSONB: steps, ingredients)          │  │
+│  │  menus, freezer, shopping, prep_plans, etc.         │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│              IndexedDB (Dexie) - Legacy/Unused               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  initDb.ts синхронизирует seed-данные                │  │
+│  │  НО: runtime данные НЕ используются из IndexedDB    │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## Ссылки
 
-- [Supabase Auth](https://supabase.com/docs/guides/auth)
+- [Neon PostgreSQL](https://neon.tech/docs)
+- [Neon Serverless Driver](https://neon.tech/docs/serverless/serverless-driver)
+- [Neon Auth](https://neon.tech/docs/auth) (если используется)
+- [Supabase Auth](https://supabase.com/docs/guides/auth) (альтернатива)
 - [Vercel](https://vercel.com/docs)
 - [Notebook LM](https://notebooklm.google/)
 - [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk)

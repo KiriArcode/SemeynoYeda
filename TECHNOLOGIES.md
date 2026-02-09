@@ -127,43 +127,94 @@ SemeynoYeda построен на современном веб-стеке с ф
 - Поддержка hash и browser history
 
 **Использование:**
-- Browser router для GitHub Pages
+- Browser router для Vercel
 - Lazy loading страниц
-- Protected routes (если понадобится в будущем)
+- Protected routes (планируется с Auth)
 - Навигационные хуки
 
 **Конфигурация:**
 ```typescript
-basename: '/SemeynoYeda' // для GitHub Pages (БЕЗ trailing slash)
+basename: '/' // для Vercel (корневой путь)
 ```
+
+**Vercel SPA роутинг:**
+- Конфигурация в `vercel.json` с rewrites для fallback на `index.html`
+- Все маршруты обрабатываются на клиенте через React Router
 
 ---
 
 ## Хранение данных
 
-### Dexie.js
-**Версия:** 3.x  
-**Назначение:** Обёртка над IndexedDB
+### Neon PostgreSQL (Serverless)
+**Версия:** Latest  
+**Назначение:** Основная база данных (serverless Postgres)
 
 **Почему выбрано:**
-- Простой API для работы с IndexedDB
-- TypeScript поддержка
-- Реактивные хуки для React
-- Миграции схемы данных
+- Serverless архитектура — масштабируется автоматически
+- PostgreSQL — полнофункциональная реляционная БД
+- JSONB поддержка для гибких структур данных
+- Бесплатный tier для начала разработки
+- Автоматические бэкапы и point-in-time recovery
 
 **Использование:**
-- Хранение рецептов, меню, заготовок
-- Offline-first подход
-- Быстрый поиск и фильтрация
-- Индексы для производительности
+- Хранение рецептов, меню, заготовок, списков покупок
+- Все runtime данные хранятся в Neon
+- Доступ через Vercel Serverless Functions API
+
+**Клиент:**
+- `@neondatabase/serverless` — serverless driver для Neon
+- Используется в `api/_lib/db.ts` для подключения к БД
 
 **Структура:**
-```typescript
-db.recipes — рецепты
-db.menus — недельные меню
-db.freezer — заготовки в морозилке
-db.shopping — списки покупок
+```sql
+recipes — рецепты (JSONB: ingredients, steps, storage, reheating)
+menus — недельные меню (JSONB: days, shopping_settings)
+freezer — заготовки в морозилке (JSONB: reheating)
+shopping — списки покупок
+prep_plans — планы подготовки (JSONB: tasks)
+cooking_sessions — сессии готовки (JSONB: timers)
+chef_settings — настройки режима повара
 ```
+
+**Маппинг данных:**
+- PostgreSQL: snake_case (`suitable_for`, `prep_time`)
+- App schema: camelCase (`suitableFor`, `prepTime`)
+- Мапперы: `api/_lib/mappers.ts` (appToDb, dbToApp)
+
+### Dexie.js (IndexedDB Cache)
+**Версия:** 3.x  
+**Назначение:** Локальный кэш для offline-first работы
+
+**Текущий статус:**
+- Определен в `src/lib/db.ts`
+- Используется как локальный кэш для быстрого доступа к данным
+- Синхронизируется с Neon PostgreSQL через `syncService.ts`
+
+**Архитектура Offline-First:**
+- **Optimistic Updates** — изменения сразу сохраняются в IndexedDB, затем синхронизируются с Neon
+- **Background Sync** — автоматическая синхронизация в фоне каждые 30 секунд
+- **Sync Queue** — очередь pending изменений для синхронизации при восстановлении сети
+- **Conflict Resolution** — last write wins (по `updatedAt`)
+
+**Метаданные синхронизации:**
+Каждая запись в IndexedDB содержит поле `_sync`:
+```typescript
+_sync: {
+  syncStatus: 'synced' | 'pending' | 'failed',
+  lastSyncedAt?: string,
+  syncError?: string,
+  retryCount?: number,
+  localUpdatedAt: string
+}
+```
+
+**Преимущества:**
+- Быстрый отклик — данные сразу из IndexedDB, не ждём сеть
+- Offline работа — приложение работает без интернета
+- Синхронизация между устройствами — изменения через Neon
+- Надёжность — pending changes сохраняются и синхронизируются при восстановлении сети
+
+**Подробности:** см. [docs/OFFLINE_FIRST_ARCHITECTURE.md](docs/OFFLINE_FIRST_ARCHITECTURE.md)
 
 **Альтернативы рассмотренные:**
 - LocalStorage — ограничение 5-10MB, только строки
@@ -238,65 +289,97 @@ db.shopping — списки покупок
 
 ---
 
-## Хостинг и деплой
+## Backend и API
 
-### GitHub Pages
-**Назначение:** Бесплатный хостинг статических сайтов
+### Vercel Serverless Functions
+**Назначение:** Serverless API endpoints для работы с базой данных
 
 **Почему выбрано:**
-- Бесплатно
+- Интеграция с Vercel hosting
+- Автоматическое масштабирование
+- Pay-per-use модель (бесплатный tier для начала)
+- Простая интеграция с Neon PostgreSQL
+
+**Использование:**
+- API endpoints в папке `api/`
+- Главный endpoint: `api/data/[[...resource]].ts` — унифицированный REST API
+- Репозитории: `api/_lib/repositories/*.ts` — работа с Neon через SQL
+- Мапперы: `api/_lib/mappers.ts` — преобразование camelCase ↔ snake_case
+
+**Структура API:**
+```
+/api/data/recipes          → GET (list), POST (create)
+/api/data/recipes/:id      → GET (get), PUT (update), DELETE
+/api/data/menus            → GET (getCurrent), POST (create)
+/api/data/freezer          → GET (list), POST (create)
+/api/data/cooking-sessions → GET (list), POST (create)
+/api/data/chef-settings    → GET (getById), PUT (upsert)
+```
+
+**Ограничения Vercel Hobby:**
+- Максимум 12 serverless functions (решается через catch-all routes)
+- 100GB bandwidth/месяц
+- 100 hours execution time/месяц
+
+---
+
+## Хостинг и деплой
+
+### Vercel
+**Назначение:** Хостинг статики + Serverless Functions
+
+**Почему выбрано:**
+- Бесплатный tier для начала
 - Интеграция с Git репозиторием
-- Автоматический деплой через GitHub Actions
+- Автоматический деплой при push в main
 - HTTPS из коробки (обязательно для PWA)
+- Serverless Functions для API endpoints
+- Edge Network для быстрой загрузки
 
 **Проверка совместимости технологий:**
 
 ✅ **React 18 + TypeScript 5**
 - Компилируется в статический JavaScript через Vite
-- Полностью совместимо с GitHub Pages
+- Полностью совместимо с Vercel
 - Нет серверного рендеринга (SSR) - не требуется
 
 ✅ **Vite 5**
 - Собирает проект в статические файлы (HTML, CSS, JS)
 - Оптимизирует бандлы для production
-- Полностью совместимо с GitHub Pages
+- Полностью совместимо с Vercel
 
 ✅ **Tailwind CSS 3**
 - Компилируется в статический CSS файл
 - Не требует серверной обработки
-- Полностью совместимо с GitHub Pages
+- Полностью совместимо с Vercel
 
 ✅ **React Router 6**
 - Клиентский роутинг работает полностью на клиенте
-- Требует файл `404.html` для обработки прямых переходов на маршруты
-- Файл `public/404.html` создан и настроен для редиректа на `index.html`
-- Полностью совместимо с GitHub Pages
+- Vercel автоматически обрабатывает SPA роутинг через rewrites
+- Конфигурация в `vercel.json` для fallback на `index.html`
+- Полностью совместимо с Vercel
 
-✅ **Dexie.js (IndexedDB)**
-- Работает полностью на клиенте в браузере
-- Не требует серверного хранилища
-- Полностью совместимо с GitHub Pages
+✅ **Neon PostgreSQL**
+- Доступ через Serverless Functions
+- Connection через `DATABASE_URL` environment variable
+- Полностью совместимо с Vercel
 
 ✅ **PWA (vite-plugin-pwa)**
-- Service Worker работает на GitHub Pages (требуется HTTPS)
-- GitHub Pages предоставляет HTTPS автоматически
+- Service Worker работает на Vercel (требуется HTTPS)
+- Vercel предоставляет HTTPS автоматически
 - Манифест и иконки - статические файлы
-- Полностью совместимо с GitHub Pages
+- Полностью совместимо с Vercel
 
-**Ограничения GitHub Pages:**
-- ✅ Только статические файлы - все технологии компилируются в статику
-- ✅ Нет серверной логики - не требуется для текущего функционала
-- ✅ HTTPS обязателен для PWA - GitHub Pages предоставляет HTTPS автоматически
-- ✅ Размер репозитория - текущий размер в пределах лимита (1GB)
-- ✅ Ограничение трафика - 100GB/месяц (достаточно для PWA)
-
-**Вывод:** Все текущие технологии полностью совместимы с GitHub Pages. Приложение работает как статический сайт после сборки, все функции (роутинг, хранение данных, PWA) реализованы на клиенте и не требуют серверной логики.
+**Конфигурация Vercel:**
+- Build command: `npm run build`
+- Output directory: `dist`
+- Environment variables: `DATABASE_URL` (Neon connection string)
+- Rewrites: настроены в `vercel.json` для SPA роутинга
 
 **Деплой:**
-- GitHub Actions для автоматической сборки
-- Деплой через GitHub Pages Actions (deploy-pages@v4)
-- Настройка через Settings → Pages → Source: GitHub Actions
-- Файл `404.html` обеспечивает корректную работу SPA роутинга
+- Автоматический при push в main branch
+- Preview deployments для pull requests
+- Rollback к предыдущим версиям через Vercel Dashboard
 
 ---
 
@@ -321,30 +404,71 @@ db.shopping — списки покупок
 
 ## Архитектурные решения
 
-### Offline-First подход
+### Текущая архитектура данных
 
-**Принцип:** Приложение работает полностью офлайн после первой загрузки
+**Принцип:** Все runtime данные хранятся в Neon PostgreSQL, доступ через Vercel Serverless Functions API
 
 **Реализация:**
-1. Все данные хранятся в IndexedDB (Dexie)
-2. Service Worker кэширует все ресурсы
-3. Стартовые рецепты и меню загружаются из seed (seedRecipes.ts, seedMenu.ts) при инициализации приложения (initDb, syncSeedRecipes)
-4. Изменения сохраняются локально в IndexedDB
+1. **База данных:** Neon PostgreSQL (serverless Postgres)
+   - Все таблицы определены в `supabase/migrations/20250208000001_initial_schema.sql`
+   - JSONB поля для гибких структур (steps, ingredients, storage, etc.)
+   - Маппинг snake_case (DB) ↔ camelCase (App) через `api/_lib/mappers.ts`
+
+2. **API Layer:** Vercel Serverless Functions
+   - Унифицированный endpoint: `api/data/[[...resource]].ts`
+   - Репозитории в `api/_lib/repositories/*.ts` для работы с Neon
+   - Все запросы идут через `src/lib/dataService.ts`
+
+3. **Фронтенд:** React приложение
+   - Загружает данные через `dataService.recipes.list()`, `dataService.recipes.get(id)`
+   - Все изменения сохраняются через API → Neon
+
+4. **Seed данные:**
+   - Seed-рецепты и seed-меню в `src/data/seedRecipes.ts` и `src/data/seedMenu.ts`
+   - Загружаются в Neon через `scripts/seedNeon.ts` (npm run seed:neon)
+   - IndexedDB (`initDb.ts`) синхронизирует seed-данные только для legacy (не используется для runtime)
+
+### Реализованная архитектура: Offline-First
+
+**Принцип:** Приложение работает офлайн после первой загрузки, синхронизация с Neon при наличии сети
+
+**Реализация:**
+1. **IndexedDB (Dexie)** — локальный кэш для быстрого доступа
+2. **Service Worker** — кэширует все ресурсы (HTML, CSS, JS)
+3. **Sync Service** (`src/lib/syncService.ts`) — синхронизация Neon ↔ IndexedDB:
+   - При старте: чтение из Neon → IndexedDB (если есть сеть)
+   - Локальные изменения: сначала в IndexedDB (optimistic), затем push в Neon
+   - При конфликтах: «last write wins» по `updatedAt`
+   - Background sync: каждые 30 секунд
+4. **Data Service с Sync** (`src/lib/dataServiceWithSync.ts`) — обёртка над dataService с поддержкой кэша
+5. Работа без интернета: только из IndexedDB кэша
+
+**Поток данных:**
+
+**Чтение:**
+```
+Запрос → IndexedDB (быстро!) → возвращаем
+         ↓ (в фоне)
+         Проверяем обновления в Neon → обновляем IndexedDB
+```
+
+**Запись:**
+```
+Изменение → IndexedDB (optimistic) → возвращаем пользователю
+            ↓ (в фоне)
+            Синхронизируем с Neon
+            ↓ (при ошибке)
+            Добавляем в sync queue → повторяем при восстановлении сети
+```
 
 **Преимущества:**
-- Работа без интернета
-- Быстрая загрузка из кэша
-- Надёжность при плохом соединении
+- ✅ Работа без интернета
+- ✅ Быстрая загрузка из кэша
+- ✅ Надёжность при плохом соединении
+- ✅ Синхронизация при восстановлении сети
+- ✅ Синхронизация между устройствами через Neon
 
-### Seed + IndexedDB
-
-**Принцип:** Стартовые данные рецептов и меню заданы в коде seed; при запуске приложения они загружаются в IndexedDB. Runtime — только IndexedDB.
-
-**Реализация:**
-1. Seed-рецепты и seed-меню в `src/data/seedRecipes.ts` и `src/data/seedMenu.ts`
-2. При старте приложения initDb вызывает syncSeedRecipes (bulkPut) — новые рецепты из git появляются при следующем запуске
-3. Вся работа приложения — чтение и запись в IndexedDB
-4. Экспорт в JSON / коммит в Git — отдельная функция (см. SPEC.md); целевой вариант — синхронизация с Supabase (offline-first)
+**Текущий статус:** В разработке — базовая архитектура готова, требуется реализация
 
 ### Компонентная архитектура
 
@@ -379,9 +503,13 @@ components/
    - Импорт только нужных иконок
 
 3. **Кэширование**
-   - Service Worker кэш
-   - IndexedDB для данных
-   - HTTP кэш для статики
+   - Service Worker кэш для статических ресурсов (HTML, CSS, JS)
+   - HTTP кэш для статики через Vercel Edge Network
+   - Neon PostgreSQL connection pooling для быстрых запросов
+   - **IndexedDB кэш** для offline-first синхронизации:
+     - Все данные кэшируются локально
+     - Быстрый доступ без ожидания сети
+     - Автоматическая синхронизация с Neon в фоне
 
 4. **Минификация**
    - Сжатие JavaScript и CSS
@@ -400,21 +528,30 @@ components/
 
 ### Меры безопасности
 
-1. **Локальное хранение**
-   - Все данные на устройстве пользователя
-   - Нет передачи данных на серверы
+1. **База данных**
+   - Neon PostgreSQL с SSL соединением
+   - `DATABASE_URL` хранится в Vercel environment variables (не доступен во фронтенде)
+   - Row Level Security (RLS) планируется для multi-user поддержки
 
-2. **HTTPS обязателен**
+2. **API Security**
+   - Serverless Functions изолированы от фронтенда
+   - Секреты (DATABASE_URL) не доступны в браузере
+   - Валидация данных на уровне API перед записью в БД
+
+3. **HTTPS обязателен**
    - Для PWA функциональности
    - Защита данных при передаче
+   - Vercel предоставляет HTTPS автоматически
 
-3. **Валидация данных**
-   - Проверка на клиенте
+4. **Валидация данных**
+   - Проверка на клиенте (UX)
+   - Валидация на уровне API (безопасность)
    - Санитизация пользовательского ввода
 
-4. **GitHub API (версия 2.0)**
-   - Personal Access Token хранится локально
-   - Минимальные права доступа
+5. **Auth (планируется)**
+   - Neon Auth или Supabase Auth для аутентификации
+   - JWT токены для авторизации
+   - Invite-only доступ для членов семьи
 
 ---
 
@@ -444,15 +581,44 @@ components/
 
 ## Будущие технологии (версия 2.0+)
 
-### GitHub API
-**Назначение:** Синхронизация данных с Git репозиторием
+### Neon Auth или Supabase Auth
+**Назначение:** Аутентификация и авторизация пользователей
 
-**Библиотека:** `@octokit/rest` или нативный `fetch`
+**Варианты:**
+- **Neon Auth** — нативная интеграция с Neon PostgreSQL
+- **Supabase Auth** — альтернатива, если нужны дополнительные функции
 
 **Использование:**
-- Коммит изменений через REST API
-- Pull изменений из репозитория
-- Разрешение конфликтов
+- Invite-only доступ для членов семьи
+- JWT токены для авторизации
+- Row Level Security (RLS) в PostgreSQL
+
+### Offline-First синхронизация
+**Назначение:** Работа приложения без интернета и синхронизация между устройствами
+
+**Реализация:**
+- **Sync Service** (`src/lib/syncService.ts`) — сервис синхронизации
+  - Автоматическая синхронизация каждые 30 секунд
+  - Слушает события online/offline
+  - Обрабатывает pending changes из sync queue
+- **Data Service с Sync** (`src/lib/dataServiceWithSync.ts`) — обёртка с поддержкой кэша
+  - Optimistic updates в IndexedDB
+  - Фоновая синхронизация с Neon
+- **IndexedDB (Dexie)** как локальный кэш
+- **Conflict resolution:** last write wins (по `updatedAt`)
+- **Sync metadata:** каждая запись содержит `_sync` поле со статусом синхронизации
+
+**Подробности:** см. [docs/OFFLINE_FIRST_ARCHITECTURE.md](docs/OFFLINE_FIRST_ARCHITECTURE.md)
+
+### Google Drive API
+**Назначение:** Экспорт рецептов для Notebook LM
+
+**Библиотека:** Google Drive API (OAuth)
+
+**Использование:**
+- Выгрузка рецептов в Google Doc
+- Интеграция с Notebook LM через Google Drive
+- Ручная синхронизация (без автообновления)
 
 ### Telegram Bot API (версия 3.0)
 **Назначение:** Уведомления и управление через Telegram
@@ -475,10 +641,12 @@ components/
   "react": "^18.3.0",
   "react-dom": "^18.3.0",
   "react-router-dom": "^6.20.0",
+  "@neondatabase/serverless": "^1.0.2",
+  "@supabase/supabase-js": "^2.95.3",
   "dexie": "^3.2.4",
-  "dexie-react-hooks": "^1.1.7",
   "nanoid": "^5.0.4",
-  "lucide-react": "^0.294.0"
+  "lucide-react": "^0.294.0",
+  "motion": "^12.34.0"
 }
 ```
 
@@ -489,11 +657,22 @@ components/
   "@types/react": "^18.2.43",
   "@types/react-dom": "^18.2.17",
   "@vitejs/plugin-react": "^4.2.1",
+  "@vercel/node": "^5.5.33",
   "typescript": "^5.3.3",
   "vite": "^5.0.8",
   "vite-plugin-pwa": "^0.17.4",
   "tailwindcss": "^3.3.6",
-  "@tailwindcss/vite": "^4.0.0"
+  "@tailwindcss/vite": "^4.0.0",
+  "tsx": "^4.7.0"
+}
+```
+
+### Backend зависимости (Serverless Functions)
+
+```json
+{
+  "@neondatabase/serverless": "^1.0.2",
+  "@vercel/node": "^5.5.33"
 }
 ```
 
@@ -503,9 +682,21 @@ components/
 
 Выбранный технологический стек обеспечивает:
 - ✅ Быструю разработку с TypeScript и React
-- ✅ Offline-first функциональность через PWA
+- ✅ Serverless архитектуру через Vercel + Neon PostgreSQL
+- ✅ Масштабируемую базу данных (Neon serverless Postgres)
 - ✅ Производительность через Vite и оптимизации
-- ✅ Простой деплой на GitHub Pages
-- ✅ Масштабируемость для будущих функций
+- ✅ Простой деплой на Vercel с автоматическими preview deployments
+- ✅ PWA функциональность для установки на устройство
+- ✅ Готовность к offline-first синхронизации (планируется)
+
+**Текущая архитектура:**
+- Frontend: React + Vite → статические файлы на Vercel
+- Backend: Vercel Serverless Functions → Neon PostgreSQL
+- Данные: все runtime данные в Neon, доступ через API
+
+**Планируемые улучшения:**
+- Auth (Neon Auth или Supabase Auth)
+- Offline-first синхронизация (Neon ↔ IndexedDB)
+- Google Drive интеграция для Notebook LM
 
 Все технологии современные, активно поддерживаются и имеют большое сообщество разработчиков.

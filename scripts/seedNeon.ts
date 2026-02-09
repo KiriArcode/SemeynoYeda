@@ -7,11 +7,43 @@
  */
 
 import { neon } from '@neondatabase/serverless';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { getSeedRecipes } from '../src/data/seedRecipes';
 import { getSeedWeekMenu } from '../src/data/seedMenu';
 import { appToDb } from '../api/_lib/mappers';
 import type { Recipe, WeekMenu } from '../src/data/schema';
 
+// Попытка загрузить DATABASE_URL из .env файла, если не установлен в process.env
+function loadEnvFile(): void {
+  if (process.env.DATABASE_URL) return; // Уже установлен
+  
+  try {
+    const envPath = join(process.cwd(), '.env');
+    const envContent = readFileSync(envPath, 'utf-8');
+    const lines = envContent.split('\n');
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('#') || !trimmed.includes('=')) continue;
+      
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key.trim() === 'DATABASE_URL' && valueParts.length > 0) {
+        const value = valueParts.join('=').trim();
+        // Удаляем кавычки если есть
+        const cleanValue = value.replace(/^["']|["']$/g, '');
+        process.env.DATABASE_URL = cleanValue;
+        console.log('✓ Loaded DATABASE_URL from .env file');
+        return;
+      }
+    }
+  } catch (error) {
+    // .env файл не найден или не может быть прочитан - это нормально
+    // Будем использовать process.env.DATABASE_URL
+  }
+}
+
+loadEnvFile();
 const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL || DATABASE_URL.trim() === '') {

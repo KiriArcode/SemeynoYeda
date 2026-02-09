@@ -50,10 +50,23 @@
 
 ### Данные и синхронизация
 
-- Dexie (IndexedDB): таблицы `recipes`, `menus`, `freezer`, `shopping`, `prepPlans`, `cookingSessions`, `chefSettings`
-- **syncSeedRecipes**: при каждом запуске `bulkPut` всех seed-рецептов и seed-меню (новые рецепты из git автоматически появляются)
+**Текущая архитектура:**
+- **Neon PostgreSQL** — основная база данных (serverless Postgres)
+- **Vercel Serverless Functions** — API endpoints для работы с БД
+- **IndexedDB (Dexie)** — локальный кэш для offline работы (планируется)
+- Таблицы: `recipes`, `menus`, `freezer`, `shopping`, `prepPlans`, `cookingSessions`, `chefSettings`
+
+**Offline-First синхронизация (планируется):**
+- **Optimistic Updates** — изменения сразу в IndexedDB, затем синхронизация с Neon
+- **Background Sync** — автоматическая синхронизация в фоне каждые 30 секунд
+- **Conflict Resolution** — last write wins (по `updatedAt`)
+- **Sync Queue** — очередь pending изменений для синхронизации при восстановлении сети
+- Подробности: [docs/OFFLINE_FIRST_ARCHITECTURE.md](docs/OFFLINE_FIRST_ARCHITECTURE.md)
+
+**Seed данные:**
 - 28 seed-рецептов: соусы, котлеты, фрикадельки, суфле, пюре, крупы, завтраки, полдники
-- Теги: `gastritis-safe`, `soft-texture`, `rich-feel`, `freezable`, `quick`, `prep-day`, `overnight`, `packable`, `low-calorie`
+- Загружаются в Neon через `scripts/seedNeon.ts` (npm run seed:neon)
+- Теги: `gastritis-safe`, `soft-texture`, `rich-feel`, `freezable`, `quick`, `prep-day`, `overnight`, `packable`, `low-calorie`, `blanch-before-freeze`
 - Разделение: Коля / Кристина / Оба — в рецептах (`suitableFor`) и в меню (`forWhom`)
 - Кухонное оборудование: `stove`, `oven`, `air-grill`, `e-grill`, `steamer`, `blender`, `mixer`, `grinder`, `vacuum`, `bowls`
 

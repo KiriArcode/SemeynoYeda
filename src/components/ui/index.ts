@@ -11,3 +11,4 @@ export { GlitchText, GlitchHeading, GlitchTitle } from './GlitchText';
 export { PortalButton, PortalActionButton, PortalDangerButton } from './PortalButton';
 export { EmptyState } from './EmptyState';
 export { InterdimensionalRecipeGenerator } from './InterdimensionalRecipeGenerator';
+export { SyncStatus } from './SyncStatus';

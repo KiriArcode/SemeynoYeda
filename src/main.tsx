@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppRouter } from './app/Router';
+import { syncService } from './lib/syncService';
 import './styles/globals.css';
 
 // При 404 на чанке (устаревший кэш после деплоя) — перезагрузка страницы
@@ -18,7 +19,14 @@ if (savedPath) {
 }
 
 // Данные теперь через API (dataService). База — Neon/Postgres на сервере.
-// Seed: npx tsx scripts/seedDb.ts (после настройки DATABASE_URL)
+// Seed: npx tsx scripts/seedNeon.ts (после настройки DATABASE_URL)
+
+// Инициализация синхронизации IndexedDB ↔ Neon
+if (typeof window !== 'undefined') {
+  syncService.initialize().catch((error) => {
+    console.error('[main] Ошибка инициализации синхронизации:', error);
+  });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
