@@ -140,21 +140,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Vercel catch-all route: /api/data/[[...resource]] matches /api/data/:resource/:id
-    // Handle both array and string formats for resource parameter
+    // Always parse from URL for reliability - Vercel's query.resource can be inconsistent
     let resourcePath: string[] = [];
-    if (Array.isArray(req.query.resource)) {
-      resourcePath = req.query.resource;
-    } else if (typeof req.query.resource === 'string') {
-      resourcePath = [req.query.resource];
-    }
-    
-    // Fallback: parse from URL if query.resource is empty
-    // This handles cases where Vercel doesn't populate req.query.resource correctly
-    if (resourcePath.length === 0 && req.url) {
+    if (req.url) {
       const urlPath = req.url.split('?')[0]; // Remove query string
       const pathParts = urlPath.replace(/^\/api\/data\//, '').split('/').filter(Boolean);
-      if (pathParts.length > 0) {
-        resourcePath = pathParts;
+      resourcePath = pathParts;
+    }
+    
+    // Fallback to query.resource only if URL parsing failed
+    if (resourcePath.length === 0) {
+      if (Array.isArray(req.query.resource)) {
+        resourcePath = req.query.resource;
+      } else if (typeof req.query.resource === 'string') {
+        resourcePath = [req.query.resource];
       }
     }
     
@@ -190,9 +189,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // GET /api/data/:resource/:id
     if (id && req.method === 'GET') {
-      const item = await handler.getById(id);
-      if (!item) return sendResponse(404, { error: `${resource} not found` });
-      return sendResponse(200, item);
+      console.log(`[api/data] GET by ID: resource=${resource}, id=${id}`);
+      try {
+        const item = await handler.getById(id);
+        if (!item) {
+          console.log(`[api/data] ${resource} with id="${id}" not found in database`);
+          return sendResponse(404, { error: `${resource} not found`, id });
+        }
+        console.log(`[api/data] Found ${resource} with id="${id}"`);
+        return sendResponse(200, item);
+      } catch (error) {
+        console.error(`[api/data] Error fetching ${resource} by id="${id}":`, error);
+        throw error;
+      }
     }
 
     // GET /api/data/chef-settings?id=default (special case)
