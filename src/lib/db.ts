@@ -5,6 +5,7 @@ import type {
   FreezerItem,
   ShoppingItem,
   PrepPlan,
+  BatchPlan,
   CookingSession,
   ChefModeSettings,
 } from '../data/schema';
@@ -15,6 +16,7 @@ const db = new Dexie('SemeynoYedaDB') as Dexie & {
   freezer: Table<FreezerItem, 'id'>;
   shopping: Table<ShoppingItem, 'ingredient'>;
   prepPlans: Table<PrepPlan, 'id'>;
+  batchPlans: Table<BatchPlan, 'id'>;
   cookingSessions: Table<CookingSession, 'id'>;
   chefSettings: Table<ChefModeSettings, 'id'>;
 };
@@ -87,5 +89,17 @@ db.version(4)
         }
       });
   });
+
+// Версия 5: план заготовок (batch cooking)
+db.version(5).stores({
+  recipes: 'id, slug, category, *tags, suitableFor',
+  menus: 'id, weekStart, shoppingDay, createdAt',
+  freezer: 'id, recipeId, expiryDate, batchId',
+  shopping: 'ingredient, category, checked, markedMissing',
+  prepPlans: 'id, date',
+  batchPlans: 'id, date',
+  cookingSessions: 'id, date, mealType',
+  chefSettings: 'id',
+});
 
 export { db };

@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { db } from '../lib/db';
 import type { WeekMenu, Recipe, BatchTask, BatchPlan, EquipmentId } from '../data/schema';
 import { nanoid } from 'nanoid';
 
@@ -35,7 +36,22 @@ function getPhaseForEquipment(equipment: EquipmentId): 1 | 2 | 3 | 4 {
 
 export function useBatchCooking() {
   const [plan, setPlan] = useState<BatchPlan | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const latest = await db.batchPlans.orderBy('date').reverse().first();
+        if (!cancelled && latest) setPlan(latest);
+      } catch (e) {
+        console.error('[useBatchCooking] Load saved plan:', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const generateBatchPlan = useCallback(async (weekMenu: WeekMenu): Promise<BatchPlan | null> => {
     setLoading(true);
@@ -170,6 +186,7 @@ export function useBatchCooking() {
       };
 
       console.log(`[useBatchCooking] Generated plan: ${tasks.length} tasks, ~${totalTime} min`);
+      await db.batchPlans.put(newPlan);
       setPlan(newPlan);
       setLoading(false);
       return newPlan;
@@ -188,7 +205,9 @@ export function useBatchCooking() {
         ? prev.completedTasks.filter(id => id !== taskId)
         : [...prev.completedTasks, taskId];
       const tasks = prev.tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t);
-      return { ...prev, tasks, completedTasks };
+      const next = { ...prev, tasks, completedTasks };
+      db.batchPlans.put(next).catch(e => console.error('[useBatchCooking] Save after toggle:', e));
+      return next;
     });
   }, []);
 
