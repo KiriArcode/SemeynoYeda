@@ -164,15 +164,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
     
-    // В production не возвращаем детали ошибки, но логируем
-    if (process.env.NODE_ENV === 'development') {
+    // Логируем детали для Vercel Runtime Logs
+    console.error(`[api/data/${resource}] Error details:`, {
+      message: errorMessage,
+      stack: errorStack,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      nodeEnv: process.env.NODE_ENV,
+    });
+    
+    // Возвращаем более информативную ошибку для диагностики
+    // В production возвращаем код ошибки, но не полный stack
+    const isDatabaseError = errorMessage.includes('DATABASE_URL') || 
+                           errorMessage.includes('connection') ||
+                           errorMessage.includes('neon');
+    
+    if (isDatabaseError) {
       return res.status(500).json({ 
-        error: 'Internal server error',
-        message: errorMessage,
-        stack: errorStack,
+        error: 'Database connection error',
+        message: 'Please check DATABASE_URL environment variable in Vercel settings',
+        code: 'DATABASE_ERROR',
       });
     }
     
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? errorMessage : 'An error occurred',
+      code: 'INTERNAL_ERROR',
+    });
   }
 }
