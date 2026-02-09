@@ -3,6 +3,8 @@ import { lazy, Suspense } from 'react';
 import { PageShell } from '../components/layout/PageShell';
 import { BottomNav } from '../components/layout/BottomNav';
 import { ChefModeProvider } from '../contexts/ChefModeContext';
+import { PortalTransitionProvider } from '../contexts/PortalTransitionContext';
+import { PortalLoading } from '../components/ui/PortalSpinner';
 
 function ChunkErrorBoundary() {
   const error = useRouteError();
@@ -48,11 +50,7 @@ const CookingPage = lazy(() => import('../pages/CookingPage'));
 const ChefSettingsPage = lazy(() => import('../pages/ChefSettingsPage'));
 
 function LoadingFallback() {
-  return (
-    <div className="min-h-screen bg-void flex items-center justify-center">
-      <div className="text-portal font-heading">Загрузка...</div>
-    </div>
-  );
+  return <PortalLoading text="Загружаем портал..." />;
 }
 
 // Vite BASE_URL: '/' for Vercel, '/SemeynoYeda/' for GitHub Pages if needed later
@@ -63,12 +61,14 @@ const router = createBrowserRouter([
   {
     errorElement: <ChunkErrorBoundary />,
     element: (
-      <ChefModeProvider>
-        <PageShell>
-          <Outlet />
-        </PageShell>
-        <BottomNav />
-      </ChefModeProvider>
+      <PortalTransitionProvider>
+        <ChefModeProvider>
+          <PageShell>
+            <Outlet />
+          </PageShell>
+          <BottomNav />
+        </ChefModeProvider>
+      </PortalTransitionProvider>
     ),
     children: [
       { path: '/', element: <Suspense fallback={<LoadingFallback />}><MenuPage /></Suspense> },

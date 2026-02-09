@@ -18,6 +18,7 @@
     "@supabase/supabase-js": "^2.95.3",
     "dexie": "^3.2.4",
     "lucide-react": "^0.294.0",
+    "motion": "^12.34.0",
     "nanoid": "^5.0.4",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
