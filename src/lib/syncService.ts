@@ -8,7 +8,7 @@
  */
 
 import { db } from './db';
-import { dataService } from './dataService';
+import { apiDataService } from './dataServiceApi';
 import type {
   Recipe,
   WeekMenu,
@@ -71,11 +71,17 @@ class SyncService {
   }
 
   /**
-   * Инициализация: загрузка данных из Neon при старте
+   * Инициализация: загрузка данных из Neon при старте (только если задан VITE_API_URL).
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
     this.initialized = true;
+
+    const hasApi = typeof import.meta.env.VITE_API_URL === 'string' && import.meta.env.VITE_API_URL.length > 0;
+    if (!hasApi) {
+      console.log('[SyncService] API не задан — используем только IndexedDB');
+      return;
+    }
 
     if (!this.isOnline) {
       console.log('[SyncService] Офлайн при старте — используем только IndexedDB');
@@ -113,26 +119,26 @@ class SyncService {
       // Загружаем данные из Neon через API
       switch (tableName) {
         case 'recipes':
-          items = (await dataService.recipes.list()) as SyncableItem[];
+          items = (await apiDataService.recipes.list()) as SyncableItem[];
           break;
         case 'menus':
-          const menu = await dataService.menus.getCurrent();
+          const menu = await apiDataService.menus.getCurrent();
           items = menu ? [menu as SyncableItem] : [];
           break;
         case 'freezer':
-          items = (await dataService.freezer.list()) as SyncableItem[];
+          items = (await apiDataService.freezer.list()) as SyncableItem[];
           break;
         case 'shopping':
-          items = (await dataService.shopping.list()) as SyncableItem[];
+          items = (await apiDataService.shopping.list()) as SyncableItem[];
           break;
         case 'prepPlans':
-          items = (await dataService.prepPlans.list()) as SyncableItem[];
+          items = (await apiDataService.prepPlans.list()) as SyncableItem[];
           break;
         case 'cookingSessions':
-          items = (await dataService.cookingSessions.list()) as SyncableItem[];
+          items = (await apiDataService.cookingSessions.list()) as SyncableItem[];
           break;
         case 'chefSettings':
-          const settings = await dataService.chefSettings.get();
+          const settings = await apiDataService.chefSettings.get();
           items = settings ? [settings as SyncableItem] : [];
           break;
       }
@@ -238,25 +244,25 @@ class SyncService {
   private async createInNeon(tableName: TableName, item: any): Promise<void> {
     switch (tableName) {
       case 'recipes':
-        await dataService.recipes.create(item);
+        await apiDataService.recipes.create(item);
         break;
       case 'menus':
-        await dataService.menus.create(item);
+        await apiDataService.menus.create(item);
         break;
       case 'freezer':
-        await dataService.freezer.create(item);
+        await apiDataService.freezer.create(item);
         break;
       case 'shopping':
-        await dataService.shopping.create(item);
+        await apiDataService.shopping.create(item);
         break;
       case 'prepPlans':
-        await dataService.prepPlans.create(item);
+        await apiDataService.prepPlans.create(item);
         break;
       case 'cookingSessions':
-        await dataService.cookingSessions.create(item);
+        await apiDataService.cookingSessions.create(item);
         break;
       case 'chefSettings':
-        await dataService.chefSettings.save(item);
+        await apiDataService.chefSettings.save(item);
         break;
     }
   }
@@ -267,25 +273,25 @@ class SyncService {
   private async updateInNeon(tableName: TableName, id: string, item: any): Promise<void> {
     switch (tableName) {
       case 'recipes':
-        await dataService.recipes.update(id, item);
+        await apiDataService.recipes.update(id, item);
         break;
       case 'menus':
-        await dataService.menus.update(id, item);
+        await apiDataService.menus.update(id, item);
         break;
       case 'freezer':
-        await dataService.freezer.update(id, item);
+        await apiDataService.freezer.update(id, item);
         break;
       case 'shopping':
-        await dataService.shopping.update(item.ingredient, item);
+        await apiDataService.shopping.update(item.ingredient, item);
         break;
       case 'prepPlans':
-        await dataService.prepPlans.update(id, item);
+        await apiDataService.prepPlans.update(id, item);
         break;
       case 'cookingSessions':
-        await dataService.cookingSessions.update(id, item);
+        await apiDataService.cookingSessions.update(id, item);
         break;
       case 'chefSettings':
-        await dataService.chefSettings.save(item);
+        await apiDataService.chefSettings.save(item);
         break;
     }
   }

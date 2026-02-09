@@ -1,14 +1,12 @@
 /**
  * Data Service с поддержкой синхронизации IndexedDB ↔ Neon
- * 
- * Использование:
- * - Заменяет прямой вызов dataService
- * - Автоматически работает с IndexedDB как кэшем
- * - Синхронизирует изменения в фоне
+ * Без VITE_API_URL работает только с IndexedDB (офлайн/статичный деплой, напр. Vercel).
  */
 
+const hasApi = typeof import.meta.env.VITE_API_URL === 'string' && import.meta.env.VITE_API_URL.length > 0;
+
 import { db } from './db';
-import { dataService } from './dataService';
+import { apiDataService } from './dataServiceApi';
 import { syncService, type SyncableItem } from './syncService';
 import type {
   Recipe,
@@ -49,8 +47,7 @@ export const dataServiceWithSync = {
           );
         }
 
-        // В фоне синхронизируем с Neon (не блокируем ответ)
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
 
@@ -58,9 +55,8 @@ export const dataServiceWithSync = {
         return removeSyncMetadataArray<Recipe>(cached);
       } catch (error) {
         console.error('[dataServiceWithSync.recipes.list] Ошибка:', error);
-        // Fallback на прямой вызов API если IndexedDB недоступен
-        if (navigator.onLine) {
-          return await dataService.recipes.list(filters);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.recipes.list(filters);
         }
         return [];
       }
@@ -74,9 +70,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<Recipe>(cached);
         }
 
-        // Если нет в кэше, загружаем из Neon
-        if (navigator.onLine) {
-          const item = await dataService.recipes.get(id);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.recipes.get(id);
           if (item) {
             // Сохраняем в IndexedDB
             const now = new Date().toISOString();
@@ -95,8 +90,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.recipes.get] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.recipes.get(id);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.recipes.get(id);
         }
         return null;
       }
@@ -119,8 +114,7 @@ export const dataServiceWithSync = {
         // Optimistic: сразу сохраняем в IndexedDB
         await db.recipes.put(itemWithSync as any);
 
-        // В фоне синхронизируем с Neon
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
 
@@ -155,8 +149,7 @@ export const dataServiceWithSync = {
         // Optimistic: сразу сохраняем в IndexedDB
         await db.recipes.put(updated as any);
 
-        // В фоне синхронизируем с Neon
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
 
@@ -172,10 +165,9 @@ export const dataServiceWithSync = {
         // Optimistic: удаляем из IndexedDB
         await db.recipes.delete(id as any);
 
-        // В фоне синхронизируем с Neon
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           try {
-            await dataService.recipes.delete(id);
+            await apiDataService.recipes.delete(id);
           } catch (error) {
             console.error('[dataServiceWithSync.recipes.delete] Ошибка удаления в Neon:', error);
             // Можно добавить в очередь удалений для повторной попытки
@@ -195,15 +187,15 @@ export const dataServiceWithSync = {
         const cached = (await db.menus.orderBy('createdAt').last()) as SyncableItem | undefined;
         if (cached) {
           // В фоне синхронизируем
-          if (navigator.onLine) {
+          if (hasApi && navigator.onLine) {
             syncService.syncAll().catch(console.error);
           }
           return removeSyncMetadata<WeekMenu>(cached);
         }
 
         // Если нет в кэше, загружаем из Neon
-        if (navigator.onLine) {
-          const item = await dataService.menus.getCurrent();
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.menus.getCurrent();
           if (item) {
             const now = new Date().toISOString();
             await db.menus.put({
@@ -221,8 +213,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.menus.getCurrent] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.menus.getCurrent();
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.menus.getCurrent();
         }
         return null;
       }
@@ -235,8 +227,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<WeekMenu>(cached);
         }
 
-        if (navigator.onLine) {
-          const item = await dataService.menus.get(id);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.menus.get(id);
           if (item) {
             const now = new Date().toISOString();
             await db.menus.put({
@@ -254,8 +246,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.menus.get] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.menus.get(id);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.menus.get(id);
         }
         return null;
       }
@@ -275,7 +267,7 @@ export const dataServiceWithSync = {
 
       try {
         await db.menus.put(itemWithSync as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<WeekMenu>(itemWithSync);
@@ -305,7 +297,7 @@ export const dataServiceWithSync = {
         } as SyncableItem;
 
         await db.menus.put(updated as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<WeekMenu>(updated);
@@ -318,9 +310,9 @@ export const dataServiceWithSync = {
     delete: async (id: string): Promise<void> => {
       try {
         await db.menus.delete(id as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           try {
-            await dataService.menus.delete(id);
+            await apiDataService.menus.delete(id);
           } catch (error) {
             console.error('[dataServiceWithSync.menus.delete] Ошибка:', error);
           }
@@ -336,14 +328,14 @@ export const dataServiceWithSync = {
     list: async (): Promise<FreezerItem[]> => {
       try {
         const cached = (await db.freezer.toArray()) as SyncableItem[];
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadataArray<FreezerItem>(cached);
       } catch (error) {
         console.error('[dataServiceWithSync.freezer.list] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.freezer.list();
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.freezer.list();
         }
         return [];
       }
@@ -356,8 +348,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<FreezerItem>(cached);
         }
 
-        if (navigator.onLine) {
-          const item = await dataService.freezer.get(id);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.freezer.get(id);
           if (item) {
             const now = new Date().toISOString();
             await db.freezer.put({
@@ -375,8 +367,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.freezer.get] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.freezer.get(id);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.freezer.get(id);
         }
         return null;
       }
@@ -395,7 +387,7 @@ export const dataServiceWithSync = {
 
       try {
         await db.freezer.put(itemWithSync as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<FreezerItem>(itemWithSync);
@@ -425,7 +417,7 @@ export const dataServiceWithSync = {
         } as SyncableItem;
 
         await db.freezer.put(updated as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<FreezerItem>(updated);
@@ -438,9 +430,9 @@ export const dataServiceWithSync = {
     delete: async (id: string): Promise<void> => {
       try {
         await db.freezer.delete(id as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           try {
-            await dataService.freezer.delete(id);
+            await apiDataService.freezer.delete(id);
           } catch (error) {
             console.error('[dataServiceWithSync.freezer.delete] Ошибка:', error);
           }
@@ -456,14 +448,14 @@ export const dataServiceWithSync = {
     list: async (): Promise<ShoppingItem[]> => {
       try {
         const cached = (await db.shopping.toArray()) as SyncableItem[];
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadataArray<ShoppingItem>(cached);
       } catch (error) {
         console.error('[dataServiceWithSync.shopping.list] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.shopping.list();
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.shopping.list();
         }
         return [];
       }
@@ -482,7 +474,7 @@ export const dataServiceWithSync = {
 
       try {
         await db.shopping.bulkPut(itemsWithSync as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadataArray<ShoppingItem>(itemsWithSync);
@@ -505,7 +497,7 @@ export const dataServiceWithSync = {
 
       try {
         await db.shopping.put(itemWithSync as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<ShoppingItem>(itemWithSync);
@@ -535,7 +527,7 @@ export const dataServiceWithSync = {
         } as SyncableItem;
 
         await db.shopping.put(updated as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<ShoppingItem>(updated);
@@ -548,9 +540,9 @@ export const dataServiceWithSync = {
     delete: async (ingredient: string): Promise<void> => {
       try {
         await db.shopping.delete(ingredient as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           try {
-            await dataService.shopping.delete(ingredient);
+            await apiDataService.shopping.delete(ingredient);
           } catch (error) {
             console.error('[dataServiceWithSync.shopping.delete] Ошибка:', error);
           }
@@ -566,14 +558,14 @@ export const dataServiceWithSync = {
     list: async (): Promise<PrepPlan[]> => {
       try {
         const cached = (await db.prepPlans.toArray()) as SyncableItem[];
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadataArray<PrepPlan>(cached);
       } catch (error) {
         console.error('[dataServiceWithSync.prepPlans.list] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.prepPlans.list();
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.prepPlans.list();
         }
         return [];
       }
@@ -586,8 +578,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<PrepPlan>(cached);
         }
 
-        if (navigator.onLine) {
-          const item = await dataService.prepPlans.getByDate(date);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.prepPlans.getByDate(date);
           if (item) {
             const now = new Date().toISOString();
             await db.prepPlans.put({
@@ -605,8 +597,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.prepPlans.getByDate] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.prepPlans.getByDate(date);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.prepPlans.getByDate(date);
         }
         return null;
       }
@@ -619,8 +611,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<PrepPlan>(cached);
         }
 
-        if (navigator.onLine) {
-          const item = await dataService.prepPlans.get(id);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.prepPlans.get(id);
           if (item) {
             const now = new Date().toISOString();
             await db.prepPlans.put({
@@ -638,8 +630,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.prepPlans.get] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.prepPlans.get(id);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.prepPlans.get(id);
         }
         return null;
       }
@@ -658,7 +650,7 @@ export const dataServiceWithSync = {
 
       try {
         await db.prepPlans.put(itemWithSync as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<PrepPlan>(itemWithSync);
@@ -688,7 +680,7 @@ export const dataServiceWithSync = {
         } as SyncableItem;
 
         await db.prepPlans.put(updated as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<PrepPlan>(updated);
@@ -701,9 +693,9 @@ export const dataServiceWithSync = {
     delete: async (id: string): Promise<void> => {
       try {
         await db.prepPlans.delete(id as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           try {
-            await dataService.prepPlans.delete(id);
+            await apiDataService.prepPlans.delete(id);
           } catch (error) {
             console.error('[dataServiceWithSync.prepPlans.delete] Ошибка:', error);
           }
@@ -719,14 +711,14 @@ export const dataServiceWithSync = {
     list: async (): Promise<CookingSession[]> => {
       try {
         const cached = (await db.cookingSessions.toArray()) as SyncableItem[];
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadataArray<CookingSession>(cached);
       } catch (error) {
         console.error('[dataServiceWithSync.cookingSessions.list] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.cookingSessions.list();
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.cookingSessions.list();
         }
         return [];
       }
@@ -739,8 +731,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<CookingSession>(cached);
         }
 
-        if (navigator.onLine) {
-          const item = await dataService.cookingSessions.getByDate(date);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.cookingSessions.getByDate(date);
           if (item) {
             const now = new Date().toISOString();
             await db.cookingSessions.put({
@@ -758,8 +750,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.cookingSessions.getByDate] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.cookingSessions.getByDate(date);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.cookingSessions.getByDate(date);
         }
         return null;
       }
@@ -772,8 +764,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<CookingSession>(cached);
         }
 
-        if (navigator.onLine) {
-          const item = await dataService.cookingSessions.get(id);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.cookingSessions.get(id);
           if (item) {
             const now = new Date().toISOString();
             await db.cookingSessions.put({
@@ -791,8 +783,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.cookingSessions.get] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.cookingSessions.get(id);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.cookingSessions.get(id);
         }
         return null;
       }
@@ -811,7 +803,7 @@ export const dataServiceWithSync = {
 
       try {
         await db.cookingSessions.put(itemWithSync as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<CookingSession>(itemWithSync);
@@ -841,7 +833,7 @@ export const dataServiceWithSync = {
         } as SyncableItem;
 
         await db.cookingSessions.put(updated as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<CookingSession>(updated);
@@ -860,8 +852,8 @@ export const dataServiceWithSync = {
           return removeSyncMetadata<ChefModeSettings>(cached);
         }
 
-        if (navigator.onLine) {
-          const item = await dataService.chefSettings.get(id);
+        if (hasApi && navigator.onLine) {
+          const item = await apiDataService.chefSettings.get(id);
           if (item) {
             const now = new Date().toISOString();
             await db.chefSettings.put({
@@ -879,8 +871,8 @@ export const dataServiceWithSync = {
         return null;
       } catch (error) {
         console.error('[dataServiceWithSync.chefSettings.get] Ошибка:', error);
-        if (navigator.onLine) {
-          return await dataService.chefSettings.get(id);
+        if (hasApi && navigator.onLine) {
+          return await apiDataService.chefSettings.get(id);
         }
         return null;
       }
@@ -899,7 +891,7 @@ export const dataServiceWithSync = {
 
       try {
         await db.chefSettings.put(itemWithSync as any);
-        if (navigator.onLine) {
+        if (hasApi && navigator.onLine) {
           syncService.syncAll().catch(console.error);
         }
         return removeSyncMetadata<ChefModeSettings>(itemWithSync);
