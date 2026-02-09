@@ -6,7 +6,7 @@
 
 ## 1. Vercel (деплой)
 
-**Что нужно:** аккаунт Vercel и подключение репозитория. Креды Supabase задаются в Vercel как переменные окружения (см. раздел 2).
+**Что нужно:** аккаунт Vercel и подключение репозитория. Переменные окружения: Neon (раздел 2), Supabase (раздел 3) и при необходимости Google (раздел 4).
 
 ### Шаги
 
@@ -17,16 +17,38 @@
    - **Output Directory:** `dist`
    - **Root Directory:** оставить пустым.
 4. Переменные окружения добавить после создания проекта (Project → **Settings** → **Environment Variables**):
-   - `VITE_SUPABASE_URL` — из Supabase (раздел 2).
-   - `VITE_SUPABASE_ANON_KEY` — из Supabase (раздел 2).
+   - `DATABASE_URL` — из Neon (раздел 2).
+   - `VITE_SUPABASE_URL` — из Supabase (раздел 3).
+   - `VITE_SUPABASE_ANON_KEY` — из Supabase (раздел 3).
 
-Дополнительные креды (например, для Google Drive) тоже задаются здесь, с префиксом `VITE_` только для тех, что должны быть доступны в браузере.
+Дополнительные креды (например, для Google Drive) тоже задаются здесь, с префиксом `VITE_` только для тех, что должны быть доступны в браузере. Для Serverless API на Vercel нужна переменная **без** префикса `VITE_`: `DATABASE_URL` (см. раздел 2).
 
 **Итог:** репозиторий подключён, сборка и деплой работают, env-переменные подставлены в билд.
 
 ---
 
-## 2. Supabase (БД и авторизация)
+## 2. Neon (PostgreSQL для API)
+
+**Что нужно:** connection string к базе Neon. Его использует только бэкенд (Vercel Serverless Functions в `api/`), во фронтенд не попадает.
+
+**Текущий проект SemeynoYeda:**
+- **Organization:** `org-polished-dew-77895240`
+- **Project:** `twilight-star-96642684`
+
+### Шаги
+
+1. Зайти в [Neon Console](https://console.neon.tech/), выбрать организацию и проект выше.
+2. В дашборде проекта открыть **Connection details** (или **Dashboard** → ветка по умолчанию).
+3. Скопировать **Connection string** (формат `postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`).
+4. Задать переменную окружения:
+   - **Vercel:** Project → **Settings** → **Environment Variables** → добавить `DATABASE_URL` со значением connection string (отметить **Sensitive**).
+   - **Локально:** в корне проекта в `.env` добавить строку `DATABASE_URL=postgresql://...` (тот же URL).
+
+**Итог:** API (`api/_lib/db.ts`) подключается к Neon через `DATABASE_URL`; seed и все запросы к данным идут в эту БД.
+
+---
+
+## 3. Supabase (БД и авторизация)
 
 **Что нужно:** URL проекта и anon (public) key для клиента. Service role key не использовать во фронтенде — только в Dashboard или Edge Functions для инвайтов и админ-операций.
 
@@ -53,7 +75,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 3. Google Drive API (экспорт рецептов для Notebook LM)
+## 4. Google Drive API (экспорт рецептов для Notebook LM)
 
 **Что нужно:** OAuth 2.0 Client ID (тип «Web application») для доступа к Google Drive от имени пользователя (семейного аккаунта). Тогда кнопка «Выгрузить в Google Drive» в приложении сможет создавать/обновлять документы в папке «рецепты».
 
@@ -90,7 +112,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 4. Notebook LM и общий семейный аккаунт Google
+## 5. Notebook LM и общий семейный аккаунт Google
 
 **Креды не нужны.** Notebook LM не даёт API; интеграция ручная через Google Drive.
 
@@ -104,21 +126,22 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 5. Сводка: что куда подставлять
+## 6. Сводка: что куда подставлять
 
 | Сервис        | Где используется        | Переменные / креды |
 |---------------|-------------------------|---------------------|
-| Vercel        | Деплой, env для билда   | Задаёте в Vercel: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, при необходимости `VITE_GOOGLE_CLIENT_ID` |
+| Vercel        | Деплой, env для билда   | В Vercel: `DATABASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, при необходимости `VITE_GOOGLE_CLIENT_ID`, `VITE_API_URL` |
+| Neon          | API (Serverless), БД    | `DATABASE_URL` — только на Vercel и в локальном `.env`, не во фронт |
 | Supabase      | Фронт, синхронизация    | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (service role только на бэкенде/Dashboard) |
 | Google Drive  | Экспорт в Drive         | `VITE_GOOGLE_CLIENT_ID`; Client Secret только на сервере (если будет OAuth callback на бэкенде) |
 | Notebook LM   | Ручное добавление       | Креды не нужны, используется общий семейный Google-аккаунт |
 
 ---
 
-## 6. Безопасность
+## 7. Безопасность
 
-- В репозиторий и во фронтенд не коммитить: пароль БД Supabase, Service role key, Google Client Secret.
+- В репозиторий и во фронтенд не коммитить: `DATABASE_URL`, пароль БД Supabase, Service role key, Google Client Secret.
 - В Vercel секреты задавать через **Environment Variables** (отметить Sensitive для секретов).
 - Локальный `.env` должен быть в `.gitignore`.
 
-После выполнения этой инструкции у вас будут все креды для настройки Vercel, Supabase и экспорта рецептов в Google Drive для использования с Notebook LM.
+После выполнения этой инструкции у вас будут все креды для настройки Vercel, Neon, Supabase и экспорта рецептов в Google Drive для использования с Notebook LM.

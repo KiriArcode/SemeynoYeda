@@ -42,59 +42,59 @@ export const dataService = {
       if (filters?.category) params.set('category', filters.category);
       if (filters?.tags?.length) params.set('tags', filters.tags.join(','));
       const q = params.toString() ? `?${params}` : '';
-      return fetchJson<Recipe[]>(apiUrl(`/recipes${q}`));
+      return fetchJson<Recipe[]>(apiUrl(`/data/recipes${q}`));
     },
-    get: (id: string) => fetchJson<Recipe>(apiUrl(`/recipes/${id}`)),
+    get: (id: string) => fetchJson<Recipe>(apiUrl(`/data/recipes/${id}`)),
     create: (recipe: Recipe) =>
-      fetchJson<Recipe>(apiUrl('/recipes'), {
+      fetchJson<Recipe>(apiUrl('/data/recipes'), {
         method: 'POST',
         body: JSON.stringify(recipe),
       }),
     update: (id: string, recipe: Partial<Recipe>) =>
-      fetchJson<Recipe>(apiUrl(`/recipes/${id}`), {
+      fetchJson<Recipe>(apiUrl(`/data/recipes/${id}`), {
         method: 'PUT',
         body: JSON.stringify(recipe),
       }),
     delete: (id: string) =>
-      fetch(apiUrl(`/recipes/${id}`), { method: 'DELETE' }).then((r) => {
+      fetch(apiUrl(`/data/recipes/${id}`), { method: 'DELETE' }).then((r) => {
         if (!r.ok) throw new Error(`Failed to delete: ${r.status}`);
       }),
   },
 
   menus: {
-    getCurrent: () => fetchJson<WeekMenu>(apiUrl('/menus')),
-    get: (id: string) => fetchJson<WeekMenu>(apiUrl(`/menus/${id}`)),
+    getCurrent: () => fetchJson<WeekMenu>(apiUrl('/data/menus')),
+    get: (id: string) => fetchJson<WeekMenu>(apiUrl(`/data/menus/${id}`)),
     create: (menu: WeekMenu) =>
-      fetchJson<WeekMenu>(apiUrl('/menus'), {
+      fetchJson<WeekMenu>(apiUrl('/data/menus'), {
         method: 'POST',
         body: JSON.stringify(menu),
       }),
     update: (id: string, menu: Partial<WeekMenu>) =>
-      fetchJson<WeekMenu>(apiUrl(`/menus/${id}`), {
+      fetchJson<WeekMenu>(apiUrl(`/data/menus/${id}`), {
         method: 'PUT',
         body: JSON.stringify(menu),
       }),
     delete: (id: string) =>
-      fetch(apiUrl(`/menus/${id}`), { method: 'DELETE' }).then((r) => {
+      fetch(apiUrl(`/data/menus/${id}`), { method: 'DELETE' }).then((r) => {
         if (!r.ok) throw new Error(`Failed to delete: ${r.status}`);
       }),
   },
 
   freezer: {
-    list: () => fetchJson<FreezerItem[]>(apiUrl('/freezer')),
-    get: (id: string) => fetchJson<FreezerItem>(apiUrl(`/freezer/${id}`)),
+    list: () => fetchJson<FreezerItem[]>(apiUrl('/data/freezer')),
+    get: (id: string) => fetchJson<FreezerItem>(apiUrl(`/data/freezer/${id}`)),
     create: (item: FreezerItem) =>
-      fetchJson<FreezerItem>(apiUrl('/freezer'), {
+      fetchJson<FreezerItem>(apiUrl('/data/freezer'), {
         method: 'POST',
         body: JSON.stringify(item),
       }),
     update: (id: string, item: Partial<FreezerItem>) =>
-      fetchJson<FreezerItem>(apiUrl(`/freezer/${id}`), {
+      fetchJson<FreezerItem>(apiUrl(`/data/freezer/${id}`), {
         method: 'PUT',
         body: JSON.stringify(item),
       }),
     delete: (id: string) =>
-      fetch(apiUrl(`/freezer/${id}`), { method: 'DELETE' }).then((r) => {
+      fetch(apiUrl(`/data/freezer/${id}`), { method: 'DELETE' }).then((r) => {
         if (!r.ok) throw new Error(`Failed to delete: ${r.status}`);
       }),
   },
@@ -146,27 +146,27 @@ export const dataService = {
   },
 
   cookingSessions: {
-    list: () => fetchJson<CookingSession[]>(apiUrl('/cooking-sessions')),
+    list: () => fetchJson<CookingSession[]>(apiUrl('/data/cooking-sessions')),
     getByDate: (date: string) =>
-      fetchJson<CookingSession>(apiUrl(`/cooking-sessions?date=${encodeURIComponent(date)}`)),
-    get: (id: string) => fetchJson<CookingSession>(apiUrl(`/cooking-sessions/${id}`)),
+      fetchJson<CookingSession>(apiUrl(`/data/cooking-sessions?date=${encodeURIComponent(date)}`)),
+    get: (id: string) => fetchJson<CookingSession>(apiUrl(`/data/cooking-sessions/${id}`)),
     create: (session: CookingSession) =>
-      fetchJson<CookingSession>(apiUrl('/cooking-sessions'), {
+      fetchJson<CookingSession>(apiUrl('/data/cooking-sessions'), {
         method: 'POST',
         body: JSON.stringify(session),
       }),
     update: (id: string, session: Partial<CookingSession>) =>
-      fetchJson<CookingSession>(apiUrl('/cooking-sessions'), {
+      fetchJson<CookingSession>(apiUrl(`/data/cooking-sessions/${id}`), {
         method: 'PUT',
-        body: JSON.stringify({ id, ...session }),
+        body: JSON.stringify(session),
       }),
   },
 
   chefSettings: {
     get: (id = 'default') =>
-      fetchJson<ChefModeSettings>(apiUrl(`/chef-settings?id=${encodeURIComponent(id)}`)),
+      fetchJson<ChefModeSettings>(apiUrl(`/data/chef-settings?id=${encodeURIComponent(id)}`)),
     save: (settings: ChefModeSettings) =>
-      fetchJson<ChefModeSettings>(apiUrl('/chef-settings'), {
+      fetchJson<ChefModeSettings>(apiUrl('/data/chef-settings'), {
         method: 'PUT',
         body: JSON.stringify(settings),
       }),

@@ -1,14 +1,14 @@
 # SemeynoYeda — Cursor Project Rules
 
 ## Проект
-Семейное PWA-приложение для управления питанием. React + TypeScript + Vite + Tailwind + Dexie.js (IndexedDB). Деплой: см. SPEC.md / DEPLOY.md (Vercel или GitHub Pages).
+Семейное PWA-приложение для управления питанием. React + TypeScript + Vite + Tailwind + Dexie.js (IndexedDB). Деплой: Vercel (см. SPEC.md / DEPLOY.md). API: Vercel Serverless Functions (12 функций, лимит Hobby) + Neon PostgreSQL. Целевой вариант синхронизации: Supabase (SPEC.md), пока API работает с Neon.
 
 ## Контекст предметной области
 - Два пользователя: Коля (гастрит, щадящая диета) и Кристина (предпочитает "богатую" еду, соусы)
 - 4 приёма пищи в день: завтрак, обед, полдник, ужин
 - Заготовки в выходные (4 часа), разогрев в будни (15-30 мин)
 - Всё мягкое: котлеты, суфле, пюре + обязательно соус
-- Данные: стартовые рецепты и меню из seed (seedRecipes.ts, seedMenu.ts); при запуске загружаются в IndexedDB. Runtime — только IndexedDB.
+- Данные: стартовые рецепты и меню из seed (seedRecipes.ts, seedMenu.ts); при запуске загружаются в IndexedDB. Runtime: фронтенд работает с IndexedDB (offline-first), API работает с Neon PostgreSQL. Все запросы к API через `dataService`.
 
 ## Кухонное оборудование
 Каждый рецепт и заготовка привязаны к конкретному оборудованию. При создании/обработке рецептов Cursor должен указывать какое оборудование нужно и для каких шагов.
@@ -39,7 +39,8 @@
 - React 18 + TypeScript 5 (strict mode)
 - Vite 5 с vite-plugin-pwa
 - Tailwind CSS 3 с кастомной темой (см. STYLEGUIDE.md)
-- Dexie.js для IndexedDB
+- Dexie.js для IndexedDB (клиент, offline-first)
+- **API:** Vercel Serverless Functions + Neon PostgreSQL (`@neondatabase/serverless`)
 - React Router 6
 - Lucide React для иконок
 - nanoid для генерации ID
@@ -61,9 +62,13 @@ src/
     shopping/   — ShoppingSettings
   data/         — schema.ts, seedRecipes.ts, seedMenu.ts
   hooks/        — useShoppingList, usePrepPlan, useBatchCooking, useCookingTimers, useFreezerAlerts, useIngredientAvailability, useToast
-  lib/          — db.ts (Dexie), initDb.ts
+  lib/          — db.ts (Dexie), initDb.ts, dataService.ts (единая точка доступа к API)
   pages/        — MenuPage, RecipesPage, RecipeDetailPage, RecipeEditPage, RecipeNewPage, ShoppingPage, FreezerPage, PrepPage, CookingPage, ChefSettingsPage
   styles/       — globals.css
+api/            — Vercel Serverless Functions (12 функций, лимит Hobby)
+  _lib/         — db.ts (Neon через @neondatabase/serverless), mappers.ts, repositories/
+  */            — маршруты API (recipes, menus, freezer, shopping, prep-plans, cooking-sessions, chef-settings)
+scripts/        — seedDb.ts (seed для Neon), seedSupabase.ts
 ```
 
 ## Правила кода
@@ -97,10 +102,9 @@ src/
 - Карточки: всегда `rounded-card shadow-card bg-dimension` с бордером `border-nebula`
 
 ### Данные
-- Стартовые данные: только из seed (seedRecipes.ts, seedMenu.ts). Не предполагать JSON-файлы рецептов в src/data/ кроме кода seed.
-- При старте: initDb → syncSeedRecipes (bulkPut seed в IndexedDB)
-- Все изменения пользователя → IndexedDB
-- Экспорт в JSON / Git — отдельная функция; целевой вариант синхронизации — Supabase (SPEC.md)
+- **Клиент (frontend):** стартовые данные из seed (seedRecipes.ts, seedMenu.ts). При старте: initDb → syncSeedRecipes (bulkPut seed в IndexedDB). Все изменения пользователя → IndexedDB (Dexie). Offline-first подход. Фронтенд использует `dataService` (src/lib/dataService.ts) как единую точку доступа к API — заменяет прямые вызовы db.table().
+- **API (backend):** Neon PostgreSQL через Vercel Serverless Functions. Connection string в переменной `DATABASE_URL` (Vercel Environment Variables, локально в `.env`). API использует `@neondatabase/serverless` через `api/_lib/db.ts`. Seed для Neon: `npx tsx scripts/seedDb.ts` (загружает seed-рецепты и seed-меню в Neon). Не коммитить `DATABASE_URL` в репозиторий.
+- **Синхронизация:** текущее состояние — API работает с Neon напрямую. Целевой вариант — Supabase для авторизации и синхронизации (SPEC.md); Notebook LM интеграция через Google Drive (SPEC.md, пока не реализовано).
 
 ### Именование
 - Компоненты: PascalCase (`RecipeCard.tsx`)
@@ -116,70 +120,62 @@ src/
 - Код, комментарии, переменные, типы: английский
 - Имена рецептов: русский (в данных)
 
+## API и Serverless Functions
+
+- **Структура:** `api/_lib/` содержит db.ts (Neon), mappers.ts, repositories/ для каждой сущности. Основной маршрут: `api/data/[[...resource]].ts` — единый REST endpoint для всех ресурсов (recipes, menus, freezer, cooking-sessions, chef-settings). Специфичные маршруты: `api/shopping/[[...slug]].ts` и `api/prep-plans/[[...slug]].ts` (уже оптимизированы).
+- **Лимит:** максимум 12 Serverless Functions на Vercel Hobby plan. Оптимизировано до 3-4 функций: единый endpoint `/api/data/*` заменяет отдельные endpoints для каждого ресурса.
+- **dataService:** единая точка доступа к API в `src/lib/dataService.ts`. Все компоненты и хуки используют dataService вместо прямых fetch или db.table(). В production использует `VITE_API_URL` (опционально), иначе относительные пути `/api/*`. Пути обновлены: `/api/data/recipes`, `/api/data/menus`, `/api/data/freezer`, `/api/data/cooking-sessions`, `/api/data/chef-settings`.
+- **Seed:** `scripts/seedDb.ts` загружает seed-рецепты и seed-меню из seedRecipes.ts/seedMenu.ts в Neon PostgreSQL. Запуск: `npx tsx scripts/seedDb.ts` (требует DATABASE_URL). `scripts/checkDb.ts` проверяет состояние базы и синхронизацию.
+
 ## PWA требования
 - Service Worker через vite-plugin-pwa (Workbox)
 - Offline: всё приложение работает без сети
 - Кэширование: app shell (Cache First), данные (Stale While Revalidate)
-- manifest.json в `public/`
-- Иконки: 192x192 и 512x512
+- manifest.json генерируется vite-plugin-pwa автоматически (не в `public/`)
+- Иконки: сейчас SVG (`public/icons/icon.svg`), можно добавить PNG 192x192 и 512x512 для лучшей поддержки
 
-## Обработка рецептов (Cursor Skill)
+## Обработка рецептов
 
 ### Workflow добавления рецепта
-1. Пользователь добавляет "заметку" через форму (произвольный текст)
-2. Заметка сохраняется в `data/inbox/` как `.md` файл
-3. При открытии проекта в Cursor — запускается обработка
-4. Cursor парсит текст заметки и генерирует структурированный JSON по схеме `Recipe`
-5. JSON сохраняется в `src/data/recipes/`
-6. При следующем билде — рецепт появляется в приложении
 
-### Формат заметки (inbox)
-```markdown
-# Название блюда
+**Два пути:**
 
-Тип: основное / соус / гарнир / завтрак / полдник
-Для кого: оба / Коля / Кристина
+1. **Через форму в приложении:**
+   - Пользователь открывает `/recipe/new` → заполняет форму или вставляет текст в поле "заметка"
+   - При сохранении: `dataService.recipes.create(recipe)` → API (`api/data/recipes`) → Neon PostgreSQL
+   - Рецепт сразу доступен в приложении
 
-## Ингредиенты
-- 500г курицы
-- 1 луковица
-- ...
+2. **Для seed-рецептов (добавление в код):**
+   - Пользователь вставляет сырой текст рецепта
+   - Использовать правило `.cursor/rules/parse-recipes.mdc` для парсинга
+   - Парсер добавляет рецепт в `seedRecipes.ts` (SEED_RECIPE_IDS + seedRecipe вызов)
+   - После коммита: запустить `npx tsx scripts/seedDb.ts` для загрузки в Neon
+   - При следующем запуске приложения seed автоматически появляется в IndexedDB (syncSeedRecipes)
 
-## Как готовить
-1. ...
-2. ...
+### Правила парсинга (для parse-recipes.mdc)
 
-## Заметки
-Можно заморозить на 2 месяца
-Готовить в пароварке 25 мин
-```
-
-### Правила обработки
+Детали парсинга — см. `.cursor/rules/parse-recipes.mdc`. Кратко:
 - Определить теги автоматически (если нет острого/жареного/кислого → `gastritis-safe`)
 - Определить время приготовления из шагов
 - Определить хранение из заметок
-- **Определить оборудование** из шагов и ключевых слов:
-  - "пробить блендером", "до гладкости", "пюре" → `blender`
-  - "отварить", "сварить", "на среднем огне" → `stove`
-  - "запечь", "в духовке", "°C" → `oven`
-  - "на пару", "пароварка" → `steamer`
-  - "на гриле", "электрогриль" → `e-grill`
-  - "аэрогриль" → `air-grill`
-  - "прокрутить", "фарш", "гриндер" → `grinder`
-  - "вымесить", "взбить", "миксер" → `mixer`
-  - "вакуумировать", "вакуум" → `vacuum`
-- **Для заготовок (prep-day)**:
-  - Добавить шаг вакуумирования если `freezable`
-  - Добавить `parallel: true` к шагам которые можно делать одновременно
-  - Добавить `tip` с подсказками о параллельных процессах
-  - В `notes` указать способы разогрева для Коли и Кристины отдельно
+- **Определить оборудование** из шагов и ключевых слов (см. parse-recipes.mdc)
+- **Для заготовок (prep-day):** добавить шаг вакуумирования если `freezable`, `parallel: true`, `tip` с подсказками
 - **Температуры и время** всегда указывать конкретно (не "до готовности", а "180°C, 20 мин")
-- Если нет структуры — попросить пользователя уточнить
+
+## Переменные окружения
+
+- **`DATABASE_URL`** — connection string к Neon PostgreSQL (только для API Serverless Functions, не во фронт). Задаётся в Vercel Environment Variables и локально в `.env`. Формат: `postgresql://user:pass@host/db?sslmode=require` (без кавычек). Используется в `api/_lib/db.ts` и `scripts/seedDb.ts`.
+- **`VITE_API_URL`** (опционально) — URL приложения на Vercel для dataService в production. Если не задан, dataService использует относительные пути `/api/*`.
+- **`VITE_SUPABASE_URL`**, **`VITE_SUPABASE_ANON_KEY`** — для будущей интеграции с Supabase Auth (целевой вариант из SPEC.md, пока не используется).
 
 ## Не делать
 - Не использовать localStorage (только IndexedDB через Dexie)
 - Не использовать серверный рендеринг
 - Не добавлять внешние API без согласования
-- Не менять структуру `src/data/schema.ts` без обновления миграций Dexie
-- Не использовать Inter, Roboto, Arial — только Chakra Petch + DM Sans + JetBrains Mono
+- Не менять структуру `src/data/schema.ts` без обновления миграций Dexie и Neon
+- Не использовать Inter, Roboto, Arial — только Exo 2 + DM Sans + Share Tech Mono
 - Не делать острые углы (min border-radius: 10px для кнопок, 16px для карточек)
+- Не коммитить `DATABASE_URL` и другие секреты в репозиторий
+- Не превышать лимит 12 Serverless Functions на Vercel Hobby plan (объединять маршруты в catch-all при необходимости)
+- Не использовать прямые вызовы fetch к API — всегда через `dataService`
+- Не предполагать наличие папок `data/inbox/` или `src/data/recipes/*.json` — их нет в проекте

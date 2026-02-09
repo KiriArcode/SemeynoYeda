@@ -58,7 +58,15 @@ SemeynoYeda/
 │   ├── pages/                  # MenuPage, RecipesPage, RecipeDetailPage, RecipeEditPage, RecipeNewPage, ShoppingPage, FreezerPage, PrepPage, CookingPage, ChefSettingsPage
 │   ├── styles/globals.css      # CSS переменные, базовые стили
 │   └── main.tsx
-├── scripts/                    # seedSupabase.ts и др.
+├── api/
+│   ├── _lib/                   # db.ts (Neon), mappers.ts, repositories/
+│   ├── data/
+│   │   └── [[...resource]].ts # Единый REST endpoint для всех ресурсов
+│   ├── shopping/
+│   │   └── [[...slug]].ts     # Shopping endpoint (специфичная логика)
+│   └── prep-plans/
+│       └── [[...slug]].ts     # Prep plans endpoint (специфичная логика)
+├── scripts/                    # seedDb.ts, checkDb.ts, seedSupabase.ts
 ├── cursorrules                 # Глобальные правила Cursor
 ├── index.html
 ├── vite.config.ts
