@@ -86,6 +86,36 @@ npm run seed:db
 - **`seed:db`** — Использует репозитории с проверкой существования
 - **`seed:supabase`** — Для Supabase (использует Supabase клиент)
 
+### Шаг 4: Настройка DATABASE_URL в Vercel
+
+Для работы API endpoints на Vercel необходимо добавить переменную окружения:
+
+1. Откройте [Vercel Dashboard](https://vercel.com/dashboard)
+2. Выберите проект `SemeynoYeda`
+3. Перейдите в **Settings** → **Environment Variables**
+4. Добавьте новую переменную:
+   - **Name:** `DATABASE_URL`
+   - **Value:** `postgresql://neondb_owner:npg_mvu3wA6dSDaU@ep-small-salad-aieorqt5-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+   - **Environment:** Выберите все окружения (Production, Preview, Development)
+5. Нажмите **Save**
+6. Перезапустите деплоймент (Redeploy) для применения изменений
+
+**Важно:** После добавления переменной окружения необходимо перезапустить все деплойменты, чтобы изменения вступили в силу.
+
+### Шаг 5: Тестирование подключения
+
+Перед деплоем можно проверить подключение локально:
+
+```bash
+# Тест подключения к базе данных
+npx tsx scripts/testDbConnection.ts
+```
+
+Этот скрипт проверит:
+- ✅ Подключение к базе данных
+- ✅ Наличие таблиц
+- ✅ Количество рецептов в базе
+
 ### Проверка миграции
 
 После выполнения проверить в базе данных:
