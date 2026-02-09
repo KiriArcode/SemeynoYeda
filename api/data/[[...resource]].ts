@@ -63,7 +63,12 @@ const handlers: Record<ResourceType, ResourceHandlers<any>> = {
   'chef-settings': {
     getById: (id) => chefSettingsRepo.getChefSettings(id),
     create: (settings: ChefModeSettings) => chefSettingsRepo.upsertChefSettings(settings),
-    update: (id, settings) => chefSettingsRepo.upsertChefSettings({ ...settings, id }),
+    update: async (id, settings) => {
+      const existing = await chefSettingsRepo.getChefSettings(id);
+      if (!existing) return null;
+      const merged = { ...existing, ...settings, id };
+      return chefSettingsRepo.upsertChefSettings(merged);
+    },
   },
 };
 

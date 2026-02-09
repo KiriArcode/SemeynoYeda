@@ -35,7 +35,7 @@ export async function getShoppingItemByIngredient(
 
 export async function createShoppingItem(item: ShoppingItem): Promise<ShoppingItem> {
   const sql = getDb();
-  const db = appToDb(item as unknown as Record<string, unknown>) as ShoppingDbRow;
+  const db = appToDb(item as unknown as Record<string, unknown>) as unknown as ShoppingDbRow;
 
   await (sql as any)(
     `INSERT INTO shopping (ingredient, total_amount, unit, category, checked, recipe_ids, marked_missing, marked_at, source, covered_by_freezer)
@@ -60,7 +60,7 @@ export async function bulkPutShoppingItems(items: ShoppingItem[]): Promise<void>
   const sql = getDb();
   await (sql as any)('DELETE FROM shopping');
   for (const item of items) {
-    const db = appToDb(item as unknown as Record<string, unknown>) as ShoppingDbRow;
+    const db = appToDb(item as unknown as Record<string, unknown>) as unknown as ShoppingDbRow;
     await (sql as any)(
       `INSERT INTO shopping (ingredient, total_amount, unit, category, checked, recipe_ids, marked_missing, marked_at, source, covered_by_freezer)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
@@ -89,7 +89,7 @@ export async function updateShoppingItem(
 
   const merged = { ...existing, ...updates };
   const sql = getDb();
-  const db = appToDb(merged as unknown as Record<string, unknown>) as ShoppingDbRow;
+  const db = appToDb(merged as unknown as Record<string, unknown>) as unknown as ShoppingDbRow;
 
   await (sql as any)(
     `UPDATE shopping SET total_amount=$2, unit=$3, category=$4, checked=$5, recipe_ids=$6, marked_missing=$7, marked_at=$8, source=$9, covered_by_freezer=$10 WHERE ingredient=$1`,
