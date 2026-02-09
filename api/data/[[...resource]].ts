@@ -73,161 +73,193 @@ const handlers: Record<ResourceType, ResourceHandlers<any>> = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Обертка для гарантии, что функция всегда вернет ответ
+  // Ensure we always send a response, even if something goes wrong
+  let responseSent = false;
+
+  const sendResponse = (status: number, body: unknown) => {
+    if (responseSent) {
+      console.warn('[api/data] Attempted to send response twice');
+      return;
+    }
+    responseSent = true;
+    return res.status(status).json(body);
+  };
+
+  const sendError = (status: number, error: unknown) => {
+    if (responseSent) {
+      console.warn('[api/data] Attempted to send error response after response already sent');
+      return;
+    }
+    responseSent = true;
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    // Log details for Vercel Runtime Logs
+    console.error('[api/data] Error:', {
+      message: errorMessage,
+      stack: errorStack,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      nodeEnv: process.env.NODE_ENV,
+    });
+
+    // Determine error type
+    const isDatabaseError =
+      errorMessage.includes('DATABASE_URL') ||
+      errorMessage.includes('connection') ||
+      errorMessage.includes('neon') ||
+      errorMessage.includes('ECONNREFUSED') ||
+      errorMessage.includes('timeout');
+
+    if (isDatabaseError) {
+      return res.status(status).json({
+        error: 'Database connection error',
+        message: 'Please check DATABASE_URL environment variable in Vercel settings',
+        code: 'DATABASE_ERROR',
+      });
+    }
+
+    return res.status(status).json({
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? errorMessage : 'An error occurred',
+      code: 'INTERNAL_ERROR',
+    });
+  };
+
   try {
-    // Ранняя проверка DATABASE_URL для более понятной ошибки
+    // Early DATABASE_URL check for clearer error messages
     if (!process.env.DATABASE_URL) {
       console.error('[api/data] DATABASE_URL is not set');
       console.error('[api/data] Available env vars:', Object.keys(process.env).sort());
-      return res.status(500).json({
+      return sendResponse(500, {
         error: 'Database configuration error',
-        message: 'DATABASE_URL environment variable is not set. Please configure it in Vercel Settings → Environment Variables.',
+        message:
+          'DATABASE_URL environment variable is not set. Please configure it in Vercel Settings → Environment Variables.',
         code: 'MISSING_DATABASE_URL',
       });
     }
 
     // Vercel catch-all route: /api/data/[[...resource]] matches /api/data/:resource/:id
-    const resourcePath = (req.query.resource as string[] | undefined) ?? [];
+    // Handle both array and string formats for resource parameter
+    let resourcePath: string[] = [];
+    if (Array.isArray(req.query.resource)) {
+      resourcePath = req.query.resource;
+    } else if (typeof req.query.resource === 'string') {
+      resourcePath = [req.query.resource];
+    }
+    
     const resource = resourcePath[0] as ResourceType | undefined;
     const id = resourcePath[1];
     const date = typeof req.query.date === 'string' ? req.query.date : undefined;
 
+    // Log for debugging
+    console.log('[api/data] Request details:', {
+      method: req.method,
+      url: req.url,
+      resourcePath,
+      resource,
+      id,
+      query: req.query,
+    });
+
     if (!resource || !handlers[resource]) {
-      return res.status(400).json({ error: `Invalid resource: ${resource}` });
+      console.error('[api/data] Invalid resource:', {
+        resource,
+        availableResources: Object.keys(handlers),
+        resourcePath,
+        query: req.query,
+      });
+      return sendResponse(400, { 
+        error: `Invalid resource: ${resource || 'undefined'}`,
+        availableResources: Object.keys(handlers),
+      });
     }
 
     const handler = handlers[resource];
 
-    try {
     // GET /api/data/:resource/:id
     if (id && req.method === 'GET') {
       const item = await handler.getById(id);
-      if (!item) return res.status(404).json({ error: `${resource} not found` });
-      return res.status(200).json(item);
+      if (!item) return sendResponse(404, { error: `${resource} not found` });
+      return sendResponse(200, item);
     }
 
     // GET /api/data/chef-settings?id=default (special case)
     if (req.method === 'GET' && resource === 'chef-settings' && !id) {
-      const settingsId = (typeof req.query.id === 'string' ? req.query.id : undefined) ?? 'default';
+      const settingsId =
+        (typeof req.query.id === 'string' ? req.query.id : undefined) ?? 'default';
       const item = await handler.getById(settingsId);
-      if (!item) return res.status(404).json({ error: `${resource} not found` });
-      return res.status(200).json(item);
+      if (!item) return sendResponse(404, { error: `${resource} not found` });
+      return sendResponse(200, item);
     }
 
     // GET /api/data/:resource?date=...
     if (req.method === 'GET' && date && handler.getByDate) {
       const item = await handler.getByDate(date);
-      if (!item) return res.status(404).json({ error: `${resource} not found` });
-      return res.status(200).json(item);
+      if (!item) return sendResponse(404, { error: `${resource} not found` });
+      return sendResponse(200, item);
     }
 
     // GET /api/data/:resource (list or getCurrent)
     if (req.method === 'GET') {
       if (handler.getCurrent && resource === 'menus') {
         const item = await handler.getCurrent();
-        if (!item) return res.status(404).json({ error: `${resource} not found` });
-        return res.status(200).json(item);
+        if (!item) return sendResponse(404, { error: `${resource} not found` });
+        return sendResponse(200, item);
       }
       if (handler.list) {
         // Special handling for recipes with filters
         if (resource === 'recipes') {
-          const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+          const category =
+            typeof req.query.category === 'string' ? req.query.category : undefined;
           const tagsParam = typeof req.query.tags === 'string' ? req.query.tags : undefined;
           const tags = tagsParam ? tagsParam.split(',') : undefined;
           const items = await recipeRepo.getRecipes({ category, tags });
-          return res.status(200).json(items);
+          return sendResponse(200, items);
         }
         const items = await handler.list();
-        return res.status(200).json(items);
+        return sendResponse(200, items);
       }
-      return res.status(405).json({ error: 'Method not allowed' });
+      return sendResponse(405, { error: 'Method not allowed' });
     }
 
     // POST /api/data/:resource
     if (req.method === 'POST' && !id) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const item = await handler.create(body);
-      return res.status(201).json(item);
+      return sendResponse(201, item);
     }
 
     // PUT /api/data/:resource/:id
     if (req.method === 'PUT' && id) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const item = await handler.update(id, body);
-      if (!item) return res.status(404).json({ error: `${resource} not found` });
-      return res.status(200).json(item);
+      if (!item) return sendResponse(404, { error: `${resource} not found` });
+      return sendResponse(200, item);
     }
 
     // PUT /api/data/:resource (for chef-settings upsert)
     if (req.method === 'PUT' && !id && resource === 'chef-settings') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const item = await handler.create(body);
-      return res.status(200).json(item);
+      return sendResponse(200, item);
     }
 
     // DELETE /api/data/:resource/:id
     if (req.method === 'DELETE' && id && handler.delete) {
       await handler.delete(id);
+      if (responseSent) return;
+      responseSent = true;
       return res.status(204).end();
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendResponse(405, { error: 'Method not allowed' });
   } catch (error) {
-    console.error(`[api/data/${resource}${id ? `/${id}` : ''}] error:`, error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    // Логируем детали для Vercel Runtime Logs
-    console.error(`[api/data/${resource}] Error details:`, {
-      message: errorMessage,
-      stack: errorStack,
-      hasDatabaseUrl: !!process.env.DATABASE_URL,
-      nodeEnv: process.env.NODE_ENV,
-    });
-    
-    // Возвращаем более информативную ошибку для диагностики
-    // В production возвращаем код ошибки, но не полный stack
-    const isDatabaseError = errorMessage.includes('DATABASE_URL') || 
-                           errorMessage.includes('connection') ||
-                           errorMessage.includes('neon');
-    
-    if (isDatabaseError) {
-      return res.status(500).json({ 
-        error: 'Database connection error',
-        message: 'Please check DATABASE_URL environment variable in Vercel settings',
-        code: 'DATABASE_ERROR',
-      });
+    // If response was already sent, just log the error
+    if (responseSent) {
+      console.error('[api/data] Error occurred after response was sent:', error);
+      return;
     }
-    
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? errorMessage : 'An error occurred',
-      code: 'INTERNAL_ERROR',
-    });
-    } catch (innerError) {
-      // Если ошибка произошла внутри обработки ошибок, логируем и возвращаем базовый ответ
-      console.error('[api/data] Fatal error in error handler:', innerError);
-      if (!res.headersSent) {
-        return res.status(500).json({ 
-          error: 'Internal server error',
-          code: 'FATAL_ERROR',
-        });
-      }
-    }
-  } catch (outerError) {
-    // Финальная защита - если что-то пошло не так на верхнем уровне
-    console.error('[api/data] Fatal error in handler:', outerError);
-    try {
-      if (!res.headersSent) {
-        return res.status(500).json({ 
-          error: 'Internal server error',
-          code: 'FATAL_ERROR',
-          message: 'Handler crashed unexpectedly',
-        });
-      }
-    } catch (finalError) {
-      // Если даже отправка ответа не работает, просто логируем
-      console.error('[api/data] Cannot send error response:', finalError);
-    }
+    return sendError(500, error);
   }
 }
