@@ -73,19 +73,32 @@ const handlers: Record<ResourceType, ResourceHandlers<any>> = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Vercel catch-all route: /api/data/[[...resource]] matches /api/data/:resource/:id
-  const resourcePath = (req.query.resource as string[] | undefined) ?? [];
-  const resource = resourcePath[0] as ResourceType | undefined;
-  const id = resourcePath[1];
-  const date = typeof req.query.date === 'string' ? req.query.date : undefined;
-
-  if (!resource || !handlers[resource]) {
-    return res.status(400).json({ error: `Invalid resource: ${resource}` });
-  }
-
-  const handler = handlers[resource];
-
+  // Обертка для гарантии, что функция всегда вернет ответ
   try {
+    // Ранняя проверка DATABASE_URL для более понятной ошибки
+    if (!process.env.DATABASE_URL) {
+      console.error('[api/data] DATABASE_URL is not set');
+      console.error('[api/data] Available env vars:', Object.keys(process.env).sort());
+      return res.status(500).json({
+        error: 'Database configuration error',
+        message: 'DATABASE_URL environment variable is not set. Please configure it in Vercel Settings → Environment Variables.',
+        code: 'MISSING_DATABASE_URL',
+      });
+    }
+
+    // Vercel catch-all route: /api/data/[[...resource]] matches /api/data/:resource/:id
+    const resourcePath = (req.query.resource as string[] | undefined) ?? [];
+    const resource = resourcePath[0] as ResourceType | undefined;
+    const id = resourcePath[1];
+    const date = typeof req.query.date === 'string' ? req.query.date : undefined;
+
+    if (!resource || !handlers[resource]) {
+      return res.status(400).json({ error: `Invalid resource: ${resource}` });
+    }
+
+    const handler = handlers[resource];
+
+    try {
     // GET /api/data/:resource/:id
     if (id && req.method === 'GET') {
       const item = await handler.getById(id);
@@ -191,5 +204,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: process.env.NODE_ENV === 'development' ? errorMessage : 'An error occurred',
       code: 'INTERNAL_ERROR',
     });
+    } catch (innerError) {
+      // Если ошибка произошла внутри обработки ошибок, логируем и возвращаем базовый ответ
+      console.error('[api/data] Fatal error in error handler:', innerError);
+      if (!res.headersSent) {
+        return res.status(500).json({ 
+          error: 'Internal server error',
+          code: 'FATAL_ERROR',
+        });
+      }
+    }
+  } catch (outerError) {
+    // Финальная защита - если что-то пошло не так на верхнем уровне
+    console.error('[api/data] Fatal error in handler:', outerError);
+    try {
+      if (!res.headersSent) {
+        return res.status(500).json({ 
+          error: 'Internal server error',
+          code: 'FATAL_ERROR',
+          message: 'Handler crashed unexpectedly',
+        });
+      }
+    } catch (finalError) {
+      // Если даже отправка ответа не работает, просто логируем
+      console.error('[api/data] Cannot send error response:', finalError);
+    }
   }
 }
