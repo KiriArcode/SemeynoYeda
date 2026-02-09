@@ -6,110 +6,146 @@ export async function getRecipes(filters?: {
   category?: string;
   tags?: string[];
 }): Promise<Recipe[]> {
-  const sql = getDb();
-  let query = 'SELECT * FROM recipes ORDER BY title';
-  const params: (string | string[])[] = [];
-
-  if (filters?.category) {
-    query = 'SELECT * FROM recipes WHERE category = $1 ORDER BY title';
-    params.push(filters.category);
+  try {
+    const sql = getDb();
+    let rows: unknown[];
+    
+    if (filters?.category && filters?.tags?.length) {
+      // Используем tagged template literals для Neon
+      rows = await sql`
+        SELECT * FROM recipes 
+        WHERE category = ${filters.category} 
+        AND tags && ${filters.tags}::text[]
+        ORDER BY title
+      `;
+    } else if (filters?.category) {
+      rows = await sql`
+        SELECT * FROM recipes 
+        WHERE category = ${filters.category} 
+        ORDER BY title
+      `;
+    } else if (filters?.tags?.length) {
+      rows = await sql`
+        SELECT * FROM recipes 
+        WHERE tags && ${filters.tags}::text[]
+        ORDER BY title
+      `;
+    } else {
+      rows = await sql`SELECT * FROM recipes ORDER BY title`;
+    }
+    
+    const result = Array.isArray(rows) ? rows : [rows];
+    return result.map((r) => dbToApp<Recipe>(r as Record<string, unknown>));
+  } catch (error) {
+    console.error('[recipeRepo.getRecipes] Error:', error);
+    throw error;
   }
-  if (filters?.tags?.length) {
-    query = filters.category
-      ? 'SELECT * FROM recipes WHERE category = $1 AND tags && $2 ORDER BY title'
-      : 'SELECT * FROM recipes WHERE tags && $1 ORDER BY title';
-    params.push(filters.tags);
-  }
-
-  // Neon serverless использует tagged template literals, но для обратной совместимости
-  // используем обычные строки с параметрами (это работает через внутреннюю обертку)
-  const rows = params.length 
-    ? await (sql as any)(query, params as [string, ...unknown[]]) 
-    : await (sql as any)(query);
-  return (Array.isArray(rows) ? rows : [rows]).map((r) => dbToApp<Recipe>(r as Record<string, unknown>));
 }
 
 export async function getRecipeById(id: string): Promise<Recipe | null> {
-  const sql = getDb();
-  const rows = await (sql as any)('SELECT * FROM recipes WHERE id = $1', [id] as [string, ...unknown[]]);
-  const row = Array.isArray(rows) ? rows[0] : rows;
-  return row ? dbToApp<Recipe>(row as Record<string, unknown>) : null;
+  try {
+    const sql = getDb();
+    const rows = await sql`SELECT * FROM recipes WHERE id = ${id}`;
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return row ? dbToApp<Recipe>(row as Record<string, unknown>) : null;
+  } catch (error) {
+    console.error('[recipeRepo.getRecipeById] Error:', error);
+    throw error;
+  }
 }
 
 export async function createRecipe(recipe: Recipe): Promise<Recipe> {
-  const sql = getDb();
-  const db = appToDb(recipe as unknown as Record<string, unknown>);
-  await (sql as any)(
-    `INSERT INTO recipes (id, slug, title, subtitle, category, tags, suitable_for, prep_time, cook_time, total_time, servings, ingredients, steps, equipment, notes, storage, reheating, version, source, image_url, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
-    [
-      db.id,
-      db.slug,
-      db.title,
-      db.subtitle ?? null,
-      db.category,
-      db.tags ?? [],
-      db.suitable_for,
-      db.prep_time,
-      db.cook_time,
-      db.total_time,
-      db.servings,
-      JSON.stringify(db.ingredients ?? []),
-      JSON.stringify(db.steps ?? []),
-      db.equipment ?? [],
-      db.notes ?? null,
-      JSON.stringify(db.storage ?? {}),
-      db.reheating ? JSON.stringify(db.reheating) : null,
-      db.version ?? null,
-      db.source ?? null,
-      db.image_url ?? null,
-      db.created_at,
-      db.updated_at,
-    ]
-  );
-  return recipe;
+  try {
+    const sql = getDb();
+    const db = appToDb(recipe as unknown as Record<string, unknown>);
+    
+    await sql`
+      INSERT INTO recipes (
+        id, slug, title, subtitle, category, tags, suitable_for,
+        prep_time, cook_time, total_time, servings,
+        ingredients, steps, equipment, notes, storage, reheating,
+        version, source, image_url, created_at, updated_at
+      )
+      VALUES (
+        ${db.id}::text,
+        ${db.slug}::text,
+        ${db.title}::text,
+        ${db.subtitle ?? null}::text,
+        ${db.category}::text,
+        ${db.tags ?? []}::text[],
+        ${db.suitable_for}::text,
+        ${db.prep_time}::integer,
+        ${db.cook_time}::integer,
+        ${db.total_time}::integer,
+        ${db.servings}::integer,
+        ${JSON.stringify(db.ingredients ?? [])}::jsonb,
+        ${JSON.stringify(db.steps ?? [])}::jsonb,
+        ${db.equipment ?? []}::text[],
+        ${db.notes ?? null}::text,
+        ${JSON.stringify(db.storage ?? {})}::jsonb,
+        ${db.reheating ? JSON.stringify(db.reheating) : null}::jsonb,
+        ${db.version ?? null}::integer,
+        ${db.source ?? null}::text,
+        ${db.image_url ?? null}::text,
+        ${db.created_at}::timestamptz,
+        ${db.updated_at}::timestamptz
+      )
+    `;
+    return recipe;
+  } catch (error) {
+    console.error('[recipeRepo.createRecipe] Error:', error);
+    throw error;
+  }
 }
 
 export async function updateRecipe(id: string, recipe: Partial<Recipe>): Promise<Recipe | null> {
-  const existing = await getRecipeById(id);
-  if (!existing) return null;
+  try {
+    const existing = await getRecipeById(id);
+    if (!existing) return null;
 
-  const merged = { ...existing, ...recipe, updatedAt: new Date().toISOString() };
-  const sql = getDb();
-  const db = appToDb(merged as unknown as Record<string, unknown>);
+    const merged = { ...existing, ...recipe, updatedAt: new Date().toISOString() };
+    const sql = getDb();
+    const db = appToDb(merged as unknown as Record<string, unknown>);
 
-  await (sql as any)(
-    `UPDATE recipes SET slug=$2, title=$3, subtitle=$4, category=$5, tags=$6, suitable_for=$7, prep_time=$8, cook_time=$9, total_time=$10, servings=$11, ingredients=$12, steps=$13, equipment=$14, notes=$15, storage=$16, reheating=$17, version=$18, source=$19, image_url=$20, updated_at=$21 WHERE id=$1`,
-    [
-      id,
-      db.slug,
-      db.title,
-      db.subtitle ?? null,
-      db.category,
-      db.tags ?? [],
-      db.suitable_for,
-      db.prep_time,
-      db.cook_time,
-      db.total_time,
-      db.servings,
-      JSON.stringify(db.ingredients ?? []),
-      JSON.stringify(db.steps ?? []),
-      db.equipment ?? [],
-      db.notes ?? null,
-      JSON.stringify(db.storage ?? {}),
-      db.reheating ? JSON.stringify(db.reheating) : null,
-      db.version ?? null,
-      db.source ?? null,
-      db.image_url ?? null,
-      db.updated_at,
-    ]
-  );
-  return merged;
+    await sql`
+      UPDATE recipes SET
+        slug = ${db.slug}::text,
+        title = ${db.title}::text,
+        subtitle = ${db.subtitle ?? null}::text,
+        category = ${db.category}::text,
+        tags = ${db.tags ?? []}::text[],
+        suitable_for = ${db.suitable_for}::text,
+        prep_time = ${db.prep_time}::integer,
+        cook_time = ${db.cook_time}::integer,
+        total_time = ${db.total_time}::integer,
+        servings = ${db.servings}::integer,
+        ingredients = ${JSON.stringify(db.ingredients ?? [])}::jsonb,
+        steps = ${JSON.stringify(db.steps ?? [])}::jsonb,
+        equipment = ${db.equipment ?? []}::text[],
+        notes = ${db.notes ?? null}::text,
+        storage = ${JSON.stringify(db.storage ?? {})}::jsonb,
+        reheating = ${db.reheating ? JSON.stringify(db.reheating) : null}::jsonb,
+        version = ${db.version ?? null}::integer,
+        source = ${db.source ?? null}::text,
+        image_url = ${db.image_url ?? null}::text,
+        updated_at = ${db.updated_at}::timestamptz
+      WHERE id = ${id}::text
+    `;
+    return merged;
+  } catch (error) {
+    console.error('[recipeRepo.updateRecipe] Error:', error);
+    throw error;
+  }
 }
 
 export async function deleteRecipe(id: string): Promise<boolean> {
-  const sql = getDb();
-  await (sql as any)('DELETE FROM recipes WHERE id = $1', [id] as [string, ...unknown[]]);
-  // Neon serverless не возвращает rowCount, поэтому считаем успешным если нет ошибки
-  return true;
+  try {
+    const sql = getDb();
+    await sql`DELETE FROM recipes WHERE id = ${id}`;
+    // Neon serverless не возвращает rowCount, поэтому считаем успешным если нет ошибки
+    return true;
+  } catch (error) {
+    console.error('[recipeRepo.deleteRecipe] Error:', error);
+    throw error;
+  }
 }

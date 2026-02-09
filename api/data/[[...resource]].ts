@@ -161,6 +161,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error(`[api/data/${resource}${id ? `/${id}` : ''}] error:`, error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // В production не возвращаем детали ошибки, но логируем
+    if (process.env.NODE_ENV === 'development') {
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        message: errorMessage,
+        stack: errorStack,
+      });
+    }
+    
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
