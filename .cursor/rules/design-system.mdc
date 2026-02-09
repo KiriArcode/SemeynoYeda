@@ -41,6 +41,9 @@ Tailwind: `text-kolya bg-kolya/8 border-kolya/20`, `text-kristina bg-kristina/8 
 - prep-day: bg `#1A0D28`, text `#B388FF`, border `#2D1A40`
 - batch-cooking: bg `#1A1A28`, text `#B388FF`, border `#2D2D40` (массовая готовка + фасовка)
 - rich-feel: bg `#280D1A`, text `#FF6B9D`, border `#401A2D`
+- blanch-before-freeze: как freezable — bg `#0D1B28`, text `#00E5FF`, border `#1A3040`
+
+Spacing и radius брать из [src/styles/globals.css](src/styles/globals.css); при расхождении со STYLEGUIDE приоритет у globals.css.
 
 ## ШРИФТЫ
 - Heading: `'Exo 2'`, fallback `'Chakra Petch'`
@@ -111,5 +114,5 @@ Tailwind: `text-kolya bg-kolya/8 border-kolya/20`, `text-kristina bg-kristina/8 
 - TypeScript strict, все типы в schema.ts, никаких any
 - React: функциональные, named export, hooks в src/hooks/
 - Tailwind: ТОЛЬКО тёмная тема, кастомные токены из конфига
-- Данные: JSON в src/data/, runtime в IndexedDB (Dexie)
+- Данные: стартовые из seed (seedRecipes.ts, seedMenu.ts), runtime в IndexedDB (Dexie)
 - Языки: UI русский, код английский, dim-labels английский

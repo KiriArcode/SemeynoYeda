@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { MealSlot as MealSlotType, Recipe } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { IngredientCheck } from '../cooking/IngredientCheck';
@@ -63,8 +63,10 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
     console.log(`[MealSlot:${slot.mealType}] Loading ${recipeIds.length} recipes...`);
     (async () => {
       try {
-        const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
-        const validRecipes = (loadedRecipes || []).filter((r): r is Recipe => r != null && typeof r === 'object' && 'id' in r && 'title' in r);
+        const allRecipes = await dataService.recipes.list();
+        const validRecipes = recipeIds
+          .map((id) => allRecipes.find((r) => r.id === id))
+          .filter((r): r is Recipe => r != null);
         if (!cancelled) {
           setRecipes(validRecipes);
           console.log(`[MealSlot:${slot.mealType}] Loaded ${validRecipes.length}/${recipeIds.length} recipes`);

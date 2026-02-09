@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { WeekMenu, MealSlot as MealSlotType, MealType } from '../data/schema';
 import { getSeedWeekMenu } from '../data/seedMenu';
 import { MealSlot } from '../components/menu/MealSlot';
@@ -61,8 +61,8 @@ export default function MenuPage() {
   async function loadWeekMenu() {
     console.log('[MenuPage] Loading week menu...');
     try {
-      const menu = await db.table('menus').orderBy('createdAt').last();
-      if (menu) {
+      const menu = await dataService.menus.getCurrent();
+      if (menu != null) {
         console.log(`[MenuPage] Menu loaded: ${menu.id}, ${menu.days?.length || 0} days`);
         setWeekMenu(menu);
       } else {
@@ -71,6 +71,7 @@ export default function MenuPage() {
       }
     } catch (error) {
       console.error('[MenuPage] Failed to load week menu:', error);
+      setWeekMenu(null);
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,7 @@ export default function MenuPage() {
     setTemplateSuccess(false);
     try {
       const menu = getSeedWeekMenu();
-      await db.table('menus').put(menu);
+      await dataService.menus.create(menu);
       await loadWeekMenu();
       setTemplateSuccess(true);
       setTimeout(() => setTemplateSuccess(false), 3000);
@@ -104,7 +105,7 @@ export default function MenuPage() {
       };
     });
     const updatedMenu = { ...weekMenu, days: updatedDays };
-    await db.table('menus').put(updatedMenu);
+    await dataService.menus.update(updatedMenu.id, updatedMenu);
     setWeekMenu(updatedMenu);
   }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { WeekMenu, FreezerItem, EquipmentId } from '../data/schema';
 import { useBatchCooking } from '../hooks/useBatchCooking';
 import { nanoid } from 'nanoid';
@@ -53,7 +53,7 @@ export default function PrepPage() {
 
   async function loadMenu() {
     try {
-      const menu = await db.table('menus').orderBy('createdAt').last();
+      const menu = await dataService.menus.getCurrent().catch(() => null);
       setWeekMenu(menu || null);
     } catch (error) {
       console.error('[PrepPage] Error:', error);
@@ -71,8 +71,10 @@ export default function PrepPage() {
   async function handleFreezeCompleted() {
     if (!plan) return;
     const packagingTasks = plan.tasks.filter(t => t.completed && t.phase === 4);
-    const recipes = await db.table('recipes').bulkGet(packagingTasks.map(t => t.recipeId));
-    const recipeMap = new Map(recipes.filter(Boolean).map(r => [r!.id, r!]));
+    const allRecipes = await dataService.recipes.list();
+    const recipeMap = new Map(
+      allRecipes.filter((r) => packagingTasks.some((t) => t.recipeId === r.id)).map((r) => [r.id, r])
+    );
 
     for (const task of packagingTasks) {
       const recipe = recipeMap.get(task.recipeId);
@@ -98,22 +100,23 @@ export default function PrepPage() {
         // Create personalized packets
         if (task.portionsByMember.kolya > 0) {
           const item = createFreezerItem(task.portionsByMember.kolya, 'kolya');
-          await db.table('freezer').add(item);
+          await dataService.freezer.create(item);
         }
         if (task.portionsByMember.kristina > 0) {
           const item = createFreezerItem(task.portionsByMember.kristina, 'kristina');
-          await db.table('freezer').add(item);
+          await dataService.freezer.create(item);
         }
       } else {
-        const existing = await db.table('freezer').where('recipeId').equals(task.recipeId).first() as FreezerItem | undefined;
+        const freezerItems = await dataService.freezer.list();
+        const existing = freezerItems.find((i) => i.recipeId === task.recipeId);
         if (existing && !existing.forWhom) {
-          await db.table('freezer').update(existing.id, {
+          await dataService.freezer.update(existing.id, {
             portionsRemaining: existing.portionsRemaining + task.portions,
             portionsOriginal: existing.portionsOriginal + task.portions,
           });
         } else {
           const newItem = createFreezerItem(task.portions, 'both');
-          await db.table('freezer').add(newItem);
+          await dataService.freezer.create(newItem);
         }
       }
     }

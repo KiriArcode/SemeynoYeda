@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { Recipe, DietTag, FamilyMember } from '../data/schema';
 import { Search, Plus, Briefcase, Zap } from 'lucide-react';
 
@@ -73,7 +73,7 @@ export default function RecipesPage() {
 
   async function loadRecipes() {
     try {
-      const allRecipes = await db.table('recipes').toArray();
+      const allRecipes = await dataService.recipes.list();
       setRecipes(allRecipes);
       setFilteredRecipes(allRecipes);
     } catch (error) {

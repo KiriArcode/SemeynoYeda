@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { Recipe, DietTag, FamilyMember, EquipmentId } from '../data/schema';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
@@ -81,7 +81,7 @@ export default function RecipeDetailPage() {
 
   async function loadRecipe(recipeId: string) {
     try {
-      const loaded = await db.table('recipes').get(recipeId);
+      const loaded = await dataService.recipes.get(recipeId);
       setRecipe(loaded || null);
     } catch (error) {
       console.error('Failed to load recipe:', error);
@@ -93,7 +93,7 @@ export default function RecipeDetailPage() {
   async function handleDelete() {
     if (!recipe) return;
     console.log('[RecipeDetailPage] Deleting recipe:', recipe.title);
-    await db.table('recipes').delete(recipe.id);
+    await dataService.recipes.delete(recipe.id);
     navigate('/recipes');
   }
 

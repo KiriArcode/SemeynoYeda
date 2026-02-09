@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useCookingTimers } from '../../hooks/useCookingTimers';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { Recipe } from '../../data/schema';
 import { Pause, Play, X, Clock } from 'lucide-react';
 
@@ -22,9 +22,10 @@ export function ParallelCooking() {
 
   async function loadRecipes() {
     const recipeIds = Array.from(new Set(timers.map((t) => t.recipeId)));
-    const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
+    const allRecipes = await dataService.recipes.list();
     const recipeMap = new Map<string, Recipe>();
-    loadedRecipes.forEach((recipe) => {
+    recipeIds.forEach((id) => {
+      const recipe = allRecipes.find((r) => r.id === id);
       if (recipe) recipeMap.set(recipe.id, recipe);
     });
     setRecipes(recipeMap);

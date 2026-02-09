@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import { RecipeForm } from '../components/recipe/RecipeForm';
 import type { Recipe } from '../data/schema';
 
@@ -8,7 +8,7 @@ export default function RecipeNewPage() {
 
   async function handleSave(recipe: Recipe) {
     console.log('[RecipeNewPage] Creating recipe:', recipe.title);
-    await db.table('recipes').add(recipe);
+    await dataService.recipes.create(recipe);
     navigate(`/recipe/${recipe.id}`);
   }
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { db } from '../lib/db';
-import type { WeekMenu, Recipe, FreezerItem, BatchTask, BatchPlan, EquipmentId } from '../data/schema';
+import { dataService } from '../lib/dataService';
+import type { WeekMenu, Recipe, BatchTask, BatchPlan, EquipmentId } from '../data/schema';
 import { nanoid } from 'nanoid';
 
 /** Phase labels for batch cooking workflow */
@@ -51,10 +51,10 @@ export function useBatchCooking() {
       }
 
       // 2. Load recipes
-      const recipes = await db.table('recipes').bulkGet(Array.from(recipeIds));
+      const allRecipes = await dataService.recipes.list();
       const recipeMap = new Map<string, Recipe>();
-      for (const r of recipes) {
-        if (r) recipeMap.set(r.id, r);
+      for (const r of allRecipes) {
+        if (recipeIds.has(r.id)) recipeMap.set(r.id, r);
       }
 
       // 3. Filter to freezable recipes
@@ -69,7 +69,7 @@ export function useBatchCooking() {
       }
 
       // 4. Check freezer inventory
-      const freezerItems = await db.table('freezer').toArray() as FreezerItem[];
+      const freezerItems = await dataService.freezer.list();
       const freezerStock = new Map<string, number>();
       for (const fi of freezerItems) {
         if (fi.portionsRemaining > 0 && fi.recipeId) {

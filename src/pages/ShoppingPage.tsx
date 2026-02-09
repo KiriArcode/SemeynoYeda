@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import { useShoppingList } from '../hooks/useShoppingList';
 import { ShoppingSettings } from '../components/shopping/ShoppingSettings';
 import { CheckCircle2, ShoppingCart, RefreshCw } from 'lucide-react';
@@ -19,11 +19,11 @@ export default function ShoppingPage() {
   async function autoGenerateList() {
     setGenerating(true);
     try {
-      const menu = await db.table('menus').orderBy('createdAt').last();
+      const menu = await dataService.menus.getCurrent().catch(() => null);
       if (menu) {
         const newItems = await generateShoppingList(menu);
         if (newItems.length > 0) {
-          await db.table('shopping').bulkPut(newItems);
+          await dataService.shopping.bulkPut(newItems);
           await loadItems();
         }
       }
@@ -37,12 +37,11 @@ export default function ShoppingPage() {
   async function handleRegenerate() {
     setGenerating(true);
     try {
-      const menu = await db.table('menus').orderBy('createdAt').last();
+      const menu = await dataService.menus.getCurrent().catch(() => null);
       if (menu) {
         const newItems = await generateShoppingList(menu);
         if (newItems.length > 0) {
-          await db.table('shopping').clear();
-          await db.table('shopping').bulkPut(newItems);
+          await dataService.shopping.bulkPut(newItems);
           await loadItems();
         }
       }

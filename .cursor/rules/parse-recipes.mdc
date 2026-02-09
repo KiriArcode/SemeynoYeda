@@ -8,6 +8,8 @@ alwaysApply: false
 
 When the user pastes raw recipe text, parse ALL recipes and insert them into `src/data/seedRecipes.ts`.
 
+**Схема и теги:** полный список DietTag и типов — в [src/data/schema.ts](src/data/schema.ts). Документы (recipe-data-templates, DESIGN_DICTIONARY, STYLEGUIDE) должны содержать все теги из schema или ссылку на него.
+
 ## Steps
 
 1. Read `src/data/seedRecipes.ts` to get current SEED_RECIPE_IDS and recipe count

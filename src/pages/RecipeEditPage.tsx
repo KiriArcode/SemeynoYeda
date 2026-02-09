@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import { RecipeForm } from '../components/recipe/RecipeForm';
 import type { Recipe } from '../data/schema';
 
@@ -12,8 +12,11 @@ export default function RecipeEditPage() {
 
   useEffect(() => {
     if (id) {
-      db.table('recipes').get(id).then(r => {
-        setRecipe(r || null);
+      dataService.recipes.get(id!).then(r => {
+        setRecipe(r);
+        setLoading(false);
+      }).catch(() => {
+        setRecipe(null);
         setLoading(false);
       });
     }
@@ -21,7 +24,7 @@ export default function RecipeEditPage() {
 
   async function handleSave(updated: Recipe) {
     console.log('[RecipeEditPage] Updating recipe:', updated.title);
-    await db.table('recipes').put(updated);
+    await dataService.recipes.update(updated.id, updated);
     navigate(`/recipe/${updated.id}`);
   }
 

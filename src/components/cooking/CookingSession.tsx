@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { Recipe, MealType, Ingredient } from '../../data/schema';
 import { useCookingTimers } from '../../hooks/useCookingTimers';
 import { IngredientCheck } from './IngredientCheck';
@@ -24,8 +24,10 @@ export function CookingSession({ recipeIds, portionsPerRecipe = {}, onComplete }
 
   async function loadRecipes() {
     try {
-      const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
-      const validRecipes = loadedRecipes.filter((r): r is Recipe => r !== undefined);
+      const allRecipes = await dataService.recipes.list();
+      const validRecipes = recipeIds
+        .map((id) => allRecipes.find((r) => r.id === id))
+        .filter((r): r is Recipe => r != null);
       setRecipes(validRecipes);
     } catch (error) {
       console.error('Failed to load recipes:', error);

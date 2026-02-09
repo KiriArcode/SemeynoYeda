@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { Recipe, WeekMenu, MealType } from '../data/schema';
 import { CookingSession } from '../components/cooking/CookingSession';
 import { ParallelCooking } from '../components/cooking/ParallelCooking';
@@ -21,7 +21,7 @@ export default function CookingPage() {
 
   async function loadChefSettings() {
     try {
-      const s = await db.table('chefSettings').get('default');
+      const s = await dataService.chefSettings.get('default').catch(() => null);
       if (s?.kolyaMealsMode === '5-6') setKolyaMealsMode('5-6');
     } catch {
       /* ignore */
@@ -36,7 +36,7 @@ export default function CookingPage() {
 
   async function loadWeekMenu() {
     try {
-      const menu = await db.table('menus').orderBy('createdAt').last();
+      const menu = await dataService.menus.getCurrent().catch(() => null);
       if (menu) {
         setWeekMenu(menu);
       }
@@ -60,7 +60,8 @@ export default function CookingPage() {
       portions[entry.recipeId] = (portions[entry.recipeId] || 0) + 1;
     }
     setPortionsPerRecipe(portions);
-    const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
+    const allRecipes = await dataService.recipes.list();
+    const loadedRecipes = recipeIds.map((id) => allRecipes.find((r) => r.id === id)).filter((r): r is Recipe => r != null);
     const validRecipes = loadedRecipes.filter((r): r is Recipe => r !== undefined);
     setRecipes(validRecipes);
   }

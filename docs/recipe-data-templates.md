@@ -13,7 +13,7 @@
 | Поле | Допустимые значения |
 |------|---------------------|
 | `category` | `'main'` \| `'sauce'` \| `'side'` \| `'breakfast'` \| `'snack'` \| `'soup'` \| `'dessert'` |
-| `tags` | массив из: `'gastritis-safe'` \| `'soft-texture'` \| `'rich-feel'` \| `'freezable'` \| `'quick'` \| `'prep-day'` \| `'overnight'` \| `'packable'` \| `'low-calorie'` |
+| `tags` | массив из: `'gastritis-safe'` \| `'soft-texture'` \| `'rich-feel'` \| `'freezable'` \| `'quick'` \| `'prep-day'` \| `'batch-cooking'` \| `'overnight'` \| `'packable'` \| `'low-calorie'` \| `'blanch-before-freeze'` |
 | `suitableFor` | `'kolya'` \| `'kristina'` \| `'both'` |
 | `unit` (в ингредиентах) | `'г'` \| `'кг'` \| `'мл'` \| `'л'` \| `'шт'` \| `'ст.л.'` \| `'ч.л.'` \| `'стакан'` \| `'щепотка'` \| `'по вкусу'` |
 | `equipment` (id в шагах и массив) | `'stove'` \| `'oven'` \| `'air-grill'` \| `'e-grill'` \| `'steamer'` \| `'blender'` \| `'mixer'` \| `'grinder'` \| `'vacuum'` \| `'bowls'` |

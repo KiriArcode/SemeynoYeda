@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { ChefModeSettings } from '../data/schema';
 
 interface ChefModeContextType {
@@ -29,11 +29,11 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
 
   async function loadSettings() {
     try {
-      const saved = await db.table('chefSettings').get('default');
+      const saved = await dataService.chefSettings.get('default').catch(() => null);
       if (saved) {
         setSettings(saved);
       } else {
-        await db.table('chefSettings').put(DEFAULT_SETTINGS);
+        await dataService.chefSettings.save(DEFAULT_SETTINGS);
       }
     } catch (error) {
       console.error('ChefMode: Failed to load settings', error);
@@ -53,7 +53,7 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
       console.log('[ChefModeContext] Toggling:', prev.enabled, '->', newSettings.enabled);
 
       // Запись в БД в фоне (не блокирует UI)
-      db.table('chefSettings').put(newSettings).catch((error) => {
+      dataService.chefSettings.save(newSettings).catch((error) => {
         console.error('ChefMode: Failed to persist toggle', error);
         // Откат при ошибке записи
         setSettings(prev);

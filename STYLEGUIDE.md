@@ -188,7 +188,7 @@ color: var(--portal-dim);
 ### Отступы
 ```css
 --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
---space-4: 16px; --space-5: 24px; --space-6: 32px; --space-8: 48px;
+--space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
 ```
 
 ### Скругления

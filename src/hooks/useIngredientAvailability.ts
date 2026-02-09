@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { Ingredient, IngredientAvailability } from '../data/schema';
 import { useShoppingList } from './useShoppingList';
 
@@ -55,7 +55,8 @@ export function useIngredientAvailability() {
 
   const getMissingIngredients = useCallback(
     async (recipeIds: string[]): Promise<string[]> => {
-      const recipes = await db.table('recipes').bulkGet(recipeIds);
+      const allRecipes = await dataService.recipes.list();
+      const recipes = allRecipes.filter((r) => recipeIds.includes(r.id));
       const missing: string[] = [];
 
       recipes.forEach((recipe) => {

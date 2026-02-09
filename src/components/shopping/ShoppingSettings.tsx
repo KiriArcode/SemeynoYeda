@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { ShoppingSettings } from '../../data/schema';
 
 const DAYS_OF_WEEK = [
@@ -25,7 +25,7 @@ export function ShoppingSettings() {
 
   async function loadSettings() {
     try {
-      const saved = await db.table('menus').orderBy('createdAt').last();
+      const saved = await dataService.menus.getCurrent().catch(() => null);
       if (saved?.shoppingSettings) {
         setSettings(saved.shoppingSettings);
       }
@@ -39,9 +39,9 @@ export function ShoppingSettings() {
   async function saveSettings(newSettings: ShoppingSettings) {
     setSettings(newSettings);
     try {
-      const currentMenu = await db.table('menus').orderBy('createdAt').last();
+      const currentMenu = await dataService.menus.getCurrent().catch(() => null);
       if (currentMenu) {
-        await db.table('menus').update(currentMenu.id, {
+        await dataService.menus.update(currentMenu.id, {
           shoppingSettings: newSettings,
         });
       }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type React from 'react';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { Recipe, FamilyMember, MealType } from '../../data/schema';
 import { Modal } from '../ui/Modal';
 import { Search } from 'lucide-react';
@@ -34,7 +34,7 @@ export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterFo
   async function loadRecipes() {
     setLoading(true);
     try {
-      const all = await db.table('recipes').toArray();
+      const all = await dataService.recipes.list();
       setRecipes(all);
     } catch (error) {
       console.error('[SwapModal] Failed to load recipes:', error);

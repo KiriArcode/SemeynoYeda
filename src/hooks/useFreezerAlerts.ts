@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
-import type { FreezerItem, WeekMenu } from '../data/schema';
+import { dataService } from '../lib/dataService';
+import type { WeekMenu } from '../data/schema';
 
 export interface FreezerAlert {
   type: 'low-stock' | 'expiring' | 'suggestion';
@@ -17,7 +17,7 @@ export function useFreezerAlerts(weekMenu: WeekMenu | null) {
 
   async function loadAlerts() {
     try {
-      const items = await db.table('freezer').toArray() as FreezerItem[];
+      const items = await dataService.freezer.list();
       const newAlerts: FreezerAlert[] = [];
       const now = new Date();
 

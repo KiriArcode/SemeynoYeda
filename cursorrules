@@ -1,14 +1,14 @@
 # SemeynoYeda — Cursor Project Rules
 
 ## Проект
-Семейное PWA-приложение для управления питанием. React + TypeScript + Vite + Tailwind + Dexie.js (IndexedDB). Деплой на GitHub Pages.
+Семейное PWA-приложение для управления питанием. React + TypeScript + Vite + Tailwind + Dexie.js (IndexedDB). Деплой: см. SPEC.md / DEPLOY.md (Vercel или GitHub Pages).
 
 ## Контекст предметной области
 - Два пользователя: Коля (гастрит, щадящая диета) и Кристина (предпочитает "богатую" еду, соусы)
 - 4 приёма пищи в день: завтрак, обед, полдник, ужин
 - Заготовки в выходные (4 часа), разогрев в будни (15-30 мин)
 - Всё мягкое: котлеты, суфле, пюре + обязательно соус
-- Данные хранятся как JSON в `src/data/` и синхронизируются с IndexedDB
+- Данные: стартовые рецепты и меню из seed (seedRecipes.ts, seedMenu.ts); при запуске загружаются в IndexedDB. Runtime — только IndexedDB.
 
 ## Кухонное оборудование
 Каждый рецепт и заготовка привязаны к конкретному оборудованию. При создании/обработке рецептов Cursor должен указывать какое оборудование нужно и для каких шагов.
@@ -46,20 +46,24 @@
 
 ## Архитектура файлов
 
+Актуальный список страниц и компонентов — в FEATURES.md (таблица маршрутов и раздел «Компоненты»).
+
 ```
 src/
-  app/          — App.tsx, Router.tsx, providers
+  app/          — Router.tsx
   components/
-    ui/         — Button, Card, Modal, Tag, Toast (переиспользуемые)
-    layout/     — Header, BottomNav, PageShell
-    recipe/     — RecipeCard, RecipeForm, RecipeDetail
-    menu/       — WeekView, DayColumn, MealSlot, SwapModal
-    prep/       — PrepChecklist, PrepTimer, FreezerInventory
-    shopping/   — ShoppingList, ShoppingItem
-  data/         — JSON файлы (recipes, menu, inventory) + schema.ts
-  hooks/        — useRecipes, useMenu, useShoppingList, useFreezer, useSync
-  lib/          — db.ts (Dexie), github.ts, export.ts, utils.ts
-  styles/       — globals.css, fonts.css
+    ui/         — Modal, Toast, AlertBanner
+    layout/     — PageShell, BottomNav, Breadcrumbs, ChefModeToggle
+    menu/       — WeekOverview, MealSlot, SwapModal, WeekStats
+    recipe/     — RecipeForm
+    prep/       — PrepBlock, PrepTaskCard
+    cooking/    — CookingSession, IngredientCheck, ParallelCooking
+    shopping/   — ShoppingSettings
+  data/         — schema.ts, seedRecipes.ts, seedMenu.ts
+  hooks/        — useShoppingList, usePrepPlan, useBatchCooking, useCookingTimers, useFreezerAlerts, useIngredientAvailability, useToast
+  lib/          — db.ts (Dexie), initDb.ts
+  pages/        — MenuPage, RecipesPage, RecipeDetailPage, RecipeEditPage, RecipeNewPage, ShoppingPage, FreezerPage, PrepPage, CookingPage, ChefSettingsPage
+  styles/       — globals.css
 ```
 
 ## Правила кода
@@ -80,7 +84,7 @@ src/
 
 ### Стили (Tailwind)
 - Использовать кастомные цвета из конфига: `bg-void`, `bg-dimension`, `text-portal`, `text-ramen`, `text-text-light`
-- Шрифты: `font-heading` (Chakra Petch) для заголовков, `font-body` (DM Sans) для текста, `font-mono` (JetBrains Mono) для данных
+- Шрифты: `font-heading` (Exo 2, fallback Chakra Petch) для заголовков, `font-body` (DM Sans) для текста, `font-mono` (Share Tech Mono / JetBrains Mono) для данных
 - Скругления: `rounded-card`, `rounded-button`, `rounded-modal`, `rounded-pill`
 - Тени: `shadow-card`, `shadow-glow`, `shadow-elevate`, `shadow-nav`
 - Mobile-first: без префикса = мобильный, `md:` = планшет, `lg:` = десктоп
@@ -93,11 +97,10 @@ src/
 - Карточки: всегда `rounded-card shadow-card bg-dimension` с бордером `border-nebula`
 
 ### Данные
-- JSON файлы рецептов: `src/data/recipes/*.json`
-- Меню: `src/data/menu/current-week.json`
-- При старте приложения: JSON → IndexedDB (если пусто или обновлено)
+- Стартовые данные: только из seed (seedRecipes.ts, seedMenu.ts). Не предполагать JSON-файлы рецептов в src/data/ кроме кода seed.
+- При старте: initDb → syncSeedRecipes (bulkPut seed в IndexedDB)
 - Все изменения пользователя → IndexedDB
-- Экспорт → JSON файлы для коммита в Git
+- Экспорт в JSON / Git — отдельная функция; целевой вариант синхронизации — Supabase (SPEC.md)
 
 ### Именование
 - Компоненты: PascalCase (`RecipeCard.tsx`)

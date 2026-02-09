@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { Recipe, PrepTask } from '../../data/schema';
 import { usePrepPlan } from '../../hooks/usePrepPlan';
 import { PrepTaskCard } from './PrepTaskCard';
@@ -28,7 +28,7 @@ export function PrepBlock({ recipes, date }: PrepBlockProps) {
 
   async function initializePlan() {
     try {
-      let plan = await db.table('prepPlans').where('date').equals(date).first();
+      let plan = await dataService.prepPlans.getByDate(date).catch(() => null);
       
       if (!plan && recipes.length > 0) {
         plan = await generatePrepPlan(recipes, date);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { CookingTimer } from '../data/schema';
 import { nanoid } from 'nanoid';
 
@@ -17,7 +17,6 @@ export function useCookingTimers() {
     } else {
       stopInterval();
     }
-
     return () => {
       stopInterval();
     };
@@ -25,7 +24,7 @@ export function useCookingTimers() {
 
   async function loadActiveTimers() {
     try {
-      const sessions = await db.table('cookingSessions').toArray();
+      const sessions = await dataService.cookingSessions.list();
       const allTimers: CookingTimer[] = [];
       sessions.forEach((session) => {
         allTimers.push(...session.timers);
@@ -38,19 +37,15 @@ export function useCookingTimers() {
 
   function startInterval() {
     if (intervalRef.current) return;
-
     intervalRef.current = setInterval(() => {
       setTimers((prev) => {
         const now = Date.now();
         return prev.map((timer) => {
           if (!timer.isActive || timer.isCompleted) return timer;
-
           if (now >= timer.endTime) {
-            // Таймер завершён
             handleTimerComplete(timer.id);
             return { ...timer, isActive: false, isCompleted: true };
           }
-
           return timer;
         });
       });
@@ -65,7 +60,6 @@ export function useCookingTimers() {
   }
 
   async function handleTimerComplete(timerId: string) {
-    // Отправить уведомление
     if ('Notification' in window && Notification.permission === 'granted') {
       const timer = timers.find((t) => t.id === timerId);
       if (timer) {
@@ -101,9 +95,8 @@ export function useCookingTimers() {
 
       setTimers((prev) => [...prev, timer]);
 
-      // Сохранить в активную сессию или создать новую
       const today = new Date().toISOString().split('T')[0];
-      let session = await db.table('cookingSessions').where('date').equals(today).first();
+      let session = await dataService.cookingSessions.getByDate(today).catch(() => null);
 
       if (!session) {
         session = {
@@ -111,13 +104,14 @@ export function useCookingTimers() {
           date: today,
           mealType: 'dinner',
           recipes: [recipeId],
-          timers: [],
+          timers: [timer],
           startedAt: new Date().toISOString(),
         };
+        await dataService.cookingSessions.create(session);
+      } else {
+        session.timers.push(timer);
+        await dataService.cookingSessions.update(session.id, session);
       }
-
-      session.timers.push(timer);
-      await db.table('cookingSessions').put(session);
 
       return timer.id;
     },
@@ -126,21 +120,15 @@ export function useCookingTimers() {
 
   const pauseTimer = useCallback(async (timerId: string) => {
     setTimers((prev) =>
-      prev.map((timer) => {
-        if (timer.id === timerId) {
-          return { ...timer, isActive: false };
-        }
-        return timer;
-      })
+      prev.map((t) => (t.id === timerId ? { ...t, isActive: false } : t))
     );
 
-    // Обновить в базе данных
-    const sessions = await db.table('cookingSessions').toArray();
+    const sessions = await dataService.cookingSessions.list();
     for (const session of sessions) {
-      const timerIndex = session.timers.findIndex((t: CookingTimer) => t.id === timerId);
-      if (timerIndex !== -1) {
-        session.timers[timerIndex].isActive = false;
-        await db.table('cookingSessions').put(session);
+      const idx = session.timers.findIndex((t: CookingTimer) => t.id === timerId);
+      if (idx !== -1) {
+        session.timers[idx] = { ...session.timers[idx], isActive: false };
+        await dataService.cookingSessions.update(session.id, session);
         break;
       }
     }
@@ -148,56 +136,52 @@ export function useCookingTimers() {
 
   const resumeTimer = useCallback(async (timerId: string) => {
     setTimers((prev) =>
-      prev.map((timer) => {
-        if (timer.id === timerId && !timer.isCompleted) {
-          const remaining = timer.endTime - Date.now();
-          return {
-            ...timer,
-            isActive: true,
-            endTime: Date.now() + remaining,
-          };
+      prev.map((t) => {
+        if (t.id === timerId && !t.isCompleted) {
+          const remaining = t.endTime - Date.now();
+          return { ...t, isActive: true, endTime: Date.now() + remaining };
         }
-        return timer;
+        return t;
       })
     );
 
-    // Обновить в базе данных
-    const sessions = await db.table('cookingSessions').toArray();
+    const sessions = await dataService.cookingSessions.list();
     for (const session of sessions) {
-      const timerIndex = session.timers.findIndex((t: CookingTimer) => t.id === timerId);
-      if (timerIndex !== -1) {
-        const timer = session.timers[timerIndex];
+      const idx = session.timers.findIndex((t: CookingTimer) => t.id === timerId);
+      if (idx !== -1) {
+        const timer = session.timers[idx];
         const remaining = timer.endTime - Date.now();
-        session.timers[timerIndex] = {
+        session.timers[idx] = {
           ...timer,
           isActive: true,
           endTime: Date.now() + remaining,
         };
-        await db.table('cookingSessions').put(session);
+        await dataService.cookingSessions.update(session.id, session);
         break;
       }
     }
   }, []);
 
   const stopTimer = useCallback(async (timerId: string) => {
-    setTimers((prev) => prev.filter((timer) => timer.id !== timerId));
+    setTimers((prev) => prev.filter((t) => t.id !== timerId));
 
-    // Обновить в базе данных
-    const sessions = await db.table('cookingSessions').toArray();
+    const sessions = await dataService.cookingSessions.list();
     for (const session of sessions) {
-      session.timers = session.timers.filter((t: CookingTimer) => t.id !== timerId);
-      await db.table('cookingSessions').put(session);
+      const filtered = session.timers.filter((t: CookingTimer) => t.id !== timerId);
+      if (filtered.length !== session.timers.length) {
+        await dataService.cookingSessions.update(session.id, { timers: filtered });
+        break;
+      }
     }
   }, []);
 
-  const getActiveTimers = useCallback(() => {
-    return timers.filter((t: CookingTimer) => t.isActive && !t.isCompleted);
-  }, [timers]);
+  const getActiveTimers = useCallback(
+    () => timers.filter((t) => t.isActive && !t.isCompleted),
+    [timers]
+  );
 
   const getTimersForRecipes = useCallback(
-    (recipeIds: string[]) => {
-      return timers.filter((t: CookingTimer) => recipeIds.includes(t.recipeId));
-    },
+    (recipeIds: string[]) => timers.filter((t) => recipeIds.includes(t.recipeId)),
     [timers]
   );
 

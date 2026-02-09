@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { Recipe, Ingredient, IngredientAvailability } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
@@ -26,8 +26,10 @@ export function IngredientCheck({ recipeIds, portionsPerRecipe = {}, onComplete 
 
   async function loadRecipes() {
     try {
-      const loadedRecipes = await db.table('recipes').bulkGet(recipeIds);
-      const validRecipes = loadedRecipes.filter((r): r is Recipe => r !== undefined);
+      const allRecipes = await dataService.recipes.list();
+      const validRecipes = recipeIds
+        .map((id) => allRecipes.find((r) => r.id === id))
+        .filter((r): r is Recipe => r != null);
       setRecipes(validRecipes);
 
       // Собрать все уникальные ингредиенты (с учётом масштаба порций)

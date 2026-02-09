@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppRouter } from './app/Router';
-import { initializeDatabase } from './lib/initDb';
 import './styles/globals.css';
 
 // При 404 на чанке (устаревший кэш после деплоя) — перезагрузка страницы
@@ -18,10 +17,8 @@ if (savedPath) {
   window.history.replaceState(null, '', savedPath);
 }
 
-// Инициализируем базу данных при загрузке приложения
-initializeDatabase().catch((error) => {
-  console.error('Ошибка при инициализации базы данных:', error);
-});
+// Данные теперь через API (dataService). База — Neon/Postgres на сервере.
+// Seed: npx tsx scripts/seedDb.ts (после настройки DATABASE_URL)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

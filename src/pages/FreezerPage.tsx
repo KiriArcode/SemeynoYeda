@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { FreezerItem, Recipe } from '../data/schema';
 import { nanoid } from 'nanoid';
 import { Snowflake, Plus, Minus, Trash2, X } from 'lucide-react';
@@ -27,8 +27,8 @@ export default function FreezerPage() {
   async function loadData() {
     try {
       const [freezerItems, allRecipes] = await Promise.all([
-        db.table('freezer').toArray() as Promise<FreezerItem[]>,
-        db.table('recipes').toArray() as Promise<Recipe[]>,
+        dataService.freezer.list(),
+        dataService.recipes.list(),
       ]);
       setItems(freezerItems);
       setRecipes(allRecipes);
@@ -60,7 +60,7 @@ export default function FreezerPage() {
     };
 
     console.log('[FreezerPage] Adding item:', name, formPortions, 'portions');
-    await db.table('freezer').add(newItem);
+    await dataService.freezer.create(newItem);
     setItems(prev => [...prev, newItem]);
     resetForm();
   }
@@ -69,14 +69,14 @@ export default function FreezerPage() {
     const remaining = Math.max(0, item.portionsRemaining - count);
     console.log(`[FreezerPage] Using ${count} portions of ${item.name}, remaining: ${remaining}`);
     const updated = { ...item, portionsRemaining: remaining };
-    await db.table('freezer').put(updated);
+    await dataService.freezer.update(item.id, updated);
     setItems(prev => prev.map(i => i.id === item.id ? updated : i));
   }
 
   async function handleDelete() {
     if (!deleteItem) return;
     console.log('[FreezerPage] Deleting:', deleteItem.name);
-    await db.table('freezer').delete(deleteItem.id);
+    await dataService.freezer.delete(deleteItem.id);
     setItems(prev => prev.filter(i => i.id !== deleteItem.id));
     setDeleteItem(null);
   }

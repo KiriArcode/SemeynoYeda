@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../lib/db';
+import { dataService } from '../../lib/dataService';
 import type { WeekMenu, Recipe } from '../../data/schema';
 import { BarChart3, AlertTriangle } from 'lucide-react';
 
@@ -54,7 +54,8 @@ export function WeekStats({ weekMenu }: WeekStatsProps) {
         }
       }
 
-      const recipes = await db.table('recipes').bulkGet(Array.from(allRecipeIds));
+      const allRecipes = await dataService.recipes.list();
+      const recipes = allRecipes.filter((r) => allRecipeIds.has(r.id));
       const recipeMap = new Map<string, Recipe>();
       for (const r of recipes) {
         if (r) recipeMap.set(r.id, r);

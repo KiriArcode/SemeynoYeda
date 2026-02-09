@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/db';
+import { dataService } from '../lib/dataService';
 import type { ChefModeSettings } from '../data/schema';
 import { ChefHat, Settings } from 'lucide-react';
 import { useChefMode } from '../contexts/ChefModeContext';
@@ -29,11 +29,11 @@ export default function ChefSettingsPage() {
 
   async function loadSettings() {
     try {
-      const saved = await db.table('chefSettings').get('default');
+      const saved = await dataService.chefSettings.get('default').catch(() => null);
       if (saved) {
         setSettings(saved);
       } else {
-        await db.table('chefSettings').put(DEFAULT_SETTINGS);
+        await dataService.chefSettings.save(DEFAULT_SETTINGS);
         setSettings(DEFAULT_SETTINGS);
       }
     } catch (error) {
@@ -47,7 +47,7 @@ export default function ChefSettingsPage() {
     const newSettings: ChefModeSettings = { ...settings, ...updates };
     setSettings(newSettings);
     try {
-      await db.table('chefSettings').put(newSettings);
+      await dataService.chefSettings.save(newSettings);
     } catch (error) {
       console.error('Failed to update chef settings:', error);
     }
