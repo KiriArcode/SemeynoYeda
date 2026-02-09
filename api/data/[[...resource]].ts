@@ -148,6 +148,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       resourcePath = [req.query.resource];
     }
     
+    // Fallback: parse from URL if query.resource is empty
+    // This handles cases where Vercel doesn't populate req.query.resource correctly
+    if (resourcePath.length === 0 && req.url) {
+      const urlPath = req.url.split('?')[0]; // Remove query string
+      const pathParts = urlPath.replace(/^\/api\/data\//, '').split('/').filter(Boolean);
+      if (pathParts.length > 0) {
+        resourcePath = pathParts;
+      }
+    }
+    
     const resource = resourcePath[0] as ResourceType | undefined;
     const id = resourcePath[1];
     const date = typeof req.query.date === 'string' ? req.query.date : undefined;
@@ -160,6 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       resource,
       id,
       query: req.query,
+      parsedFromUrl: resourcePath.length > 0 && (!req.query.resource || (Array.isArray(req.query.resource) && req.query.resource.length === 0)),
     });
 
     if (!resource || !handlers[resource]) {
