@@ -4,12 +4,53 @@
  */
 
 import { neon } from '@neondatabase/serverless';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Загружаем .env файл если он существует
+function loadEnvFile() {
+  try {
+    const envPath = join(process.cwd(), '.env');
+    const envContent = readFileSync(envPath, 'utf-8');
+    const lines = envContent.split('\n');
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      
+      const equalIndex = trimmed.indexOf('=');
+      if (equalIndex === -1) continue;
+      
+      const key = trimmed.substring(0, equalIndex).trim();
+      let value = trimmed.substring(equalIndex + 1).trim();
+      
+      // Убираем кавычки если есть
+      if ((value.startsWith('"') && value.endsWith('"')) || 
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      
+      if (key && value) {
+        process.env[key] = value;
+      }
+    }
+  } catch (error) {
+    // .env файл не найден или не может быть прочитан - это нормально
+  }
+}
+
+// Загружаем переменные из .env
+loadEnvFile();
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
   console.error('❌ Ошибка: DATABASE_URL не установлена в переменных окружения');
-  console.error('Установите переменную: export DATABASE_URL="postgresql://..."');
+  console.error('');
+  console.error('Варианты решения:');
+  console.error('1. Добавьте DATABASE_URL в файл .env в корне проекта');
+  console.error('2. Или экспортируйте переменную: export DATABASE_URL="postgresql://..."');
+  console.error('3. Или запустите с inline переменной: DATABASE_URL="postgresql://..." npm run test:db');
   process.exit(1);
 }
 
