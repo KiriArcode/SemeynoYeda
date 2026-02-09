@@ -1,5 +1,45 @@
 # Troubleshooting Guide — Решение проблем
 
+## Ошибка "This Serverless Function has crashed" / FUNCTION_INVOCATION_FAILED
+
+### Симптомы
+- `500: INTERNAL_SERVER_ERROR`
+- `Code: FUNCTION_INVOCATION_FAILED`
+- Сообщение: "This Serverless Function has crashed"
+
+### Причина
+Serverless Function падает полностью из-за необработанной ошибки, чаще всего из-за отсутствия `DATABASE_URL`.
+
+### Решение
+
+**Шаг 1: Проверьте переменные окружения в Vercel**
+1. Откройте [Vercel Dashboard](https://vercel.com/dashboard)
+2. Выберите проект → **Settings** → **Environment Variables**
+3. Убедитесь, что переменная `DATABASE_URL` установлена и доступна для всех окружений
+
+**Шаг 2: Проверьте Runtime Logs**
+1. Vercel Dashboard → **Deployments** → последний деплоймент
+2. Откройте вкладку **Runtime Logs** или **Logs**
+3. Ищите сообщения:
+   - `[api/data] DATABASE_URL is not set`
+   - `[db] Error: DATABASE_URL environment variable is not set`
+   - `[api/data] Error details:`
+
+**Шаг 3: Добавьте DATABASE_URL (если отсутствует)**
+1. В Vercel Dashboard → **Settings** → **Environment Variables**
+2. Добавьте переменную:
+   - **Name:** `DATABASE_URL`
+   - **Value:** `postgresql://neondb_owner:npg_mvu3wA6dSDaU@ep-small-salad-aieorqt5-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+   - **Environment:** Все окружения (Production, Preview, Development)
+3. **Обязательно перезапустите деплоймент** (Redeploy)
+
+**Шаг 4: Проверьте формат DATABASE_URL**
+- Убедитесь, что нет лишних пробелов или кавычек
+- Формат должен быть: `postgresql://user:password@host/database?options`
+- Проверьте, что строка не разбита на несколько строк
+
+---
+
 ## Ошибки 500 в API endpoints
 
 ### Симптомы
