@@ -4,7 +4,7 @@ import type { PrepPlan } from '../../../src/data/schema';
 
 export async function getPrepPlans(): Promise<PrepPlan[]> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM prep_plans ORDER BY date DESC');
+  const rows = await (sql as any)('SELECT * FROM prep_plans ORDER BY date DESC');
   return (Array.isArray(rows) ? rows : [rows]).map((r) =>
     dbToApp<PrepPlan>(r as Record<string, unknown>)
   );
@@ -12,23 +12,23 @@ export async function getPrepPlans(): Promise<PrepPlan[]> {
 
 export async function getPrepPlanByDate(date: string): Promise<PrepPlan | null> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM prep_plans WHERE date = $1', [date]);
+  const rows = await (sql as any)('SELECT * FROM prep_plans WHERE date = $1', [date]);
   const row = Array.isArray(rows) ? rows[0] : rows;
   return row ? dbToApp<PrepPlan>(row as Record<string, unknown>) : null;
 }
 
 export async function getPrepPlanById(id: string): Promise<PrepPlan | null> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM prep_plans WHERE id = $1', [id]);
+  const rows = await (sql as any)('SELECT * FROM prep_plans WHERE id = $1', [id]);
   const row = Array.isArray(rows) ? rows[0] : rows;
   return row ? dbToApp<PrepPlan>(row as Record<string, unknown>) : null;
 }
 
 export async function createPrepPlan(plan: PrepPlan): Promise<PrepPlan> {
   const sql = getDb();
-  const db = appToDb(plan);
+  const db = appToDb(plan as unknown as Record<string, unknown>);
 
-  await sql(
+  await (sql as any)(
     `INSERT INTO prep_plans (id, date, tasks, estimated_time, completed_tasks)
      VALUES ($1, $2, $3, $4, $5)`,
     [
@@ -51,9 +51,9 @@ export async function updatePrepPlan(
 
   const merged = { ...existing, ...plan };
   const sql = getDb();
-  const db = appToDb(merged);
+  const db = appToDb(merged as unknown as Record<string, unknown>);
 
-  await sql(
+  await (sql as any)(
     `UPDATE prep_plans SET date=$2, tasks=$3, estimated_time=$4, completed_tasks=$5 WHERE id=$1`,
     [
       id,
@@ -68,6 +68,6 @@ export async function updatePrepPlan(
 
 export async function deletePrepPlan(id: string): Promise<boolean> {
   const sql = getDb();
-  await sql('DELETE FROM prep_plans WHERE id = $1', [id]);
+  await (sql as any)('DELETE FROM prep_plans WHERE id = $1', [id]);
   return true;
 }

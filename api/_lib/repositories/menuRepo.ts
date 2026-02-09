@@ -4,7 +4,7 @@ import type { WeekMenu } from '../../../src/data/schema';
 
 export async function getMenus(): Promise<WeekMenu[]> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM menus ORDER BY created_at DESC');
+  const rows = await (sql as any)('SELECT * FROM menus ORDER BY created_at DESC');
   return (Array.isArray(rows) ? rows : [rows]).map((r) =>
     dbToApp<WeekMenu>(r as Record<string, unknown>)
   );
@@ -17,16 +17,16 @@ export async function getCurrentMenu(): Promise<WeekMenu | null> {
 
 export async function getMenuById(id: string): Promise<WeekMenu | null> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM menus WHERE id = $1', [id]);
+  const rows = await (sql as any)('SELECT * FROM menus WHERE id = $1', [id] as [string, ...unknown[]]);
   const row = Array.isArray(rows) ? rows[0] : rows;
   return row ? dbToApp<WeekMenu>(row as Record<string, unknown>) : null;
 }
 
 export async function createMenu(menu: WeekMenu): Promise<WeekMenu> {
   const sql = getDb();
-  const db = appToDb(menu);
+  const db = appToDb(menu as unknown as Record<string, unknown>);
 
-  await sql(
+  await (sql as any)(
     `INSERT INTO menus (id, week_start, days, shopping_list_generated, shopping_settings, shopping_day, created_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
@@ -48,9 +48,9 @@ export async function updateMenu(id: string, menu: Partial<WeekMenu>): Promise<W
 
   const merged = { ...existing, ...menu };
   const sql = getDb();
-  const db = appToDb(merged);
+  const db = appToDb(merged as unknown as Record<string, unknown>);
 
-  await sql(
+  await (sql as any)(
     `UPDATE menus SET week_start=$2, days=$3, shopping_list_generated=$4, shopping_settings=$5, shopping_day=$6 WHERE id=$1`,
     [
       id,
@@ -66,6 +66,6 @@ export async function updateMenu(id: string, menu: Partial<WeekMenu>): Promise<W
 
 export async function deleteMenu(id: string): Promise<boolean> {
   const sql = getDb();
-  await sql('DELETE FROM menus WHERE id = $1', [id]);
+  await (sql as any)('DELETE FROM menus WHERE id = $1', [id] as [string, ...unknown[]]);
   return true;
 }

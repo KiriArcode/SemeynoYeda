@@ -1,7 +1,10 @@
 /**
- * Seed Neon/Postgres with recipes and seed menu.
+ * Seed Neon/Postgres with recipes and seed menu using repositories.
  * Run: npx tsx scripts/seedDb.ts
  * Requires: DATABASE_URL (Neon connection string)
+ * 
+ * Note: For better performance, consider using seedNeon.ts which uses
+ * direct SQL upsert with ON CONFLICT instead of checking existence first.
  */
 
 import { getSeedRecipes } from '../src/data/seedRecipes';

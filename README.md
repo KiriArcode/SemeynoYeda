@@ -39,6 +39,71 @@ npm run dev
 npm run build
 ```
 
+## Миграция данных в Neon PostgreSQL
+
+Для загрузки seed-данных (66 рецептов и недельное меню) в Neon PostgreSQL:
+
+### Шаг 1: Получить строку подключения из Neon
+
+1. Зайдите в [Neon Console](https://console.neon.tech/)
+2. Выберите ваш проект
+3. Перейдите в раздел "Connection Details"
+4. Скопируйте строку подключения (Connection String)
+
+Формат строки должен быть: `postgresql://user:password@host.tld/dbname?sslmode=require`
+
+### Шаг 2: Установить переменную окружения
+
+**Вариант A: Экспорт в текущей сессии терминала**
+```bash
+export DATABASE_URL="postgresql://user:password@host.tld/dbname?sslmode=require"
+```
+
+**Вариант B: Inline при запуске команды**
+```bash
+DATABASE_URL="postgresql://user:password@host.tld/dbname?sslmode=require" npm run seed:neon
+```
+
+**Вариант C: Использовать .env файл (если поддерживается)**
+```bash
+# Создать .env файл в корне проекта
+echo 'DATABASE_URL="postgresql://user:password@host.tld/dbname?sslmode=require"' > .env
+```
+
+### Шаг 3: Запустить миграцию
+
+```bash
+# Рекомендуемый способ - эффективный upsert с ON CONFLICT
+npm run seed:neon
+
+# Или использовать существующий скрипт через репозитории
+npm run seed:db
+```
+
+### Доступные скрипты миграции
+
+- **`seed:neon`** — Прямой SQL upsert с `ON CONFLICT` (рекомендуется, более эффективен)
+- **`seed:db`** — Использует репозитории с проверкой существования
+- **`seed:supabase`** — Для Supabase (использует Supabase клиент)
+
+### Проверка миграции
+
+После выполнения проверить в базе данных:
+
+```sql
+-- Количество рецептов (ожидается 66)
+SELECT COUNT(*) FROM recipes;
+
+-- Наличие меню (ожидается >= 1)
+SELECT COUNT(*) FROM menus;
+
+-- Пример рецепта
+SELECT id, title, category FROM recipes LIMIT 5;
+
+-- Структура JSONB полей
+SELECT ingredients, steps FROM recipes WHERE id = 'seed-kabachkovyj-sous';
+```
+
 ## Деплой
 
 Приложение автоматически деплоится на GitHub Pages при пуше в ветку `main` через GitHub Actions.

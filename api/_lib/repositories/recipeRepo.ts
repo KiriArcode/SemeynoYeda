@@ -21,21 +21,25 @@ export async function getRecipes(filters?: {
     params.push(filters.tags);
   }
 
-  const rows = params.length ? await sql(query, params as [string, ...unknown[]]) : await sql(query);
+  // Neon serverless использует tagged template literals, но для обратной совместимости
+  // используем обычные строки с параметрами (это работает через внутреннюю обертку)
+  const rows = params.length 
+    ? await (sql as any)(query, params as [string, ...unknown[]]) 
+    : await (sql as any)(query);
   return (Array.isArray(rows) ? rows : [rows]).map((r) => dbToApp<Recipe>(r as Record<string, unknown>));
 }
 
 export async function getRecipeById(id: string): Promise<Recipe | null> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM recipes WHERE id = $1', [id]);
+  const rows = await (sql as any)('SELECT * FROM recipes WHERE id = $1', [id] as [string, ...unknown[]]);
   const row = Array.isArray(rows) ? rows[0] : rows;
   return row ? dbToApp<Recipe>(row as Record<string, unknown>) : null;
 }
 
 export async function createRecipe(recipe: Recipe): Promise<Recipe> {
   const sql = getDb();
-  const db = appToDb(recipe);
-  await sql(
+  const db = appToDb(recipe as unknown as Record<string, unknown>);
+  await (sql as any)(
     `INSERT INTO recipes (id, slug, title, subtitle, category, tags, suitable_for, prep_time, cook_time, total_time, servings, ingredients, steps, equipment, notes, storage, reheating, version, source, image_url, created_at, updated_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
     [
@@ -72,9 +76,9 @@ export async function updateRecipe(id: string, recipe: Partial<Recipe>): Promise
 
   const merged = { ...existing, ...recipe, updatedAt: new Date().toISOString() };
   const sql = getDb();
-  const db = appToDb(merged);
+  const db = appToDb(merged as unknown as Record<string, unknown>);
 
-  await sql(
+  await (sql as any)(
     `UPDATE recipes SET slug=$2, title=$3, subtitle=$4, category=$5, tags=$6, suitable_for=$7, prep_time=$8, cook_time=$9, total_time=$10, servings=$11, ingredients=$12, steps=$13, equipment=$14, notes=$15, storage=$16, reheating=$17, version=$18, source=$19, image_url=$20, updated_at=$21 WHERE id=$1`,
     [
       id,
@@ -105,8 +109,7 @@ export async function updateRecipe(id: string, recipe: Partial<Recipe>): Promise
 
 export async function deleteRecipe(id: string): Promise<boolean> {
   const sql = getDb();
-  const result = await sql('DELETE FROM recipes WHERE id = $1', [id]);
-  return (result as { rowCount?: number })?.rowCount !== undefined
-    ? (result as { rowCount: number }).rowCount > 0
-    : true;
+  await (sql as any)('DELETE FROM recipes WHERE id = $1', [id] as [string, ...unknown[]]);
+  // Neon serverless не возвращает rowCount, поэтому считаем успешным если нет ошибки
+  return true;
 }

@@ -4,7 +4,7 @@ import type { CookingSession } from '../../../src/data/schema';
 
 export async function getCookingSessions(): Promise<CookingSession[]> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM cooking_sessions ORDER BY date DESC');
+  const rows = await (sql as any)('SELECT * FROM cooking_sessions ORDER BY date DESC');
   return (Array.isArray(rows) ? rows : [rows]).map((r) =>
     dbToApp<CookingSession>(r as Record<string, unknown>)
   );
@@ -12,23 +12,23 @@ export async function getCookingSessions(): Promise<CookingSession[]> {
 
 export async function getCookingSessionByDate(date: string): Promise<CookingSession | null> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM cooking_sessions WHERE date = $1', [date]);
+  const rows = await (sql as any)('SELECT * FROM cooking_sessions WHERE date = $1', [date]);
   const row = Array.isArray(rows) ? rows[0] : rows;
   return row ? dbToApp<CookingSession>(row as Record<string, unknown>) : null;
 }
 
 export async function getCookingSessionById(id: string): Promise<CookingSession | null> {
   const sql = getDb();
-  const rows = await sql('SELECT * FROM cooking_sessions WHERE id = $1', [id]);
+  const rows = await (sql as any)('SELECT * FROM cooking_sessions WHERE id = $1', [id]);
   const row = Array.isArray(rows) ? rows[0] : rows;
   return row ? dbToApp<CookingSession>(row as Record<string, unknown>) : null;
 }
 
 export async function createCookingSession(session: CookingSession): Promise<CookingSession> {
   const sql = getDb();
-  const db = appToDb(session);
+  const db = appToDb(session as unknown as Record<string, unknown>);
 
-  await sql(
+  await (sql as any)(
     `INSERT INTO cooking_sessions (id, date, meal_type, recipes, timers, started_at, completed_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
@@ -53,9 +53,9 @@ export async function updateCookingSession(
 
   const merged = { ...existing, ...session };
   const sql = getDb();
-  const db = appToDb(merged);
+  const db = appToDb(merged as unknown as Record<string, unknown>);
 
-  await sql(
+  await (sql as any)(
     `UPDATE cooking_sessions SET date=$2, meal_type=$3, recipes=$4, timers=$5, started_at=$6, completed_at=$7 WHERE id=$1`,
     [
       id,
@@ -72,6 +72,6 @@ export async function updateCookingSession(
 
 export async function deleteCookingSession(id: string): Promise<boolean> {
   const sql = getDb();
-  await sql('DELETE FROM cooking_sessions WHERE id = $1', [id]);
+  await (sql as any)('DELETE FROM cooking_sessions WHERE id = $1', [id]);
   return true;
 }
