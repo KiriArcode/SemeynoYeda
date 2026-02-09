@@ -24,6 +24,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Отключаем минификацию SW (terser), чтобы сборка не падала с "Unexpected early exit"
+        // на Vercel и в CI (race между rollup и workbox-build).
+        mode: 'development',
         // Не кэшируем index.html — иначе после деплоя SW отдаёт старый HTML
         // со ссылками на удалённые чанки → 404 на RecipesPage, FreezerPage и т.д.
         globPatterns: ['**/*.{js,css,ico,png,svg,json,woff2}'],

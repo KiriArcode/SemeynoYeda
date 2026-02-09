@@ -69,7 +69,7 @@ export const dataServiceWithSync = {
     get: async (id: string): Promise<Recipe | null> => {
       try {
         // Сначала проверяем IndexedDB
-        const cached = (await db.recipes.get(id)) as SyncableItem | undefined;
+        const cached = (await db.recipes.get(id as any)) as SyncableItem | undefined;
         if (cached) {
           return removeSyncMetadata<Recipe>(cached);
         }
@@ -106,14 +106,14 @@ export const dataServiceWithSync = {
       const now = new Date().toISOString();
       const itemWithSync: SyncableItem = {
         ...recipe,
-        updatedAt: now,
         createdAt: recipe.createdAt || now,
+        updatedAt: now,
         _sync: {
           syncStatus: 'pending',
           localUpdatedAt: now,
           retryCount: 0,
         },
-      };
+      } as SyncableItem;
 
       try {
         // Optimistic: сразу сохраняем в IndexedDB
@@ -134,7 +134,7 @@ export const dataServiceWithSync = {
     update: async (id: string, recipe: Partial<Recipe>): Promise<Recipe> => {
       try {
         // Получаем текущую версию из IndexedDB
-        const existing = (await db.recipes.get(id)) as SyncableItem | undefined;
+        const existing = (await db.recipes.get(id as any)) as SyncableItem | undefined;
         if (!existing) {
           throw new Error(`Recipe ${id} not found`);
         }
@@ -150,7 +150,7 @@ export const dataServiceWithSync = {
             localUpdatedAt: now,
             retryCount: existing._sync?.retryCount || 0,
           },
-        };
+        } as SyncableItem;
 
         // Optimistic: сразу сохраняем в IndexedDB
         await db.recipes.put(updated as any);
@@ -170,7 +170,7 @@ export const dataServiceWithSync = {
     delete: async (id: string): Promise<void> => {
       try {
         // Optimistic: удаляем из IndexedDB
-        await db.recipes.delete(id);
+        await db.recipes.delete(id as any);
 
         // В фоне синхронизируем с Neon
         if (navigator.onLine) {
@@ -230,7 +230,7 @@ export const dataServiceWithSync = {
 
     get: async (id: string): Promise<WeekMenu | null> => {
       try {
-        const cached = (await db.menus.get(id)) as SyncableItem | undefined;
+        const cached = (await db.menus.get(id as any)) as SyncableItem | undefined;
         if (cached) {
           return removeSyncMetadata<WeekMenu>(cached);
         }
@@ -271,7 +271,7 @@ export const dataServiceWithSync = {
           localUpdatedAt: now,
           retryCount: 0,
         },
-      };
+      } as SyncableItem;
 
       try {
         await db.menus.put(itemWithSync as any);
@@ -287,7 +287,7 @@ export const dataServiceWithSync = {
 
     update: async (id: string, menu: Partial<WeekMenu>): Promise<WeekMenu> => {
       try {
-        const existing = (await db.menus.get(id)) as SyncableItem | undefined;
+        const existing = (await db.menus.get(id as any)) as SyncableItem | undefined;
         if (!existing) {
           throw new Error(`Menu ${id} not found`);
         }
@@ -302,7 +302,7 @@ export const dataServiceWithSync = {
             localUpdatedAt: now,
             retryCount: existing._sync?.retryCount || 0,
           },
-        };
+        } as SyncableItem;
 
         await db.menus.put(updated as any);
         if (navigator.onLine) {
@@ -317,7 +317,7 @@ export const dataServiceWithSync = {
 
     delete: async (id: string): Promise<void> => {
       try {
-        await db.menus.delete(id);
+        await db.menus.delete(id as any);
         if (navigator.onLine) {
           try {
             await dataService.menus.delete(id);
@@ -351,7 +351,7 @@ export const dataServiceWithSync = {
 
     get: async (id: string): Promise<FreezerItem | null> => {
       try {
-        const cached = (await db.freezer.get(id)) as SyncableItem | undefined;
+        const cached = (await db.freezer.get(id as any)) as SyncableItem | undefined;
         if (cached) {
           return removeSyncMetadata<FreezerItem>(cached);
         }
@@ -391,7 +391,7 @@ export const dataServiceWithSync = {
           localUpdatedAt: now,
           retryCount: 0,
         },
-      };
+      } as SyncableItem;
 
       try {
         await db.freezer.put(itemWithSync as any);
@@ -407,7 +407,7 @@ export const dataServiceWithSync = {
 
     update: async (id: string, item: Partial<FreezerItem>): Promise<FreezerItem> => {
       try {
-        const existing = (await db.freezer.get(id)) as SyncableItem | undefined;
+        const existing = (await db.freezer.get(id as any)) as SyncableItem | undefined;
         if (!existing) {
           throw new Error(`FreezerItem ${id} not found`);
         }
@@ -422,7 +422,7 @@ export const dataServiceWithSync = {
             localUpdatedAt: now,
             retryCount: existing._sync?.retryCount || 0,
           },
-        };
+        } as SyncableItem;
 
         await db.freezer.put(updated as any);
         if (navigator.onLine) {
@@ -437,7 +437,7 @@ export const dataServiceWithSync = {
 
     delete: async (id: string): Promise<void> => {
       try {
-        await db.freezer.delete(id);
+        await db.freezer.delete(id as any);
         if (navigator.onLine) {
           try {
             await dataService.freezer.delete(id);
@@ -478,7 +478,7 @@ export const dataServiceWithSync = {
           localUpdatedAt: now,
           retryCount: 0,
         },
-      }));
+      } as SyncableItem));
 
       try {
         await db.shopping.bulkPut(itemsWithSync as any);
@@ -501,7 +501,7 @@ export const dataServiceWithSync = {
           localUpdatedAt: now,
           retryCount: 0,
         },
-      };
+      } as SyncableItem;
 
       try {
         await db.shopping.put(itemWithSync as any);
@@ -517,7 +517,7 @@ export const dataServiceWithSync = {
 
     update: async (ingredient: string, updates: Partial<ShoppingItem>): Promise<ShoppingItem> => {
       try {
-        const existing = (await db.shopping.get(ingredient)) as SyncableItem | undefined;
+        const existing = (await db.shopping.get(ingredient as any)) as SyncableItem | undefined;
         if (!existing) {
           throw new Error(`ShoppingItem ${ingredient} not found`);
         }
@@ -532,7 +532,7 @@ export const dataServiceWithSync = {
             localUpdatedAt: now,
             retryCount: existing._sync?.retryCount || 0,
           },
-        };
+        } as SyncableItem;
 
         await db.shopping.put(updated as any);
         if (navigator.onLine) {
@@ -547,7 +547,7 @@ export const dataServiceWithSync = {
 
     delete: async (ingredient: string): Promise<void> => {
       try {
-        await db.shopping.delete(ingredient);
+        await db.shopping.delete(ingredient as any);
         if (navigator.onLine) {
           try {
             await dataService.shopping.delete(ingredient);
@@ -614,7 +614,7 @@ export const dataServiceWithSync = {
 
     get: async (id: string): Promise<PrepPlan | null> => {
       try {
-        const cached = (await db.prepPlans.get(id)) as SyncableItem | undefined;
+        const cached = (await db.prepPlans.get(id as any)) as SyncableItem | undefined;
         if (cached) {
           return removeSyncMetadata<PrepPlan>(cached);
         }
@@ -654,7 +654,7 @@ export const dataServiceWithSync = {
           localUpdatedAt: now,
           retryCount: 0,
         },
-      };
+      } as SyncableItem;
 
       try {
         await db.prepPlans.put(itemWithSync as any);
@@ -670,7 +670,7 @@ export const dataServiceWithSync = {
 
     update: async (id: string, plan: Partial<PrepPlan>): Promise<PrepPlan> => {
       try {
-        const existing = (await db.prepPlans.get(id)) as SyncableItem | undefined;
+        const existing = (await db.prepPlans.get(id as any)) as SyncableItem | undefined;
         if (!existing) {
           throw new Error(`PrepPlan ${id} not found`);
         }
@@ -685,7 +685,7 @@ export const dataServiceWithSync = {
             localUpdatedAt: now,
             retryCount: existing._sync?.retryCount || 0,
           },
-        };
+        } as SyncableItem;
 
         await db.prepPlans.put(updated as any);
         if (navigator.onLine) {
@@ -700,7 +700,7 @@ export const dataServiceWithSync = {
 
     delete: async (id: string): Promise<void> => {
       try {
-        await db.prepPlans.delete(id);
+        await db.prepPlans.delete(id as any);
         if (navigator.onLine) {
           try {
             await dataService.prepPlans.delete(id);
@@ -767,7 +767,7 @@ export const dataServiceWithSync = {
 
     get: async (id: string): Promise<CookingSession | null> => {
       try {
-        const cached = (await db.cookingSessions.get(id)) as SyncableItem | undefined;
+        const cached = (await db.cookingSessions.get(id as any)) as SyncableItem | undefined;
         if (cached) {
           return removeSyncMetadata<CookingSession>(cached);
         }
@@ -807,7 +807,7 @@ export const dataServiceWithSync = {
           localUpdatedAt: now,
           retryCount: 0,
         },
-      };
+      } as SyncableItem;
 
       try {
         await db.cookingSessions.put(itemWithSync as any);
@@ -823,7 +823,7 @@ export const dataServiceWithSync = {
 
     update: async (id: string, session: Partial<CookingSession>): Promise<CookingSession> => {
       try {
-        const existing = (await db.cookingSessions.get(id)) as SyncableItem | undefined;
+        const existing = (await db.cookingSessions.get(id as any)) as SyncableItem | undefined;
         if (!existing) {
           throw new Error(`CookingSession ${id} not found`);
         }
@@ -838,7 +838,7 @@ export const dataServiceWithSync = {
             localUpdatedAt: now,
             retryCount: existing._sync?.retryCount || 0,
           },
-        };
+        } as SyncableItem;
 
         await db.cookingSessions.put(updated as any);
         if (navigator.onLine) {
@@ -855,7 +855,7 @@ export const dataServiceWithSync = {
   chefSettings: {
     get: async (id = 'default'): Promise<ChefModeSettings | null> => {
       try {
-        const cached = (await db.chefSettings.get(id)) as SyncableItem | undefined;
+        const cached = (await db.chefSettings.get(id as any)) as SyncableItem | undefined;
         if (cached) {
           return removeSyncMetadata<ChefModeSettings>(cached);
         }
@@ -895,7 +895,7 @@ export const dataServiceWithSync = {
           localUpdatedAt: now,
           retryCount: 0,
         },
-      };
+      } as SyncableItem;
 
       try {
         await db.chefSettings.put(itemWithSync as any);

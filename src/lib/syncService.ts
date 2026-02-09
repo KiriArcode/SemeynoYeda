@@ -45,7 +45,7 @@ export interface SyncMetadata {
   localUpdatedAt: string;
 }
 
-export interface SyncableItem extends SyncableEntity {
+export type SyncableItem = SyncableEntity & {
   _sync?: SyncMetadata;
 }
 
@@ -144,7 +144,6 @@ class SyncService {
       // Сохраняем в IndexedDB с метаданными синхронизации
       const now = new Date().toISOString();
       const itemsWithSync: SyncableItem[] = items.map((item) => {
-        const existing = (item as any).id ? undefined : undefined; // Будет проверено при записи
         return {
           ...item,
           _sync: {
