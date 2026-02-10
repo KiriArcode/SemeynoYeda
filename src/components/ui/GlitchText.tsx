@@ -69,8 +69,20 @@ export function GlitchText({
       }
 
       // Заменяем случайные символы на глитч
-      const glitched = text.split('').map((char) => {
-        if (Math.random() < 0.3 && frame < maxFrames - 1) {
+      // Используем параметр chars для контроля количества заменяемых символов
+      const charsToReplace = Math.min(config.chars, text.length);
+      const indicesToReplace = new Set<number>();
+      
+      // Выбираем случайные индексы для замены
+      while (indicesToReplace.size < charsToReplace && indicesToReplace.size < text.length) {
+        const randomIndex = Math.floor(Math.random() * text.length);
+        if (frame < maxFrames - 1) {
+          indicesToReplace.add(randomIndex);
+        }
+      }
+
+      const glitched = text.split('').map((char, i) => {
+        if (indicesToReplace.has(i)) {
           return glitchChars[Math.floor(Math.random() * glitchChars.length)];
         }
         return char;
@@ -81,12 +93,22 @@ export function GlitchText({
     }, config.duration);
 
     return () => clearInterval(glitchInterval);
-  }, [isGlitching, text, config.duration, prefersReducedMotion]);
+  }, [isGlitching, text, config.duration, config.chars, prefersReducedMotion]);
 
   // Обработчик наведения
   const handleMouseEnter = () => {
     if (glitchOnHover && !isGlitching && !prefersReducedMotion) {
       setIsGlitching(true);
+    }
+  };
+
+  // Обработчик ухода курсора - плавное завершение эффекта
+  const handleMouseLeave = () => {
+    if (glitchOnHover && isGlitching && !prefersReducedMotion) {
+      // Даём эффекту завершиться естественным образом через небольшую задержку
+      setTimeout(() => {
+        setIsGlitching(false);
+      }, config.duration * 2);
     }
   };
 
@@ -101,6 +123,7 @@ export function GlitchText({
     <Tag 
       className={`relative inline-block font-heading ${className}`}
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouch}
       style={{ 
         cursor: glitchOnHover ? 'pointer' : 'default',
