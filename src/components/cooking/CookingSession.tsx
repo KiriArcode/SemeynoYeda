@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../../lib/dataService';
+import { logger } from '../../lib/logger';
 import type { Recipe, MealType, Ingredient } from '../../data/schema';
 import { useCookingTimers } from '../../hooks/useCookingTimers';
 import { IngredientCheck } from './IngredientCheck';
@@ -30,7 +31,7 @@ export function CookingSession({ recipeIds, portionsPerRecipe = {}, onComplete }
         .filter((r): r is Recipe => r != null);
       setRecipes(validRecipes);
     } catch (error) {
-      console.error('Failed to load recipes:', error);
+      logger.error('Failed to load recipes:', error);
     }
   }
 

@@ -5,8 +5,8 @@
 **SemeynoYeda** — PWA-приложение для управления семейным питанием с учётом индивидуальных диетических потребностей (гастрит, предпочтения по текстурам и соусам).
 
 ### Ключевые принципы
-- **Offline-first** — работает без интернета (PWA + IndexedDB)
-- **Seed + IndexedDB** — стартовые рецепты и меню в коде seed (`seedRecipes.ts`, `seedMenu.ts`); при запуске загружаются в IndexedDB. Runtime-данные только в IndexedDB. Экспорт в Git/JSON — отдельная функция (см. SPEC.md).
+- **Offline-first** — работает без интернета (PWA + IndexedDB как локальный кэш)
+- **Neon PostgreSQL + IndexedDB** — основная БД — Neon (serverless Postgres), доступ через Vercel Serverless Functions. IndexedDB (Dexie) используется как offline-кэш и синхронизируется с Neon через `syncService.ts`. Seed-данные (57 рецептов, меню) загружаются при старте.
 - **Cursor-friendly** — структура проекта оптимизирована для работы с Cursor IDE
 - **Двухпользовательская модель** — каждое блюдо может иметь вариации для разных членов семьи
 
@@ -20,12 +20,13 @@
 |------|-----------|--------|
 | Фреймворк | **React 18** + **TypeScript** | Компонентная модель, типизация данных рецептов |
 | Сборка | **Vite 5** | Быстрый HMR, нативный PWA-плагин |
-| Стили | **Tailwind CSS 3** + **CSS Variables** | Утилиты + кастомная тема |
+| Стили | **Tailwind CSS 4** (через @tailwindcss/vite) + **CSS Variables** | Утилиты + кастомная тема |
 | Роутинг | **React Router 6** | SPA навигация |
-| Хранилище | **IndexedDB** (через Dexie.js) | Offline-данные, >50MB |
+| Хранилище | **Neon PostgreSQL** (serverless) + **IndexedDB** (Dexie, offline-кэш) | Основная БД в облаке, локальный кэш для offline |
+| API | **Vercel Serverless Functions** (`api/`) | REST-доступ к Neon из клиента |
 | PWA | **vite-plugin-pwa** (Workbox) | Service Worker, кэширование |
-| Хостинг | **Vercel** или **GitHub Pages** | см. раздел «Деплой» и SPEC.md |
-| Синхронизация | **Supabase** (целевой, по SPEC) / **GitHub API** (опционально) | Offline-first sync или коммит данных |
+| Хостинг | **Vercel** | Serverless Functions + статика |
+| Синхронизация | **Neon ↔ IndexedDB** через syncService (offline-first) | Фоновая синхронизация, optimistic writes |
 
 ### 2.2 Структура проекта
 
@@ -49,12 +50,16 @@ SemeynoYeda/
 │   │   └── shopping/           # ShoppingSettings
 │   ├── data/
 │   │   ├── schema.ts           # TypeScript типы данных (единственный источник правды по схеме)
-│   │   ├── seedRecipes.ts      # Seed-рецепты (bulkPut в IndexedDB при инициализации)
+│   │   ├── seedRecipes.ts      # 57 seed-рецептов (bulkPut в IndexedDB при инициализации)
 │   │   └── seedMenu.ts         # Seed-меню
 │   ├── hooks/                  # useShoppingList, usePrepPlan, useBatchCooking, useCookingTimers, useFreezerAlerts, useIngredientAvailability, useToast
 │   ├── lib/
-│   │   ├── db.ts               # Dexie.js инстанс
-│   │   └── initDb.ts           # Инициализация БД, syncSeedRecipes
+│   │   ├── db.ts               # Dexie.js инстанс (локальный кэш)
+│   │   ├── initDb.ts           # Инициализация БД, syncSeedRecipes
+│   │   ├── dataService.ts      # Локальный data-сервис (IndexedDB)
+│   │   ├── dataServiceApi.ts   # API data-сервис (Neon через Vercel Functions)
+│   │   ├── dataServiceWithSync.ts # Комбинированный сервис: API + IndexedDB кэш
+│   │   └── syncService.ts      # Синхронизация Neon ↔ IndexedDB (фоновый sync)
 │   ├── pages/                  # MenuPage, RecipesPage, RecipeDetailPage, RecipeEditPage, RecipeNewPage, ShoppingPage, FreezerPage, PrepPage, CookingPage, ChefSettingsPage
 │   ├── styles/globals.css      # CSS переменные, базовые стили
 │   └── main.tsx
@@ -66,7 +71,7 @@ SemeynoYeda/
 │   │   └── [[...slug]].ts     # Shopping endpoint (специфичная логика)
 │   └── prep-plans/
 │       └── [[...slug]].ts     # Prep plans endpoint (специфичная логика)
-├── scripts/                    # seedDb.ts, checkDb.ts, seedSupabase.ts
+├── scripts/                    # seedDb.ts, seedNeon.ts, checkDb.ts, testDbConnection.ts
 ├── cursorrules                 # Глобальные правила Cursor
 ├── index.html
 ├── vite.config.ts
@@ -94,29 +99,39 @@ SemeynoYeda/
 ### 2.4 Потоки данных
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      DATA FLOW                              │
-│                                                             │
-│  ┌─────────────────┐     при старте      ┌──────────────┐   │
-│  │ seedRecipes.ts  │  bulkPut (merge)    │  IndexedDB   │   │
-│  │ seedMenu.ts     │───────────────────▶│  (Dexie)    │   │
-│  └─────────────────┘                     └──────┬───────┘   │
-│         │                                        │           │
-│         │                                        │ read/write│
-│         │                                        ▼           │
-│         │                                 ┌──────────┐      │
-│         │                                 │   UI     │      │
-│         │                                 └──────────┘      │
-│         │                                                       │
-│  Экспорт (опционально): IndexedDB → JSON → Git / скачивание   │
-│  Целевой вариант (SPEC): Supabase ↔ IndexedDB, offline-first  │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│                         DATA FLOW                                 │
+│                                                                   │
+│  ┌──────────────┐  seed при старте  ┌──────────────┐             │
+│  │seedRecipes.ts│──────────────────▶│  IndexedDB   │             │
+│  │ seedMenu.ts  │  (57 рецептов)    │  (Dexie)     │             │
+│  └──────────────┘                   │  offline-кэш │             │
+│                                     └──────┬───────┘             │
+│                                       ▲    │                     │
+│                            sync       │    │ fast read           │
+│                          (background) │    ▼                     │
+│  ┌──────────────────┐            ┌──────────┐                    │
+│  │  Neon PostgreSQL │◀──────────▶│   UI     │                    │
+│  │  (primary DB)    │  write     └──────────┘                    │
+│  └────────┬─────────┘  (optimistic → push)                       │
+│           │                                                       │
+│           │ SQL                                                   │
+│           ▼                                                       │
+│  ┌──────────────────┐                                            │
+│  │ Vercel Serverless│  REST API (api/)                           │
+│  │ Functions        │  dataServiceApi.ts → Neon                  │
+│  └──────────────────┘                                            │
+│                                                                   │
+│  syncService.ts: фоновая синхронизация Neon ↔ IndexedDB          │
+│  dataServiceWithSync.ts: единый интерфейс для UI                 │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 **Цикл работы:**
-1. **Старт приложения** — initDb: открытие Dexie, syncSeedRecipes (bulkPut seed-рецептов и seed-меню; новые рецепты из git появляются при следующем запуске).
-2. **Runtime** — все чтение и запись только в IndexedDB.
-3. **Экспорт** — по желанию: генерация JSON из IndexedDB → коммит через GitHub API или скачивание (см. SPEC.md для целевого варианта с Supabase).
+1. **Старт приложения** — initDb: открытие Dexie, syncSeedRecipes (bulkPut 57 seed-рецептов и seed-меню). Запуск фоновой синхронизации с Neon.
+2. **Чтение** — UI читает из IndexedDB (быстро, offline-доступ). В фоне syncService подтягивает актуальные данные из Neon.
+3. **Запись** — optimistic write в IndexedDB (UI обновляется мгновенно), затем push в Neon через API. При конфликте — last write wins.
+4. **Фоновый sync** — syncService.ts периодически синхронизирует Neon ↔ IndexedDB (каждые 30с при наличии сети).
 
 ---
 
@@ -241,34 +256,41 @@ SemeynoYeda/
 
 ### Деплой
 
-- **Текущий:** конфиг готов под Vercel (`base: '/'` в vite.config.ts). Деплой может быть на Vercel или GitHub Pages (см. DEPLOY.md, vercel.json).
-- **Целевой (SPEC.md):** Vercel + Supabase, invite-only доступ, offline-first синхронизация. Подробности — в [SPEC.md](SPEC.md) и [DEPLOY.md](DEPLOY.md).
+- **Платформа:** Vercel (`base: '/'` в vite.config.ts, конфиг в `vercel.json`).
+- **Serverless Functions:** каталог `api/` — автоматически деплоятся как Vercel Serverless Functions, обеспечивают REST-доступ к Neon PostgreSQL.
+- **БД:** Neon PostgreSQL (serverless) — подключение через `DATABASE_URL` в переменных окружения Vercel.
+- **Offline:** PWA + IndexedDB обеспечивают работу без сети; при восстановлении соединения syncService синхронизирует данные с Neon.
 
 ---
 
 ## 7. Синхронизация данных
 
-### Вариант A: Ручной экспорт (MVP)
-1. Пользователь нажимает "Экспорт"
-2. Приложение генерирует JSON-файлы
-3. Скачиваются как `.json`
-4. Пользователь коммитит в репо
+### Архитектура: Neon ↔ IndexedDB (offline-first)
 
-### Вариант B: GitHub API (MVP-2)
-1. Пользователь авторизуется через Personal Access Token
-2. Приложение коммитит изменения напрямую через GitHub REST API
-3. Триггерится GitHub Actions → редеплой
+Синхронизация реализована в `syncService.ts` и `dataServiceWithSync.ts`.
 
-```typescript
-// lib/github.ts
-async function commitToRepo(files: {path: string, content: string}[]) {
-  const token = localStorage.getItem('github_token');
-  // ... GitHub Contents API
-}
+**Компоненты:**
+- **`dataServiceWithSync.ts`** — единый интерфейс для UI. Комбинирует чтение из IndexedDB (быстрый ответ) с фоновым обновлением из Neon.
+- **`dataServiceApi.ts`** — REST-клиент для Vercel Serverless Functions → Neon PostgreSQL.
+- **`dataService.ts`** — локальный data-сервис, работает с IndexedDB (Dexie).
+- **`syncService.ts`** — фоновая синхронизация между Neon и IndexedDB.
+
+**Принцип работы:**
+
+```
+┌────────────┐   optimistic write   ┌──────────────┐   push   ┌─────────────────┐
+│    UI      │─────────────────────▶│  IndexedDB   │────────▶│ Neon PostgreSQL  │
+│            │◀─────────────────────│  (Dexie)     │◀────────│ (через API)      │
+│            │     fast read        │  offline-кэш │  pull   │ primary DB       │
+└────────────┘                      └──────────────┘         └─────────────────┘
 ```
 
-### Вариант C: GitHub App + OAuth (MVP-3)
-Полноценная OAuth авторизация, автоматическая синхронизация.
+**Процесс синхронизации:**
+1. **Запись** — данные сначала записываются в IndexedDB (optimistic update, UI обновляется мгновенно), затем отправляются в Neon через API.
+2. **Чтение** — UI читает из IndexedDB для мгновенного отклика. В фоне syncService подтягивает свежие данные из Neon.
+3. **Фоновый sync** — syncService запускает периодическую синхронизацию каждые 30 секунд при наличии сети.
+4. **Конфликты** — разрешение по принципу «last write wins» (последняя запись побеждает).
+5. **Offline** — при отсутствии сети приложение работает полностью на IndexedDB. При восстановлении соединения накопленные изменения отправляются в Neon.
 
 ---
 

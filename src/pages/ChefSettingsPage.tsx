@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { ChefModeSettings } from '../data/schema';
 import { ChefHat, Settings } from 'lucide-react';
 import { useChefMode } from '../contexts/ChefModeContext';
@@ -13,7 +14,7 @@ const DEFAULT_SETTINGS: ChefModeSettings = {
   kolyaMealsMode: '4',
 };
 
-export default function ChefSettingsPage() {
+export function ChefSettingsPage() {
   const { settings: contextSettings, loading: contextLoading } = useChefMode();
   const [settings, setSettings] = useState<ChefModeSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,7 @@ export default function ChefSettingsPage() {
         setSettings(DEFAULT_SETTINGS);
       }
     } catch (error) {
-      console.error('Failed to load chef settings:', error);
+      logger.error('Failed to load chef settings:', error);
     } finally {
       setLoading(false);
     }
@@ -49,7 +50,7 @@ export default function ChefSettingsPage() {
     try {
       await dataService.chefSettings.save(newSettings);
     } catch (error) {
-      console.error('Failed to update chef settings:', error);
+      logger.error('Failed to update chef settings:', error);
     }
   }
 
@@ -221,3 +222,6 @@ export default function ChefSettingsPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default ChefSettingsPage;

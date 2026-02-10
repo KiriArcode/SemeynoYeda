@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../../lib/dataService';
+import { logger } from '../../lib/logger';
 import type { WeekMenu, Recipe } from '../../data/schema';
 import { BarChart3, AlertTriangle } from 'lucide-react';
 
@@ -96,7 +97,7 @@ export function WeekStats({ weekMenu }: WeekStatsProps) {
       setStats(result);
       setWarnings(newWarnings);
     } catch (error) {
-      console.error('[WeekStats] Error:', error);
+      logger.error('[WeekStats] Error:', error);
     }
   }
 

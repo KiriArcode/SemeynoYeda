@@ -8,14 +8,12 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "seed:supabase": "tsx scripts/seedSupabase.ts",
     "seed:db": "tsx scripts/seedDb.ts",
     "seed:neon": "tsx scripts/seedNeon.ts",
     "test:db": "tsx scripts/testDbConnection.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
-    "@supabase/supabase-js": "^2.95.3",
     "dexie": "^3.2.4",
     "lucide-react": "^0.294.0",
     "motion": "^12.34.0",
@@ -35,7 +33,6 @@
     "eslint": "^8.55.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
-    "tailwindcss": "^3.3.6",
     "tsx": "^4.21.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.8",

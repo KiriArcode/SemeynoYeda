@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import { RecipeForm } from '../components/recipe/RecipeForm';
 import type { Recipe } from '../data/schema';
 
-export default function RecipeEditPage() {
+export function RecipeEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -23,7 +24,7 @@ export default function RecipeEditPage() {
   }, [id]);
 
   async function handleSave(updated: Recipe) {
-    console.log('[RecipeEditPage] Updating recipe:', updated.title);
+    logger.log('[RecipeEditPage] Updating recipe:', updated.title);
     await dataService.recipes.update(updated.id, updated);
     navigate(`/recipe/${updated.id}`);
   }
@@ -57,3 +58,6 @@ export default function RecipeEditPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default RecipeEditPage;

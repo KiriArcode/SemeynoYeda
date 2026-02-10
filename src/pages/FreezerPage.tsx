@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { FreezerItem, Recipe } from '../data/schema';
 import { nanoid } from 'nanoid';
 import { Snowflake, Plus, Minus, Trash2, X } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { AlertBanner } from '../components/ui/AlertBanner';
 
-export default function FreezerPage() {
+export function FreezerPage() {
   const [items, setItems] = useState<FreezerItem[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +34,7 @@ export default function FreezerPage() {
       setItems(freezerItems);
       setRecipes(allRecipes);
     } catch (error) {
-      console.error('[FreezerPage] Failed to load:', error);
+      logger.error('[FreezerPage] Failed to load:', error);
     } finally {
       setLoading(false);
     }
@@ -59,7 +60,7 @@ export default function FreezerPage() {
       forWhom: formForWhom,
     };
 
-    console.log('[FreezerPage] Adding item:', name, formPortions, 'portions');
+    logger.log('[FreezerPage] Adding item:', name, formPortions, 'portions');
     await dataService.freezer.create(newItem);
     setItems(prev => [...prev, newItem]);
     resetForm();
@@ -67,7 +68,7 @@ export default function FreezerPage() {
 
   async function handleUsePortions(item: FreezerItem, count: number) {
     const remaining = Math.max(0, item.portionsRemaining - count);
-    console.log(`[FreezerPage] Using ${count} portions of ${item.name}, remaining: ${remaining}`);
+    logger.log(`[FreezerPage] Using ${count} portions of ${item.name}, remaining: ${remaining}`);
     const updated = { ...item, portionsRemaining: remaining };
     await dataService.freezer.update(item.id, updated);
     setItems(prev => prev.map(i => i.id === item.id ? updated : i));
@@ -75,7 +76,7 @@ export default function FreezerPage() {
 
   async function handleDelete() {
     if (!deleteItem) return;
-    console.log('[FreezerPage] Deleting:', deleteItem.name);
+    logger.log('[FreezerPage] Deleting:', deleteItem.name);
     await dataService.freezer.delete(deleteItem.id);
     setItems(prev => prev.filter(i => i.id !== deleteItem.id));
     setDeleteItem(null);
@@ -293,3 +294,6 @@ export default function FreezerPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default FreezerPage;

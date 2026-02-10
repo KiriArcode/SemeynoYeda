@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { WeekMenu, FreezerItem, EquipmentId } from '../data/schema';
 import { useBatchCooking } from '../hooks/useBatchCooking';
 import { nanoid } from 'nanoid';
@@ -42,7 +43,7 @@ function generateTip(taskIndex: number, phaseTasks: { equipment: string; step: s
   return null;
 }
 
-export default function PrepPage() {
+export function PrepPage() {
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const { plan, loading: planLoading, generateBatchPlan, toggleTask } = useBatchCooking();
@@ -56,7 +57,7 @@ export default function PrepPage() {
       const menu = await dataService.menus.getCurrent().catch(() => null);
       setWeekMenu(menu || null);
     } catch (error) {
-      console.error('[PrepPage] Error:', error);
+      logger.error('[PrepPage] Error:', error);
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ export default function PrepPage() {
 
   async function handleGenerate() {
     if (!weekMenu) return;
-    console.log('[PrepPage] Generating batch plan...');
+    logger.log('[PrepPage] Generating batch plan...');
     await generateBatchPlan(weekMenu);
   }
 
@@ -120,7 +121,7 @@ export default function PrepPage() {
         }
       }
     }
-    console.log(`[PrepPage] Frozen ${packagingTasks.length} items`);
+    logger.log(`[PrepPage] Frozen ${packagingTasks.length} items`);
   }
 
   if (loading || planLoading) {
@@ -330,3 +331,6 @@ export default function PrepPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default PrepPage;

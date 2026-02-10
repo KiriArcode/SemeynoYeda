@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import { db } from '../lib/db';
 import type { WeekMenu, Recipe, BatchTask, BatchPlan, EquipmentId } from '../data/schema';
 import { nanoid } from 'nanoid';
@@ -45,7 +46,7 @@ export function useBatchCooking() {
         const latest = await db.batchPlans.orderBy('date').reverse().first();
         if (!cancelled && latest) setPlan(latest);
       } catch (e) {
-        console.error('[useBatchCooking] Load saved plan:', e);
+        logger.error('[useBatchCooking] Load saved plan:', e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -79,7 +80,7 @@ export function useBatchCooking() {
       );
 
       if (freezableRecipes.length === 0) {
-        console.log('[useBatchCooking] No freezable recipes found');
+        logger.log('[useBatchCooking] No freezable recipes found');
         setLoading(false);
         return null;
       }
@@ -121,7 +122,7 @@ export function useBatchCooking() {
         const neededPortions = Math.max(0, recipe.servings * usageCount - stockPortions);
 
         if (neededPortions <= 0) {
-          console.log(`[useBatchCooking] ${recipe.title}: stock covers needed portions`);
+          logger.log(`[useBatchCooking] ${recipe.title}: stock covers needed portions`);
           continue;
         }
 
@@ -185,13 +186,13 @@ export function useBatchCooking() {
         completedTasks: [],
       };
 
-      console.log(`[useBatchCooking] Generated plan: ${tasks.length} tasks, ~${totalTime} min`);
+      logger.log(`[useBatchCooking] Generated plan: ${tasks.length} tasks, ~${totalTime} min`);
       await db.batchPlans.put(newPlan);
       setPlan(newPlan);
       setLoading(false);
       return newPlan;
     } catch (error) {
-      console.error('[useBatchCooking] Error generating plan:', error);
+      logger.error('[useBatchCooking] Error generating plan:', error);
       setLoading(false);
       return null;
     }
@@ -206,7 +207,7 @@ export function useBatchCooking() {
         : [...prev.completedTasks, taskId];
       const tasks = prev.tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t);
       const next = { ...prev, tasks, completedTasks };
-      db.batchPlans.put(next).catch(e => console.error('[useBatchCooking] Save after toggle:', e));
+      db.batchPlans.put(next).catch(e => logger.error('[useBatchCooking] Save after toggle:', e));
       return next;
     });
   }, []);

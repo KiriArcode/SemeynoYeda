@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { ShoppingItem, WeekMenu, Recipe } from '../data/schema';
 
 export function useShoppingList() {
@@ -15,7 +16,7 @@ export function useShoppingList() {
       const allItems = await dataService.shopping.list();
       setItems(allItems);
     } catch (error) {
-      console.error('Failed to load shopping list:', error);
+      logger.error('Failed to load shopping list:', error);
     } finally {
       setLoading(false);
     }

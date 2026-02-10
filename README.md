@@ -17,7 +17,8 @@ PWA-приложение для управления семейным питан
 - React 18 + TypeScript
 - Vite 5
 - Tailwind CSS 3
-- Dexie.js (IndexedDB)
+- Neon PostgreSQL (serverless)
+- Dexie.js (IndexedDB, offline-кэш)
 - React Router 6
 - PWA (vite-plugin-pwa)
 
@@ -136,7 +137,7 @@ SELECT ingredients, steps FROM recipes WHERE id = 'seed-kabachkovyj-sous';
 
 ## Деплой
 
-Приложение автоматически деплоится на GitHub Pages при пуше в ветку `main` через GitHub Actions.
+Приложение автоматически деплоится на Vercel при пуше в ветку `main`.
 
 ## Структура проекта
 

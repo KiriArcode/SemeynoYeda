@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { Ingredient, IngredientAvailability } from '../data/schema';
 import { useShoppingList } from './useShoppingList';
 
@@ -11,7 +12,7 @@ export function useIngredientAvailability() {
 
   const markIngredientMissing = useCallback(
     async (ingredient: string) => {
-      console.log(`[useIngredientAvailability] markMissing: "${ingredient}"`);
+      logger.log(`[useIngredientAvailability] markMissing: "${ingredient}"`);
       setAvailabilityMap((prev) => {
         const newMap = new Map(prev);
         newMap.set(ingredient, 'missing');
@@ -25,7 +26,7 @@ export function useIngredientAvailability() {
   );
 
   const markIngredientAvailable = useCallback((ingredient: string) => {
-    console.log(`[useIngredientAvailability] markAvailable: "${ingredient}"`);
+    logger.log(`[useIngredientAvailability] markAvailable: "${ingredient}"`);
     setAvailabilityMap((prev) => {
       const newMap = new Map(prev);
       newMap.set(ingredient, 'available');

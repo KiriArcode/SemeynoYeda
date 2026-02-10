@@ -18,5 +18,17 @@ alwaysApply: false
 
 ## Архитектура данных
 
-- Стартовые данные рецептов и меню — только из seed ([seedRecipes.ts](src/data/seedRecipes.ts), [seedMenu.ts](src/data/seedMenu.ts)).
-- Runtime — IndexedDB (Dexie). Не предполагать наличие JSON-файлов рецептов в `src/data/` кроме кода seed.
+- **Основная БД**: Neon PostgreSQL (serverless), доступ через Vercel Serverless Functions (`api/` директория).
+- **Локальный кэш**: IndexedDB (Dexie) — offline-кэш с синхронизацией через `syncService.ts`.
+- **Seed данные**: 57 рецептов в [seedRecipes.ts](src/data/seedRecipes.ts), меню в [seedMenu.ts](src/data/seedMenu.ts). Загружаются в Neon через `scripts/seedNeon.ts`.
+- **Runtime**: чтение из IndexedDB (быстро), фоновая синхронизация с Neon каждые 30 секунд. Запись — optimistic в IndexedDB, затем push в Neon.
+- Не предполагать наличие JSON-файлов рецептов в `src/data/` кроме кода seed.
+
+## Деплой
+
+- **Vercel** — единственная платформа деплоя. `base: '/'` в vite.config.ts.
+- GitHub Pages **НЕ ИСПОЛЬЗУЕТСЯ** (документы BUILD_GUIDE.md, DEPLOY.md, FIX_DEPLOY.md — устарели).
+
+## Неиспользуемые технологии
+
+- **Supabase** — НЕ ИСПОЛЬЗУЕТСЯ. `@supabase/supabase-js` подлежит удалению. Для Auth планируется Neon Auth.

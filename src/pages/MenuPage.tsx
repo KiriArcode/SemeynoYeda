@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { WeekMenu, MealSlot as MealSlotType, MealType } from '../data/schema';
 import { getSeedWeekMenu } from '../data/seedMenu';
 import { MealSlot } from '../components/menu/MealSlot';
@@ -30,7 +31,7 @@ const MEAL_FILTERS: { value: MealType | 'all'; label: string }[] = [
   { value: 'late_snack', label: '🥛 Второй ужин' },
 ];
 
-export default function MenuPage() {
+export function MenuPage() {
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [creatingFromTemplate, setCreatingFromTemplate] = useState(false);
@@ -59,18 +60,18 @@ export default function MenuPage() {
   }, [weekMenu?.id]);
 
   async function loadWeekMenu() {
-    console.log('[MenuPage] Loading week menu...');
+    logger.log('[MenuPage] Loading week menu...');
     try {
       const menu = await dataService.menus.getCurrent();
       if (menu != null) {
-        console.log(`[MenuPage] Menu loaded: ${menu.id}, ${menu.days?.length || 0} days`);
+        logger.log(`[MenuPage] Menu loaded: ${menu.id}, ${menu.days?.length || 0} days`);
         setWeekMenu(menu);
       } else {
-        console.log('[MenuPage] No menu found');
+        logger.log('[MenuPage] No menu found');
         setWeekMenu(null);
       }
     } catch (error) {
-      console.error('[MenuPage] Failed to load week menu:', error);
+      logger.error('[MenuPage] Failed to load week menu:', error);
       setWeekMenu(null);
     } finally {
       setLoading(false);
@@ -78,7 +79,7 @@ export default function MenuPage() {
   }
 
   async function createMenuFromTemplate() {
-    console.log('[MenuPage] Creating menu from template...');
+    logger.log('[MenuPage] Creating menu from template...');
     setCreatingFromTemplate(true);
     setTemplateSuccess(false);
     try {
@@ -88,7 +89,7 @@ export default function MenuPage() {
       setTemplateSuccess(true);
       setTimeout(() => setTemplateSuccess(false), 3000);
     } catch (error) {
-      console.error('[MenuPage] Failed to create menu from template:', error);
+      logger.error('[MenuPage] Failed to create menu from template:', error);
     } finally {
       setCreatingFromTemplate(false);
     }
@@ -96,7 +97,7 @@ export default function MenuPage() {
 
   async function handleMealSlotUpdate(dayDate: string, mealIndex: number, updatedSlot: MealSlotType) {
     if (!weekMenu) return;
-    console.log(`[MenuPage] Updating slot ${mealIndex} on ${dayDate}`);
+    logger.log(`[MenuPage] Updating slot ${mealIndex} on ${dayDate}`);
     const updatedDays = weekMenu.days.map(day => {
       if (day.date !== dayDate) return day;
       return {
@@ -293,3 +294,6 @@ export default function MenuPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default MenuPage;

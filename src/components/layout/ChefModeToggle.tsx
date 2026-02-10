@@ -1,5 +1,6 @@
 import { ChefHat } from 'lucide-react';
 import { useChefMode } from '../../contexts/ChefModeContext';
+import { logger } from '../../lib/logger';
 
 export function ChefModeToggle() {
   const { enabled, toggle, loading } = useChefMode();
@@ -11,7 +12,7 @@ export function ChefModeToggle() {
   return (
     <button
       onClick={() => {
-        console.log('[ChefModeToggle] Clicked, current state:', enabled);
+        logger.log('[ChefModeToggle] Clicked, current state:', enabled);
         toggle();
       }}
       type="button"

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppRouter } from './app/Router';
 import { initializeDatabase } from './lib/initDb';
+import { logger } from './lib/logger';
 import { syncService } from './lib/syncService';
 import './styles/globals.css';
 
@@ -22,10 +23,10 @@ const initApp = async () => {
   try {
     await initializeDatabase();
   } catch (error) {
-    console.error('[main] Ошибка инициализации БД:', error);
+    logger.error('[main] Ошибка инициализации БД:', error);
   }
   syncService.initialize().catch((error) => {
-    console.error('[main] Ошибка инициализации синхронизации:', error);
+    logger.error('[main] Ошибка инициализации синхронизации:', error);
   });
 };
 

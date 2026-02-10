@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { Recipe, DietTag, FamilyMember, EquipmentId } from '../data/schema';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
@@ -66,7 +67,7 @@ function getTagStyle(tag: DietTag): string {
   }
 }
 
-export default function RecipeDetailPage() {
+export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -84,7 +85,7 @@ export default function RecipeDetailPage() {
       const loaded = await dataService.recipes.get(recipeId);
       setRecipe(loaded || null);
     } catch (error) {
-      console.error('Failed to load recipe:', error);
+      logger.error('Failed to load recipe:', error);
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,7 @@ export default function RecipeDetailPage() {
 
   async function handleDelete() {
     if (!recipe) return;
-    console.log('[RecipeDetailPage] Deleting recipe:', recipe.title);
+    logger.log('[RecipeDetailPage] Deleting recipe:', recipe.title);
     await dataService.recipes.delete(recipe.id);
     navigate('/recipes');
   }
@@ -324,3 +325,6 @@ export default function RecipeDetailPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default RecipeDetailPage;

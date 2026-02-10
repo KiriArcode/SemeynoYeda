@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { dataService } from '../../lib/dataService';
+import { logger } from '../../lib/logger';
 import type { MealSlot as MealSlotType, Recipe } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { IngredientCheck } from '../cooking/IngredientCheck';
@@ -60,7 +61,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
     let cancelled = false;
     setRecipesLoading(true);
     setRecipesError(null);
-    console.log(`[MealSlot:${slot.mealType}] Loading ${recipeIds.length} recipes...`);
+    logger.log(`[MealSlot:${slot.mealType}] Loading ${recipeIds.length} recipes...`);
     (async () => {
       try {
         const allRecipes = await dataService.recipes.list();
@@ -69,7 +70,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
           .filter((r): r is Recipe => r != null);
         if (!cancelled) {
           setRecipes(validRecipes);
-          console.log(`[MealSlot:${slot.mealType}] Loaded ${validRecipes.length}/${recipeIds.length} recipes`);
+          logger.log(`[MealSlot:${slot.mealType}] Loaded ${validRecipes.length}/${recipeIds.length} recipes`);
         }
         const missing = await getMissingIngredients(recipeIds);
         if (!cancelled) {
@@ -79,7 +80,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
         if (!cancelled) {
           setRecipes([]);
           setRecipesError(error instanceof Error ? error.message : 'Ошибка загрузки рецептов');
-          console.error(`[MealSlot:${slot.mealType}] Failed to load recipes`, { recipeIds, error });
+          logger.error(`[MealSlot:${slot.mealType}] Failed to load recipes`, { recipeIds, error });
         }
       } finally {
         if (!cancelled) {
@@ -93,13 +94,13 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
   function handleSwapRecipe(e: React.MouseEvent, index: number) {
     e.stopPropagation();
     e.preventDefault();
-    console.log(`[MealSlot:${slot.mealType}] Opening swap for index ${index}`);
+    logger.log(`[MealSlot:${slot.mealType}] Opening swap for index ${index}`);
     setSwapIndex(index);
   }
 
   function handleSwapSelect(newRecipe: Recipe) {
     if (swapIndex === null || !onUpdate) return;
-    console.log(`[MealSlot:${slot.mealType}] Swapping recipe at index ${swapIndex} to ${newRecipe.title}`);
+    logger.log(`[MealSlot:${slot.mealType}] Swapping recipe at index ${swapIndex} to ${newRecipe.title}`);
     const updatedSlot: MealSlotType = {
       ...slot,
       recipes: slot.recipes.map((r, i) => i === swapIndex ? { ...r, recipeId: newRecipe.id } : r),
@@ -109,7 +110,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
   }
 
   function handleIngredientCheckComplete(missing: string[]) {
-    console.log(`[MealSlot:${slot.mealType}] Ingredient check complete, missing: ${missing.length}`);
+    logger.log(`[MealSlot:${slot.mealType}] Ingredient check complete, missing: ${missing.length}`);
     setMissingIngredients(missing);
     setShowIngredientCheck(false);
     if (onUpdate) {

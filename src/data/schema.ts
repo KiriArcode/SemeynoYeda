@@ -160,16 +160,17 @@ export interface WeekMenu {
 
 /** Элемент списка покупок */
 export interface ShoppingItem {
+  id: string;                 // PK, совпадает с SQL schema (shopping.id)
   ingredient: string;
   totalAmount: number;
   unit: Unit;
   category: 'мясо' | 'молочка' | 'овощи' | 'крупы' | 'другое';
   checked: boolean;
   recipeIds: string[];        // в каких рецептах используется
-  markedMissing?: boolean;  // отмечен как отсутствующий
-  markedAt?: string;  // когда отмечен
+  markedMissing?: boolean;    // отмечен как отсутствующий
+  markedAt?: string;          // когда отмечен
   source: 'auto' | 'manual' | 'missing';  // откуда добавлен
-  coveredByFreezer?: boolean;  // покрыто морозилкой
+  coveredByFreezer?: boolean; // покрыто морозилкой
 }
 
 /** Элемент морозилки */

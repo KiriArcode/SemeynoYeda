@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../../lib/dataService';
+import { logger } from '../../lib/logger';
 import type { Recipe, Ingredient, IngredientAvailability } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
@@ -65,7 +66,7 @@ export function IngredientCheck({ recipeIds, portionsPerRecipe = {}, onComplete 
       });
       setIngredients(ingredientsWithAvailability);
     } catch (error) {
-      console.error('Failed to load recipes:', error);
+      logger.error('Failed to load recipes:', error);
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export function IngredientCheck({ recipeIds, portionsPerRecipe = {}, onComplete 
   }
 
   async function handleAvailabilityChange(name: string, availability: IngredientAvailability) {
-    console.log(`[IngredientCheck] Set "${name}" -> ${availability}`);
+    logger.log(`[IngredientCheck] Set "${name}" -> ${availability}`);
     if (availability === 'missing') {
       await markIngredientMissing(name);
     } else if (availability === 'available') {
@@ -98,10 +99,10 @@ export function IngredientCheck({ recipeIds, portionsPerRecipe = {}, onComplete 
       .filter((ing) => ing.availability === 'missing')
       .map((ing) => ing.name);
     
-    console.log(`[IngredientCheck] Add ${missing.length} missing to shopping list:`, missing);
+    logger.log(`[IngredientCheck] Add ${missing.length} missing to shopping list:`, missing);
     if (missing.length > 0) {
       await addMissingToShoppingList(missing);
-      console.log('[IngredientCheck] Added to shopping list successfully');
+      logger.log('[IngredientCheck] Added to shopping list successfully');
       if (onComplete) {
         onComplete(missing);
       }

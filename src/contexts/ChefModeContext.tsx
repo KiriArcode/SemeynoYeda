@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { ChefModeSettings } from '../data/schema';
 
 interface ChefModeContextType {
@@ -36,7 +37,7 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
         await dataService.chefSettings.save(DEFAULT_SETTINGS);
       }
     } catch (error) {
-      console.error('ChefMode: Failed to load settings', error);
+      logger.error('ChefMode: Failed to load settings', error);
     } finally {
       setLoading(false);
     }
@@ -44,17 +45,17 @@ export function ChefModeProvider({ children }: { children: ReactNode }) {
 
   // Синхронный optimistic toggle — мгновенная реакция UI
   const toggle = useCallback(() => {
-    console.log('[ChefModeContext] toggle() called');
+    logger.log('[ChefModeContext] toggle() called');
     setSettings((prev) => {
       const newSettings: ChefModeSettings = {
         ...prev,
         enabled: !prev.enabled,
       };
-      console.log('[ChefModeContext] Toggling:', prev.enabled, '->', newSettings.enabled);
+      logger.log('[ChefModeContext] Toggling:', prev.enabled, '->', newSettings.enabled);
 
       // Запись в БД в фоне (не блокирует UI)
       dataService.chefSettings.save(newSettings).catch((error) => {
-        console.error('ChefMode: Failed to persist toggle', error);
+        logger.error('ChefMode: Failed to persist toggle', error);
         // Откат при ошибке записи
         setSettings(prev);
       });

@@ -9,6 +9,7 @@
 
 import { db } from './db';
 import { apiDataService } from './dataServiceApi';
+import { logger } from './logger';
 import type {
   Recipe,
   WeekMenu,
@@ -45,6 +46,13 @@ export interface SyncMetadata {
   localUpdatedAt: string;
 }
 
+/** Вспомогательный тип: entity с id и опциональными временными метками */
+interface EntityWithId {
+  id: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
 export type SyncableItem = SyncableEntity & {
   _sync?: SyncMetadata;
 }
@@ -60,12 +68,12 @@ class SyncService {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
         this.isOnline = true;
-        console.log('[SyncService] Онлайн — запускаем синхронизацию');
-        this.syncAll().catch(console.error);
+        logger.log('[SyncService] Онлайн — запускаем синхронизацию');
+        this.syncAll().catch(logger.error);
       });
       window.addEventListener('offline', () => {
         this.isOnline = false;
-        console.log('[SyncService] Офлайн — используем только IndexedDB');
+        logger.log('[SyncService] Офлайн — используем только IndexedDB');
       });
     }
   }
@@ -79,17 +87,17 @@ class SyncService {
 
     const hasApi = typeof import.meta.env.VITE_API_URL === 'string' && import.meta.env.VITE_API_URL.length > 0;
     if (!hasApi) {
-      console.log('[SyncService] API не задан — используем только IndexedDB');
+      logger.log('[SyncService] API не задан — используем только IndexedDB');
       return;
     }
 
     if (!this.isOnline) {
-      console.log('[SyncService] Офлайн при старте — используем только IndexedDB');
+      logger.log('[SyncService] Офлайн при старте — используем только IndexedDB');
       return;
     }
 
     try {
-      console.log('[SyncService] Инициализация синхронизации...');
+      logger.log('[SyncService] Инициализация синхронизации...');
       
       // Загружаем все данные из Neon и сохраняем в IndexedDB
       await this.syncFromNeon('recipes');
@@ -103,9 +111,9 @@ class SyncService {
       // Запускаем периодическую синхронизацию
       this.startPeriodicSync();
       
-      console.log('[SyncService] Инициализация завершена');
+      logger.log('[SyncService] Инициализация завершена');
     } catch (error) {
-      console.error('[SyncService] Ошибка инициализации:', error);
+      logger.error('[SyncService] Ошибка инициализации:', error);
     }
   }
 
@@ -150,20 +158,21 @@ class SyncService {
       // Сохраняем в IndexedDB с метаданными синхронизации
       const now = new Date().toISOString();
       const itemsWithSync: SyncableItem[] = items.map((item) => {
+        const entity = item as unknown as EntityWithId;
         return {
           ...item,
           _sync: {
-            syncStatus: 'synced',
+            syncStatus: 'synced' as const,
             lastSyncedAt: now,
-            localUpdatedAt: (item as any).updatedAt || (item as any).createdAt || now,
+            localUpdatedAt: entity.updatedAt || entity.createdAt || now,
           },
         };
       });
 
-      await db.table(tableName).bulkPut(itemsWithSync as any);
-      console.log(`[SyncService] Синхронизировано ${items.length} записей из ${tableName}`);
+      await db.table(tableName).bulkPut(itemsWithSync);
+      logger.log(`[SyncService] Синхронизировано ${items.length} записей из ${tableName}`);
     } catch (error) {
-      console.error(`[SyncService] Ошибка синхронизации ${tableName}:`, error);
+      logger.error(`[SyncService] Ошибка синхронизации ${tableName}:`, error);
       // Не бросаем ошибку, чтобы не блокировать другие таблицы
     }
   }
@@ -179,60 +188,64 @@ class SyncService {
 
     try {
       // Находим все записи со статусом 'pending' или 'failed'
-      const allItems = await db.table(tableName).toArray();
-      const pendingItems = allItems.filter((item: any) => {
+      const allItems = await db.table(tableName).toArray() as SyncableItem[];
+      const pendingItems = allItems.filter((item) => {
         const sync = item._sync;
         return sync && (sync.syncStatus === 'pending' || sync.syncStatus === 'failed');
-      }) as SyncableItem[];
+      });
 
       if (pendingItems.length === 0) {
         return;
       }
 
       for (const item of pendingItems) {
+        const entity = item as unknown as EntityWithId & { _sync?: SyncMetadata };
+        const entityId = entity.id;
+
         try {
           const { _sync, ...itemWithoutSync } = item;
 
           // Определяем операцию: create, update или delete
-          const existing = await db.table(tableName).get((itemWithoutSync as any).id);
+          const existing = await db.table(tableName).get(entityId) as SyncableItem | undefined;
           const isNew = !existing || !existing._sync?.lastSyncedAt;
 
           if (isNew) {
-            // Create
-            await this.createInNeon(tableName, itemWithoutSync as any);
+            await this.createInNeon(tableName, itemWithoutSync);
           } else {
-            // Update
-            await this.updateInNeon(tableName, (itemWithoutSync as any).id, itemWithoutSync as any);
+            await this.updateInNeon(tableName, entityId, itemWithoutSync);
           }
 
           // Обновляем метаданные синхронизации
-          await db.table(tableName).update((itemWithoutSync as any).id, {
+          const syncUpdate: { _sync: SyncMetadata } = {
             _sync: {
               syncStatus: 'synced',
               lastSyncedAt: new Date().toISOString(),
               localUpdatedAt: item._sync?.localUpdatedAt || new Date().toISOString(),
               retryCount: 0,
             },
-          } as any);
+          };
+          await db.table(tableName).update(entityId, syncUpdate);
 
-          console.log(`[SyncService] Синхронизировано ${tableName}:${(itemWithoutSync as any).id}`);
+          logger.log(`[SyncService] Синхронизировано ${tableName}:${entityId}`);
         } catch (error) {
-          console.error(`[SyncService] Ошибка синхронизации ${tableName}:${(item as any).id}:`, error);
+          logger.error(`[SyncService] Ошибка синхронизации ${tableName}:${entityId}:`, error);
 
           // Обновляем статус на 'failed'
           const retryCount = (item._sync?.retryCount || 0) + 1;
-          await db.table(tableName).update((item as any).id, {
+          const failUpdate: { _sync: SyncMetadata } = {
             _sync: {
               ...item._sync,
               syncStatus: 'failed',
               syncError: error instanceof Error ? error.message : String(error),
+              localUpdatedAt: item._sync?.localUpdatedAt || new Date().toISOString(),
               retryCount,
             },
-          } as any);
+          };
+          await db.table(tableName).update(entityId, failUpdate);
         }
       }
     } catch (error) {
-      console.error(`[SyncService] Ошибка при синхронизации ${tableName}:`, error);
+      logger.error(`[SyncService] Ошибка при синхронизации ${tableName}:`, error);
     } finally {
       this.syncInProgress.delete(tableName);
     }
@@ -241,7 +254,7 @@ class SyncService {
   /**
    * Создание записи в Neon
    */
-  private async createInNeon(tableName: TableName, item: any): Promise<void> {
+  private async createInNeon(tableName: TableName, item: SyncableEntity): Promise<void> {
     switch (tableName) {
       case 'recipes':
         await apiDataService.recipes.create(item);
@@ -270,7 +283,7 @@ class SyncService {
   /**
    * Обновление записи в Neon
    */
-  private async updateInNeon(tableName: TableName, id: string, item: any): Promise<void> {
+  private async updateInNeon(tableName: TableName, id: string, item: SyncableEntity): Promise<void> {
     switch (tableName) {
       case 'recipes':
         await apiDataService.recipes.update(id, item);
@@ -282,7 +295,7 @@ class SyncService {
         await apiDataService.freezer.update(id, item);
         break;
       case 'shopping':
-        await apiDataService.shopping.update(item.ingredient, item);
+        await apiDataService.shopping.update(id, item as ShoppingItem);
         break;
       case 'prepPlans':
         await apiDataService.prepPlans.update(id, item);
@@ -303,7 +316,7 @@ class SyncService {
     // Синхронизация каждые 30 секунд
     this.syncInterval = window.setInterval(() => {
       if (this.isOnline) {
-        this.syncAll().catch(console.error);
+        this.syncAll().catch(logger.error);
       }
     }, 30000);
   }
@@ -313,7 +326,7 @@ class SyncService {
    */
   async syncAll(): Promise<void> {
     if (!this.isOnline) {
-      console.log('[SyncService] Офлайн — пропускаем синхронизацию');
+      logger.log('[SyncService] Офлайн — пропускаем синхронизацию');
       return;
     }
 
@@ -338,7 +351,7 @@ class SyncService {
         await this.syncFromNeon(table);
       }
     } catch (error) {
-      console.error('[SyncService] Ошибка при синхронизации всех таблиц:', error);
+      logger.error('[SyncService] Ошибка при синхронизации всех таблиц:', error);
     }
   }
 
@@ -374,9 +387,9 @@ class SyncService {
     let failedCount = 0;
 
     for (const table of tables) {
-      const items = await db.table(table).toArray();
+      const items = await db.table(table).toArray() as SyncableItem[];
       for (const item of items) {
-        const sync = (item as any)._sync;
+        const sync = item._sync;
         if (sync) {
           if (sync.syncStatus === 'pending') pendingCount++;
           if (sync.syncStatus === 'failed') failedCount++;

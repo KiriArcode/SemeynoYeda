@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { nanoid } from 'nanoid';
 import { dataService } from '../../lib/dataService';
+import { logger } from '../../lib/logger';
 import { getRandomRickQuote } from '../../data/rickQuotes';
 import type { Recipe } from '../../data/schema';
 import { PortalButton } from './PortalButton';
@@ -44,7 +45,7 @@ export function InterdimensionalRecipeGenerator({ onRecipeSelect }: Interdimensi
       const recipes = await dataService.recipes.list();
       setExistingRecipes(recipes);
     } catch (error) {
-      console.error('Failed to load recipes:', error);
+      logger.error('Failed to load recipes:', error);
     }
   }
 

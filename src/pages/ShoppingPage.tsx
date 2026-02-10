@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import { useShoppingList } from '../hooks/useShoppingList';
 import { ShoppingSettings } from '../components/shopping/ShoppingSettings';
 import { CheckCircle2, ShoppingCart, RefreshCw } from 'lucide-react';
 
-export default function ShoppingPage() {
+export function ShoppingPage() {
   const { items, loading, loadItems, toggleChecked, clearChecked, generateShoppingList } = useShoppingList();
   const [filter, setFilter] = useState<'all' | 'auto' | 'manual' | 'missing'>('all');
   const [generating, setGenerating] = useState(false);
@@ -28,7 +29,7 @@ export default function ShoppingPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to auto-generate shopping list:', error);
+      logger.error('Failed to auto-generate shopping list:', error);
     } finally {
       setGenerating(false);
     }
@@ -46,7 +47,7 @@ export default function ShoppingPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to regenerate shopping list:', error);
+      logger.error('Failed to regenerate shopping list:', error);
     } finally {
       setGenerating(false);
     }
@@ -215,3 +216,6 @@ export default function ShoppingPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default ShoppingPage;

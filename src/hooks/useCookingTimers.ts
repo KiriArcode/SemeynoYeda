@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { CookingTimer } from '../data/schema';
 import { nanoid } from 'nanoid';
 
@@ -31,7 +32,7 @@ export function useCookingTimers() {
       });
       setTimers(allTimers.filter((t) => !t.isCompleted));
     } catch (error) {
-      console.error('Failed to load timers:', error);
+      logger.error('Failed to load timers:', error);
     }
   }
 

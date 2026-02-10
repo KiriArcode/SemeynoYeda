@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { WeekMenu } from '../data/schema';
 
 export interface FreezerAlert {
@@ -77,7 +78,7 @@ export function useFreezerAlerts(weekMenu: WeekMenu | null) {
 
       setAlerts(newAlerts);
     } catch (error) {
-      console.error('[useFreezerAlerts] Error:', error);
+      logger.error('[useFreezerAlerts] Error:', error);
     }
   }
 

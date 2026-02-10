@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import { RecipeForm } from '../components/recipe/RecipeForm';
 import type { Recipe } from '../data/schema';
 
-export default function RecipeNewPage() {
+export function RecipeNewPage() {
   const navigate = useNavigate();
 
   async function handleSave(recipe: Recipe) {
-    console.log('[RecipeNewPage] Creating recipe:', recipe.title);
+    logger.log('[RecipeNewPage] Creating recipe:', recipe.title);
     await dataService.recipes.create(recipe);
     navigate(`/recipe/${recipe.id}`);
   }
@@ -21,3 +22,6 @@ export default function RecipeNewPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default RecipeNewPage;

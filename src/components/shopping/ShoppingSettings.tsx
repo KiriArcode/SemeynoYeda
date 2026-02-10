@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../../lib/dataService';
+import { logger } from '../../lib/logger';
 import type { ShoppingSettings } from '../../data/schema';
 
 const DAYS_OF_WEEK = [
@@ -30,7 +31,7 @@ export function ShoppingSettings() {
         setSettings(saved.shoppingSettings);
       }
     } catch (error) {
-      console.error('Failed to load shopping settings:', error);
+      logger.error('Failed to load shopping settings:', error);
     } finally {
       setLoading(false);
     }
@@ -46,7 +47,7 @@ export function ShoppingSettings() {
         });
       }
     } catch (error) {
-      console.error('Failed to save shopping settings:', error);
+      logger.error('Failed to save shopping settings:', error);
     }
   }
 

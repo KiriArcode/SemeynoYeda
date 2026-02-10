@@ -1,4 +1,5 @@
 import { db } from './db';
+import { logger } from './logger';
 import { getSeedRecipes } from '../data/seedRecipes';
 import { getSeedWeekMenu } from '../data/seedMenu';
 import type { Recipe } from '../data/schema';
@@ -12,7 +13,7 @@ export async function initializeDatabase(): Promise<void> {
     await syncSeedRecipes();
     await syncSeedMenu();
   } catch (error) {
-    console.error('[initDb] Ошибка при инициализации базы данных:', error);
+    logger.error('[initDb] Ошибка при инициализации базы данных:', error);
   }
 }
 
@@ -42,7 +43,7 @@ async function syncSeedRecipes(): Promise<void> {
   if (toUpsert.length > 0) {
     await db.table('recipes').bulkPut(toUpsert);
   }
-  console.log(`[initDb] Синхронизировано ${toUpsert.length}/${seedRecipes.length} seed-рецептов`);
+  logger.log(`[initDb] Синхронизировано ${toUpsert.length}/${seedRecipes.length} seed-рецептов`);
 }
 
 /**
@@ -51,7 +52,7 @@ async function syncSeedRecipes(): Promise<void> {
 async function syncSeedMenu(): Promise<void> {
   const menu = getSeedWeekMenu();
   await db.table('menus').put(menu);
-  console.log('[initDb] Синхронизировано seed-меню');
+  logger.log('[initDb] Синхронизировано seed-меню');
 }
 
 /**
@@ -63,7 +64,7 @@ export async function isDatabaseEmpty(): Promise<boolean> {
     const menuCount = await db.table('menus').count();
     return recipeCount === 0 && menuCount === 0;
   } catch (error) {
-    console.error('[initDb] Ошибка при проверке базы данных:', error);
+    logger.error('[initDb] Ошибка при проверке базы данных:', error);
     return true;
   }
 }

@@ -14,7 +14,7 @@ const db = new Dexie('SemeynoYedaDB') as Dexie & {
   recipes: Table<Recipe, 'id'>;
   menus: Table<WeekMenu, 'id'>;
   freezer: Table<FreezerItem, 'id'>;
-  shopping: Table<ShoppingItem, 'ingredient'>;
+  shopping: Table<ShoppingItem, 'id'>;
   prepPlans: Table<PrepPlan, 'id'>;
   batchPlans: Table<BatchPlan, 'id'>;
   cookingSessions: Table<CookingSession, 'id'>;
@@ -101,5 +101,18 @@ db.version(5).stores({
   cookingSessions: 'id, date, mealType',
   chefSettings: 'id',
 });
+
+// Версия 6: shopping — id как primary key (совмещение с SQL schema)
+db.version(6)
+  .stores({
+    recipes: 'id, slug, category, *tags, suitableFor',
+    menus: 'id, weekStart, shoppingDay, createdAt',
+    freezer: 'id, recipeId, expiryDate, batchId',
+    shopping: 'id, ingredient, category, checked, markedMissing',
+    prepPlans: 'id, date',
+    batchPlans: 'id, date',
+    cookingSessions: 'id, date, mealType',
+    chefSettings: 'id',
+  });
 
 export { db };

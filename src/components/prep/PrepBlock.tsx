@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { dataService } from '../../lib/dataService';
+import { logger } from '../../lib/logger';
 import type { Recipe, PrepTask } from '../../data/schema';
 import { usePrepPlan } from '../../hooks/usePrepPlan';
 import { PrepTaskCard } from './PrepTaskCard';
@@ -37,7 +38,7 @@ export function PrepBlock({ recipes, date }: PrepBlockProps) {
 
       setLoading(false);
     } catch (error) {
-      console.error('Failed to initialize prep plan:', error);
+      logger.error('Failed to initialize prep plan:', error);
       setLoading(false);
     }
   }

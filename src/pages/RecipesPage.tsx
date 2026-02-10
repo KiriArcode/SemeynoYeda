@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { Recipe, DietTag, FamilyMember } from '../data/schema';
 import { Search, Plus, Briefcase, Zap } from 'lucide-react';
 
@@ -46,7 +47,7 @@ function getTagStyle(tag: DietTag): string {
   }
 }
 
-export default function RecipesPage() {
+export function RecipesPage() {
   const location = useLocation();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
@@ -77,7 +78,7 @@ export default function RecipesPage() {
       setRecipes(allRecipes);
       setFilteredRecipes(allRecipes);
     } catch (error) {
-      console.error('Failed to load recipes:', error);
+      logger.error('Failed to load recipes:', error);
     } finally {
       setLoading(false);
     }
@@ -281,3 +282,6 @@ export default function RecipesPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default RecipesPage;

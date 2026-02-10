@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
+import { logger } from '../lib/logger';
 import type { Recipe, WeekMenu, MealType } from '../data/schema';
 import { CookingSession } from '../components/cooking/CookingSession';
 import { ParallelCooking } from '../components/cooking/ParallelCooking';
 import { ChefHat } from 'lucide-react';
 
-export default function CookingPage() {
+export function CookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
   const [kolyaMealsMode, setKolyaMealsMode] = useState<'4' | '5-6'>('4');
@@ -41,7 +42,7 @@ export default function CookingPage() {
         setWeekMenu(menu);
       }
     } catch (error) {
-      console.error('Failed to load week menu:', error);
+      logger.error('Failed to load week menu:', error);
     }
   }
 
@@ -200,3 +201,6 @@ export default function CookingPage() {
     </div>
   );
 }
+
+// default export for React.lazy()
+export default CookingPage;

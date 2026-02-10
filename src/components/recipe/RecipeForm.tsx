@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Recipe, DietTag, FamilyMember, EquipmentId, Ingredient, RecipeStep, Unit } from '../../data/schema';
+import { logger } from '../../lib/logger';
 import { Plus, Trash2 } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
@@ -141,7 +142,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
       updatedAt: now,
     };
 
-    console.log(`[RecipeForm] Saving recipe: ${recipe.title}`);
+    logger.log(`[RecipeForm] Saving recipe: ${recipe.title}`);
     onSave(recipe);
     setSaving(false);
   }

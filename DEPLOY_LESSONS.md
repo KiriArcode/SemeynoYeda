@@ -1,3 +1,5 @@
+> **УСТАРЕЛО**: Этот документ описывает деплой на GitHub Pages. Проект перенесён на **Vercel**. Актуальные инструкции — в [README.md](README.md) и [SPEC.md](SPEC.md).
+
 # Уроки деплоя Vite + React Router на GitHub Pages
 
 Документ с выученными уроками при деплое Vite приложения с React Router на GitHub Pages. Содержит проблемы, которые возникали, и их решения.
