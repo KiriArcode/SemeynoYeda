@@ -53,12 +53,12 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
 
       {/* Top header bar */}
       {showChefToggle && (
-        <header className="sticky top-0 z-50 border-b shadow-nav" style={{ background: 'rgba(11,14,20,0.93)', backdropFilter: 'blur(12px)', borderColor: '#161C2A' }}>
+        <header className="sticky top-0 z-50 border-b border-dimension shadow-nav bg-void/93 backdrop-blur-[12px]">
           <div className="container mx-auto px-4 py-2 flex items-center justify-between">
             <Link to="/" className="font-heading text-base font-extrabold text-text-light hover:text-portal transition-colors">
               SemeynoYeda
             </Link>
-            <div className="flex items-center" style={{ gap: '12px' }}>
+            <div className="flex items-center gap-3">
               <SyncStatus />
               <ChefModeToggle />
             </div>
@@ -66,19 +66,18 @@ export function PageShell({ children, showChefToggle = true }: PageShellProps) {
 
           {/* Permanent section navigation */}
           <div className="container mx-auto px-2 pb-1">
-            <div className="flex items-center overflow-x-auto" style={{ gap: '2px' }}>
+            <div className="flex items-center overflow-x-auto gap-0.5">
               {sections.map((section) => {
                 const active = isActive(section.path);
                 return (
                   <Link
                     key={section.path}
                     to={section.path}
-                    className={`flex items-center whitespace-nowrap px-3 py-1.5 text-xs font-heading font-semibold transition-all border-b-2 ${
+                    className={`flex items-center gap-1 whitespace-nowrap px-3 py-1.5 text-xs font-heading font-semibold transition-all border-b-2 ${
                       active
                         ? 'text-portal border-portal'
                         : 'text-text-ghost border-transparent hover:text-text-mid hover:border-nebula'
                     }`}
-                    style={{ gap: '4px' }}
                   >
                     <span className="text-sm">{section.icon}</span>
                     <span>{section.label}</span>

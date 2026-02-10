@@ -132,18 +132,16 @@ export function RecipeDetailPage() {
         <h1 className="font-heading text-2xl font-extrabold text-text-primary flex-1">
           {recipe.title}
         </h1>
-        <div className="flex items-center" style={{ gap: '8px' }}>
+        <div className="flex items-center gap-2">
           <Link
             to={`/recipe/${recipe.id}/edit`}
-            className="flex items-center px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/40 rounded-button hover:bg-portal/10 transition-colors"
-            style={{ gap: '4px' }}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/40 rounded-button hover:bg-portal/10 transition-colors"
           >
             <Pencil className="w-3.5 h-3.5" /> Изменить
           </Link>
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="flex items-center px-3 py-1.5 text-xs font-heading font-semibold text-ramen border border-ramen/40 rounded-button hover:bg-ramen/10 transition-colors"
-            style={{ gap: '4px' }}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-heading font-semibold text-ramen border border-ramen/40 rounded-button hover:bg-ramen/10 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" /> Удалить
           </button>
@@ -155,16 +153,15 @@ export function RecipeDetailPage() {
       )}
 
       {/* Для кого и теги */}
-      <div className="flex flex-wrap items-center mb-4" style={{ gap: '10px' }}>
+      <div className="flex flex-wrap items-center gap-2.5 mb-4">
         <span
-          className="text-xs px-3 py-1 font-heading font-semibold border"
-          style={{ borderRadius: '9999px', ...MEMBER_BADGE[recipe.suitableFor] }}
+          className="text-xs px-3 py-1 font-heading font-semibold border rounded-full"
+          style={{ ...MEMBER_BADGE[recipe.suitableFor] }}
         >
           {MEMBER_LABELS[recipe.suitableFor]}
         </span>
         {recipe.tags.map((tag) => (
-          <span key={tag} className={`text-xs px-3 py-1 font-heading border ${getTagStyle(tag)}`}
-            style={{ borderRadius: '9999px' }}>
+          <span key={tag} className={`text-xs px-3 py-1 font-heading border rounded-full ${getTagStyle(tag)}`}>
             {TAG_LABELS[tag] || tag}
           </span>
         ))}
@@ -206,7 +203,7 @@ export function RecipeDetailPage() {
           <span className="block text-[10px] font-mono text-portal-dim tracking-[1.5px] mb-2 uppercase">
             Оборудование
           </span>
-          <div className="flex flex-wrap" style={{ gap: '8px' }}>
+          <div className="flex flex-wrap gap-2">
             {recipe.equipment.map((eq) => {
               const icon = EQUIPMENT_ICONS[eq] || '🔧';
               const label = EQUIPMENT_LABELS[eq] || eq;
@@ -214,7 +211,7 @@ export function RecipeDetailPage() {
               const stepWithEq = recipe.steps.find(s => s.equipment?.id === eq);
               const settings = stepWithEq?.equipment?.settings;
               return (
-                <div key={eq} className="flex items-center bg-card border border-elevated rounded-button py-2.5 px-3" style={{ gap: '8px' }}>
+                <div key={eq} className="flex items-center gap-2 bg-card border border-elevated rounded-button py-2.5 px-3">
                   <span className="text-xl">{icon}</span>
                   <div>
                     <div className="text-[13px] font-heading font-semibold text-text-primary">{label}</div>
@@ -235,10 +232,10 @@ export function RecipeDetailPage() {
           <h3 className="text-sm font-heading font-semibold text-text-primary mb-2">Разогрев из морозилки</h3>
           <div className="space-y-2">
             {recipe.reheating.map((rh, i) => (
-              <div key={i} className="flex items-center text-xs font-body text-text-secondary" style={{ gap: '8px' }}>
+              <div key={i} className="flex items-center gap-2 text-xs font-body text-text-secondary">
                 <span
-                  className="px-2 py-0.5 font-heading font-semibold border"
-                  style={{ borderRadius: '9999px', ...MEMBER_BADGE[rh.forWhom] }}
+                  className="px-2 py-0.5 font-heading font-semibold border rounded-full"
+                  style={{ ...MEMBER_BADGE[rh.forWhom] }}
                 >
                   {MEMBER_LABELS[rh.forWhom]}
                 </span>
@@ -255,7 +252,7 @@ export function RecipeDetailPage() {
         <h2 className="font-heading text-xl font-bold text-text-primary mb-4">Ингредиенты</h2>
         <ul className="space-y-2">
           {recipe.ingredients.map((ingredient, index) => (
-            <li key={index} className="flex items-center text-text-secondary font-body" style={{ gap: '8px' }}>
+            <li key={index} className="flex items-center gap-2 text-text-secondary font-body">
               <span className="text-portal">•</span>
               <span>
                 {ingredient.amount} {ingredient.unit} {ingredient.name}
@@ -271,7 +268,7 @@ export function RecipeDetailPage() {
         <h2 className="font-heading text-xl font-bold text-text-primary mb-4">Приготовление</h2>
         <ol className="space-y-4">
           {recipe.steps.map((step) => (
-            <li key={step.order} className="flex" style={{ gap: '12px' }}>
+            <li key={step.order} className="flex gap-3">
               <span className="flex-shrink-0 w-8 h-8 rounded-full bg-rift border border-elevated flex items-center justify-center text-sm font-heading font-semibold text-portal">
                 {step.order}
               </span>

@@ -24,7 +24,7 @@ export function WeekOverview({ days, activeDay, onDayClick }: WeekOverviewProps)
       <span className="block text-[10px] font-mono text-portal-dim tracking-[1.5px] mb-2 uppercase">
         Week Overview
       </span>
-      <div className="flex" style={{ gap: '2px' }}>
+      <div className="flex gap-0.5">
         {days.map((day) => {
           const short = SHORT_DAYS[day.dayOfWeek] || day.dayOfWeek.slice(0, 2);
           const isActive = activeDay === day.dayOfWeek;
@@ -39,12 +39,11 @@ export function WeekOverview({ days, activeDay, onDayClick }: WeekOverviewProps)
             <button
               key={day.date}
               onClick={() => onDayClick(isActive ? '' : day.dayOfWeek)}
-              className={`flex-1 flex flex-col items-center py-2 rounded-md transition-all min-w-0 ${
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-md transition-all min-w-0 ${
                 isActive
                   ? 'bg-portal/12 border border-portal/30'
                   : 'border border-transparent hover:bg-hover'
               }`}
-              style={{ gap: '2px' }}
             >
               <span
                 className={`text-xs font-heading font-bold ${
@@ -56,7 +55,7 @@ export function WeekOverview({ days, activeDay, onDayClick }: WeekOverviewProps)
               <span className="text-[9px] font-mono text-text-muted leading-tight">
                 {dateLabel}
               </span>
-              <div className="flex items-center justify-center mt-0.5" style={{ gap: '3px', minHeight: '12px' }}>
+              <div className="flex items-center justify-center gap-[3px] mt-0.5 min-h-3">
                 {isPrepDay ? (
                   <span className="text-[10px]">📦</span>
                 ) : (

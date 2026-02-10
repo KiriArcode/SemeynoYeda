@@ -270,3 +270,13 @@ export interface ChefModeSettings {
   defaultPrepTime: number;  // минут до готовки для подготовки
   kolyaMealsMode?: '4' | '5-6';  // 4 приёма или 5-6 (second_breakfast, late_snack)
 }
+
+// ─── Sync metadata (используется в IndexedDB для offline-first) ─────
+
+export interface SyncMetadata {
+  syncStatus: 'synced' | 'pending' | 'conflict' | 'error';
+  lastSyncedAt?: string;
+  localUpdatedAt: string;
+  retryCount?: number;
+  errorMessage?: string;
+}

@@ -41,17 +41,16 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-      <div className="flex mx-auto max-w-[360px] bg-panel border border-elevated" style={{ borderRadius: '20px', padding: '6px', backdropFilter: 'blur(12px)' }}>
+      <div className="flex mx-auto max-w-[360px] bg-panel border border-elevated rounded-modal p-1.5 backdrop-blur-[12px]">
         {navItems.map((item) => {
           const active = isActive(item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 pb-2 relative cursor-pointer transition-all ${
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 pb-2 relative cursor-pointer transition-all rounded-lg gap-[3px] ${
                 active ? 'bg-portal-soft' : ''
               }`}
-              style={{ borderRadius: '14px', gap: '3px' }}
             >
               <span
                 className="text-lg transition-all"
@@ -66,14 +65,7 @@ export function BottomNav() {
               </span>
               {active && (
                 <div
-                  className="absolute bg-portal"
-                  style={{
-                    bottom: '4px',
-                    width: '16px',
-                    height: '2px',
-                    borderRadius: '1px',
-                    boxShadow: '0 0 8px rgba(57,255,20,0.4)',
-                  }}
+                  className="absolute bottom-1 w-4 h-0.5 rounded-[1px] bg-portal shadow-[0_0_8px_rgba(57,255,20,0.4)]"
                 />
               )}
             </Link>

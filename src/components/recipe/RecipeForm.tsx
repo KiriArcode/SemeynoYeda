@@ -162,7 +162,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
           <label className={labelClass}>Подзаголовок</label>
           <input value={subtitle} onChange={e => setSubtitle(e.target.value)} className={inputClass} placeholder="база для Коли" />
         </div>
-        <div className="grid grid-cols-2" style={{ gap: '12px' }}>
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Категория</label>
             <select value={category} onChange={e => setCategory(e.target.value as Recipe['category'])} className={inputClass}>
@@ -176,7 +176,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-3" style={{ gap: '12px' }}>
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className={labelClass}>Подготовка (мин)</label>
             <input type="number" min={0} value={prepTime} onChange={e => setPrepTime(+e.target.value)} className={inputClass} />
@@ -195,14 +195,14 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
       {/* Теги */}
       <div className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
         <label className={labelClass}>Теги</label>
-        <div className="flex flex-wrap" style={{ gap: '6px' }}>
+        <div className="flex flex-wrap gap-1.5">
           {TAG_OPTIONS.map(t => (
             <button key={t.value} type="button" onClick={() => toggleTag(t.value)}
-              className={`text-xs px-3 py-1 font-heading border transition-colors ${
+              className={`text-xs px-3 py-1 font-heading border transition-colors rounded-full ${
                 tags.includes(t.value)
                   ? 'bg-portal/20 text-portal border-portal/50'
                   : 'bg-rift text-text-dim border-nebula hover:border-portal/30'
-              }`} style={{ borderRadius: '9999px' }}>
+              }`}>
               {t.label}
             </button>
           ))}
@@ -214,7 +214,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
         <label className={labelClass}>Ингредиенты</label>
         <div className="space-y-2">
           {ingredients.map((ing, idx) => (
-            <div key={idx} className="flex items-center" style={{ gap: '8px' }}>
+            <div key={idx} className="flex items-center gap-2">
               <input value={ing.name} onChange={e => updateIngredient(idx, 'name', e.target.value)} className={`${inputClass} flex-1`} placeholder="Название" />
               <input type="number" min={0} step="any" value={ing.amount || ''} onChange={e => updateIngredient(idx, 'amount', +e.target.value)} className={`${inputClass} w-20`} placeholder="Кол-во" />
               <select value={ing.unit} onChange={e => updateIngredient(idx, 'unit', e.target.value)} className={`${inputClass} w-24`}>
@@ -226,7 +226,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
             </div>
           ))}
         </div>
-        <button type="button" onClick={addIngredient} className="mt-2 flex items-center text-xs text-portal font-heading font-semibold" style={{ gap: '4px' }}>
+        <button type="button" onClick={addIngredient} className="mt-2 flex items-center gap-1 text-xs text-portal font-heading font-semibold">
           <Plus className="w-3.5 h-3.5" /> Добавить ингредиент
         </button>
       </div>
@@ -236,17 +236,17 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
         <label className={labelClass}>Шаги приготовления</label>
         <div className="space-y-3">
           {steps.map((step, idx) => (
-            <div key={idx} className="flex items-start" style={{ gap: '8px' }}>
+            <div key={idx} className="flex items-start gap-2">
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-rift border border-nebula flex items-center justify-center text-xs font-heading font-semibold text-portal mt-2">
                 {step.order}
               </span>
               <div className="flex-1 space-y-1">
                 <textarea value={step.text} onChange={e => updateStep(idx, 'text', e.target.value)}
                   className={`${inputClass} min-h-[60px] resize-y`} placeholder="Описание шага..." rows={2} />
-                <div className="flex" style={{ gap: '8px' }}>
+                <div className="flex gap-2">
                   <input type="number" min={0} value={step.duration || ''} onChange={e => updateStep(idx, 'duration', +e.target.value || undefined)}
                     className={`${inputClass} w-24`} placeholder="Мин" />
-                  <label className="flex items-center text-xs text-text-dim font-body" style={{ gap: '4px' }}>
+                  <label className="flex items-center gap-1 text-xs text-text-dim font-body">
                     <input type="checkbox" checked={step.parallel || false} onChange={e => updateStep(idx, 'parallel', e.target.checked)} className="accent-portal" />
                     Параллельно
                   </label>
@@ -258,7 +258,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
             </div>
           ))}
         </div>
-        <button type="button" onClick={addStep} className="mt-2 flex items-center text-xs text-portal font-heading font-semibold" style={{ gap: '4px' }}>
+        <button type="button" onClick={addStep} className="mt-2 flex items-center gap-1 text-xs text-portal font-heading font-semibold">
           <Plus className="w-3.5 h-3.5" /> Добавить шаг
         </button>
       </div>
@@ -266,14 +266,14 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
       {/* Оборудование */}
       <div className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
         <label className={labelClass}>Оборудование</label>
-        <div className="flex flex-wrap" style={{ gap: '6px' }}>
+        <div className="flex flex-wrap gap-1.5">
           {EQUIPMENT_OPTIONS.map(eq => (
             <button key={eq.value} type="button" onClick={() => toggleEquipment(eq.value)}
-              className={`text-xs px-3 py-1 font-heading border transition-colors ${
+              className={`text-xs px-3 py-1 font-heading border transition-colors rounded-full ${
                 equipment.includes(eq.value)
                   ? 'bg-frost/20 text-frost border-frost/50'
                   : 'bg-rift text-text-dim border-nebula hover:border-frost/30'
-              }`} style={{ borderRadius: '9999px' }}>
+              }`}>
               {eq.label}
             </button>
           ))}
@@ -283,7 +283,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
       {/* Хранение */}
       <div className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
         <label className={labelClass}>Хранение</label>
-        <div className="grid grid-cols-3" style={{ gap: '12px' }}>
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className={labelClass}>Холодильник (дней)</label>
             <input type="number" min={0} value={fridgeDays || ''} onChange={e => setFridgeDays(+e.target.value)} className={inputClass} />
@@ -293,7 +293,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
             <input type="number" min={0} value={freezerMonths || ''} onChange={e => setFreezerMonths(+e.target.value)} className={inputClass} />
           </div>
           <div className="flex items-end">
-            <label className="flex items-center text-xs text-text-dim font-body" style={{ gap: '6px' }}>
+            <label className="flex items-center gap-1.5 text-xs text-text-dim font-body">
               <input type="checkbox" checked={vacuumSealed} onChange={e => setVacuumSealed(e.target.checked)} className="accent-portal" />
               Вакуум
             </label>
@@ -308,7 +308,7 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
       </div>
 
       {/* Кнопки */}
-      <div className="flex justify-end" style={{ gap: '12px' }}>
+      <div className="flex justify-end gap-3">
         <button type="button" onClick={onCancel}
           className="px-5 py-2 bg-rift border border-nebula text-text-mid font-heading font-semibold text-sm rounded-button hover:bg-nebula transition-colors">
           Отмена

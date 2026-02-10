@@ -142,18 +142,17 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
       {/* Header row — clickable to toggle accordion; explicit colors for visibility */}
       <button
         onClick={onToggle}
-        className={`w-full flex items-center py-3 px-3 transition-all ${
+        className={`w-full flex items-center gap-2.5 min-h-[44px] text-text-light py-3 px-3 transition-all ${
           onToggle ? 'cursor-pointer' : 'cursor-default'
         }`}
-        style={{ gap: '10px', minHeight: '44px', color: '#E8ECF4' }}
         type="button"
       >
         <span className="text-base">{meal.icon}</span>
-        <span className="flex-1 text-left font-heading font-bold text-sm" style={{ color: '#E8ECF4' }}>
+        <span className="flex-1 text-left font-heading font-bold text-sm text-text-light">
           {meal.label}
         </span>
         {!isExpanded && recipes.length > 0 && (
-          <span className="text-[11px] font-mono" style={{ color: '#8892A6' }}>
+          <span className="text-[11px] font-mono text-text-dim">
             {estimatedTime > 0 ? `разогрев ${estimatedTime} мин` : `${recipes.length} бл.`}
           </span>
         )}
@@ -162,8 +161,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
         )}
         {onToggle && (
           <ChevronDown
-            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-            style={{ color: '#8892A6' }}
+            className={`w-4 h-4 text-text-dim transition-transform ${isExpanded ? 'rotate-180' : ''}`}
           />
         )}
       </button>
@@ -188,16 +186,15 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                 return (
                   <div
                     key={`${recipe.id}-${index}`}
-                    className="flex items-center py-2 pl-3 pr-1"
+                    className="flex items-center gap-2 py-2 pl-3 pr-1"
                     style={{
-                      gap: '8px',
                       borderLeft: borderColor ? `3px solid ${borderColor}` : undefined,
                       borderLeftColor: borderColor ? `color-mix(in srgb, ${borderColor} 60%, transparent)` : undefined,
                     }}
                   >
                     <div className="flex-1 min-w-0">
                       {isCoffeeOnly ? (
-                        <span className="text-sm font-body text-text-muted flex items-center" style={{ gap: '4px' }}>
+                        <span className="text-sm font-body text-text-muted flex items-center gap-1">
                           <Coffee className="w-3.5 h-3.5" /> Только кофе
                         </span>
                       ) : (
@@ -239,11 +236,8 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                     {/* Member badge — explicit inline styles to avoid Tailwind opacity issues */}
                     {entry?.forWhom && (
                       <span
-                        className="flex-shrink-0 text-[10px] px-2 py-0.5 font-heading font-semibold border"
-                        style={{
-                          borderRadius: '9999px',
-                          ...MEMBER_BADGE_STYLES[entry.forWhom],
-                        }}
+                        className="flex-shrink-0 text-[10px] px-2 py-0.5 font-heading font-semibold border rounded-full"
+                        style={MEMBER_BADGE_STYLES[entry.forWhom]}
                       >
                         {MEMBER_SHORT[entry.forWhom]}
                       </span>
@@ -258,25 +252,9 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                     {onUpdate && (
                       <button
                         onClick={(e) => handleSwapRecipe(e, index)}
-                        className="flex-shrink-0 flex items-center justify-center transition-colors"
+                        className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-[8px] border border-nebula bg-void text-text-muted hover:border-portal/30 hover:text-portal transition-colors"
                         title="Заменить блюдо"
                         type="button"
-                        style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '8px',
-                          border: '1px solid #252D3B',
-                          background: '#0B0E14',
-                          color: '#9BA3B2',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(57,255,20,0.3)';
-                          e.currentTarget.style.color = '#39FF14';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = '#252D3B';
-                          e.currentTarget.style.color = '#9BA3B2';
-                        }}
                       >
                         <ArrowLeftRight className="w-3.5 h-3.5" />
                       </button>
@@ -291,7 +269,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
           )}
 
           {hasMissingIngredients && (
-            <div className="flex items-center text-ramen mt-2" style={{ gap: '4px' }}>
+            <div className="flex items-center gap-1 text-ramen mt-2">
               <AlertTriangle className="w-4 h-4" />
               <span className="text-xs font-body">Не хватает ингредиентов</span>
             </div>
@@ -300,13 +278,8 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
           {!showIngredientCheck && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowIngredientCheck(true); }}
-              className="w-full mt-3 text-text-secondary font-heading font-semibold text-xs py-2 px-3 transition-colors"
+              className="w-full mt-3 text-text-secondary font-heading font-semibold text-xs py-2 px-3 bg-[#1C2230] border border-nebula rounded-button transition-colors"
               type="button"
-              style={{
-                background: '#1C2230',
-                border: '1px solid #252D3B',
-                borderRadius: '10px',
-              }}
             >
               Проверить ингредиенты
             </button>
@@ -318,8 +291,7 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                 <span className="text-xs font-heading font-semibold text-text-muted">Ингредиенты для {meal.label.toLowerCase()}а</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowIngredientCheck(false); }}
-                  className="flex items-center px-2 py-1 text-xs font-heading font-semibold text-text-secondary transition-colors"
-                  style={{ gap: '4px', background: '#1C2230', border: '1px solid #252D3B', borderRadius: '10px' }}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-heading font-semibold text-text-secondary bg-[#1C2230] border border-nebula rounded-button transition-colors"
                   type="button"
                 >
                   <X className="w-3.5 h-3.5" /> Закрыть

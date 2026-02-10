@@ -18,7 +18,11 @@ import type {
   PrepPlan,
   CookingSession,
   ChefModeSettings,
+  SyncMetadata,
 } from '../data/schema';
+
+// Re-export для обратной совместимости
+export type { SyncMetadata };
 
 type SyncableEntity =
   | Recipe
@@ -37,14 +41,6 @@ type TableName =
   | 'prepPlans'
   | 'cookingSessions'
   | 'chefSettings';
-
-export interface SyncMetadata {
-  syncStatus: 'synced' | 'pending' | 'failed';
-  lastSyncedAt?: string;
-  syncError?: string;
-  retryCount?: number;
-  localUpdatedAt: string;
-}
 
 /** Вспомогательный тип: entity с id и опциональными временными метками */
 interface EntityWithId {
@@ -187,11 +183,11 @@ class SyncService {
     this.syncInProgress.add(tableName);
 
     try {
-      // Находим все записи со статусом 'pending' или 'failed'
+      // Находим все записи со статусом 'pending' или 'error'
       const allItems = await db.table(tableName).toArray() as SyncableItem[];
       const pendingItems = allItems.filter((item) => {
         const sync = item._sync;
-        return sync && (sync.syncStatus === 'pending' || sync.syncStatus === 'failed');
+        return sync && (sync.syncStatus === 'pending' || sync.syncStatus === 'error');
       });
 
       if (pendingItems.length === 0) {
@@ -230,13 +226,13 @@ class SyncService {
         } catch (error) {
           logger.error(`[SyncService] Ошибка синхронизации ${tableName}:${entityId}:`, error);
 
-          // Обновляем статус на 'failed'
+          // Обновляем статус на 'error'
           const retryCount = (item._sync?.retryCount || 0) + 1;
           const failUpdate: { _sync: SyncMetadata } = {
             _sync: {
               ...item._sync,
-              syncStatus: 'failed',
-              syncError: error instanceof Error ? error.message : String(error),
+              syncStatus: 'error',
+              errorMessage: error instanceof Error ? error.message : String(error),
               localUpdatedAt: item._sync?.localUpdatedAt || new Date().toISOString(),
               retryCount,
             },
@@ -255,27 +251,29 @@ class SyncService {
    * Создание записи в Neon
    */
   private async createInNeon(tableName: TableName, item: SyncableEntity): Promise<void> {
+    // Внутри switch TS не сужает SyncableEntity по tableName,
+    // поэтому используем явные cast к конкретному типу.
     switch (tableName) {
       case 'recipes':
-        await apiDataService.recipes.create(item);
+        await apiDataService.recipes.create(item as Recipe);
         break;
       case 'menus':
-        await apiDataService.menus.create(item);
+        await apiDataService.menus.create(item as WeekMenu);
         break;
       case 'freezer':
-        await apiDataService.freezer.create(item);
+        await apiDataService.freezer.create(item as FreezerItem);
         break;
       case 'shopping':
-        await apiDataService.shopping.create(item);
+        await apiDataService.shopping.create(item as ShoppingItem);
         break;
       case 'prepPlans':
-        await apiDataService.prepPlans.create(item);
+        await apiDataService.prepPlans.create(item as PrepPlan);
         break;
       case 'cookingSessions':
-        await apiDataService.cookingSessions.create(item);
+        await apiDataService.cookingSessions.create(item as CookingSession);
         break;
       case 'chefSettings':
-        await apiDataService.chefSettings.save(item);
+        await apiDataService.chefSettings.save(item as ChefModeSettings);
         break;
     }
   }
@@ -286,25 +284,25 @@ class SyncService {
   private async updateInNeon(tableName: TableName, id: string, item: SyncableEntity): Promise<void> {
     switch (tableName) {
       case 'recipes':
-        await apiDataService.recipes.update(id, item);
+        await apiDataService.recipes.update(id, item as Partial<Recipe>);
         break;
       case 'menus':
-        await apiDataService.menus.update(id, item);
+        await apiDataService.menus.update(id, item as Partial<WeekMenu>);
         break;
       case 'freezer':
-        await apiDataService.freezer.update(id, item);
+        await apiDataService.freezer.update(id, item as Partial<FreezerItem>);
         break;
       case 'shopping':
-        await apiDataService.shopping.update(id, item as ShoppingItem);
+        await apiDataService.shopping.update(id, item as Partial<ShoppingItem>);
         break;
       case 'prepPlans':
-        await apiDataService.prepPlans.update(id, item);
+        await apiDataService.prepPlans.update(id, item as Partial<PrepPlan>);
         break;
       case 'cookingSessions':
-        await apiDataService.cookingSessions.update(id, item);
+        await apiDataService.cookingSessions.update(id, item as Partial<CookingSession>);
         break;
       case 'chefSettings':
-        await apiDataService.chefSettings.save(item);
+        await apiDataService.chefSettings.save(item as ChefModeSettings);
         break;
     }
   }
@@ -392,7 +390,7 @@ class SyncService {
         const sync = item._sync;
         if (sync) {
           if (sync.syncStatus === 'pending') pendingCount++;
-          if (sync.syncStatus === 'failed') failedCount++;
+          if (sync.syncStatus === 'error') failedCount++;
         }
       }
     }

@@ -185,13 +185,13 @@ export function MenuPage() {
   return (
     <div className="container mx-auto px-4 py-4 pb-24">
       {/* Header row */}
-      <div className="flex flex-wrap items-center justify-between mb-3" style={{ gap: '8px' }}>
+      <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
         <h1 className="font-heading text-2xl font-bold text-text-primary">
           Меню недели
         </h1>
-        <div className="flex items-center" style={{ gap: '8px' }}>
+        <div className="flex items-center gap-2">
           {templateSuccess && (
-            <span className="flex items-center text-xs text-portal font-body animate-fade-in" style={{ gap: '4px' }}>
+            <span className="flex items-center gap-1 text-xs text-portal font-body animate-fade-in">
               <CheckCircle2 className="w-4 h-4" /> Готово!
             </span>
           )}
@@ -199,8 +199,7 @@ export function MenuPage() {
             type="button"
             onClick={createMenuFromTemplate}
             disabled={creatingFromTemplate}
-            className="flex items-center px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
-            style={{ gap: '6px' }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
           >
             <Copy className="w-3.5 h-3.5" />
             {creatingFromTemplate ? 'Создаём...' : 'Из шаблона'}
@@ -216,17 +215,16 @@ export function MenuPage() {
       />
 
       {/* Meal type filter */}
-      <div className="flex items-center overflow-x-auto mb-4" style={{ gap: '4px' }}>
+      <div className="flex items-center overflow-x-auto mb-4 gap-1">
         {MEAL_FILTERS.map((f) => (
           <button
             key={f.value}
             onClick={() => setMealFilter(f.value)}
-            className={`px-3 py-1.5 text-xs font-heading font-semibold whitespace-nowrap transition-colors border ${
+            className={`px-3 py-1.5 text-xs font-heading font-semibold whitespace-nowrap transition-colors border rounded-full ${
               mealFilter === f.value
                 ? 'bg-miso/20 text-miso border-miso/50'
                 : 'bg-rift text-text-muted border-nebula hover:border-miso/30'
             }`}
-            style={{ borderRadius: '9999px' }}
           >
             {f.label}
           </button>

@@ -55,6 +55,7 @@ export function useShoppingList() {
           }
         } else {
           ingredientMap.set(key, {
+            id: crypto.randomUUID(),
             ingredient: ingredient.name,
             totalAmount: ingredient.amount,
             unit: ingredient.unit,
@@ -100,6 +101,7 @@ export function useShoppingList() {
       const key = `${ingredientName}_шт`;
       if (!ingredientMap.has(key)) {
         ingredientMap.set(key, {
+          id: crypto.randomUUID(),
           ingredient: ingredientName,
           totalAmount: 1,
           unit: 'шт',
@@ -215,15 +217,16 @@ export function useShoppingList() {
     const newItems: ShoppingItem[] = missing
       .filter((name) => !existingNames.has(name))
       .map((name) => ({
+        id: crypto.randomUUID(),
         ingredient: name,
         totalAmount: 1,
-        unit: 'шт',
+        unit: 'шт' as const,
         category: categorizeIngredient(name),
         checked: false,
-        recipeIds: [],
+        recipeIds: [] as string[],
         markedMissing: true,
         markedAt: new Date().toISOString(),
-        source: 'missing',
+        source: 'missing' as const,
       }));
 
     if (newItems.length > 0) {

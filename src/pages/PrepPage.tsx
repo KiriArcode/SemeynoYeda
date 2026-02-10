@@ -149,7 +149,7 @@ export function PrepPage() {
   if (!plan) {
     return (
       <div className="container mx-auto px-4 py-6 pb-24">
-        <h1 className="font-heading text-2xl font-bold text-text-primary mb-6 flex items-center" style={{ gap: '8px' }}>
+        <h1 className="font-heading text-2xl font-bold text-text-primary mb-6 flex items-center gap-2">
           <ChefHat className="w-6 h-6 text-portal" /> Заготовки выходного дня
         </h1>
         <div className="bg-panel border border-elevated rounded-card p-6 text-center shadow-card">
@@ -158,8 +158,7 @@ export function PrepPage() {
             Нажмите чтобы сгенерировать план заготовок на основе меню недели
           </p>
           <button onClick={handleGenerate}
-            className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all flex items-center mx-auto"
-            style={{ gap: '8px' }}>
+            className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all flex items-center gap-2 mx-auto">
             <Play className="w-5 h-5" /> Создать план заготовок
           </button>
         </div>
@@ -187,7 +186,7 @@ export function PrepPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
-      <h1 className="font-heading text-2xl font-bold text-text-primary mb-4 flex items-center" style={{ gap: '8px' }}>
+      <h1 className="font-heading text-2xl font-bold text-text-primary mb-4 flex items-center gap-2">
         <ChefHat className="w-6 h-6 text-portal" /> Заготовки выходного дня
       </h1>
 
@@ -200,11 +199,11 @@ export function PrepPage() {
         <div className="w-full h-3 bg-rift rounded-sm overflow-hidden mb-3">
           <div className="h-full bg-portal rounded-sm transition-all" style={{ width: `${progressPercent}%` }} />
         </div>
-        <div className="flex items-center text-xs font-body text-text-muted" style={{ gap: '16px' }}>
-          <span className="flex items-center" style={{ gap: '4px' }}>
+        <div className="flex items-center gap-4 text-xs font-body text-text-muted">
+          <span className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" /> ~{plan.totalTime} мин
           </span>
-          <span className="flex items-center" style={{ gap: '4px' }}>
+          <span className="flex items-center gap-1">
             <Snowflake className="w-3.5 h-3.5 text-frost" />
             {plan.tasks.filter(t => t.phase === 4).length} заготовок
           </span>
@@ -213,7 +212,7 @@ export function PrepPage() {
 
       {/* Equipment timeline */}
       <div className="bg-panel border border-elevated rounded-card p-4 mb-4 shadow-card">
-        <div className="flex items-center mb-3" style={{ gap: '8px' }}>
+        <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="w-4 h-4 text-portal" />
           <span className="text-sm font-heading font-semibold text-text-primary">Загрузка оборудования</span>
         </div>
@@ -221,7 +220,7 @@ export function PrepPage() {
           {Array.from(equipmentUsage.values())
             .sort((a, b) => b.totalMinutes - a.totalMinutes)
             .map(e => (
-              <div key={e.equipment} className="flex items-center" style={{ gap: '8px' }}>
+              <div key={e.equipment} className="flex items-center gap-2">
                 <span className="text-xs font-body text-text-muted w-24 text-right">
                   {EQUIPMENT_LABELS[e.equipment as EquipmentId] || e.equipment}
                 </span>
@@ -282,7 +281,7 @@ export function PrepPage() {
                           : 'bg-card border-elevated hover:border-portal/30'
                       }`}
                     >
-                      <div className="flex items-start" style={{ gap: '10px' }}>
+                      <div className="flex items-start gap-2.5">
                         {task.completed ? (
                           <CheckCircle2 className="w-5 h-5 text-portal flex-shrink-0 mt-0.5" />
                         ) : (
@@ -292,7 +291,7 @@ export function PrepPage() {
                           <span className={`text-sm font-heading font-medium ${task.completed ? 'text-text-muted line-through' : 'text-text-primary'}`}>
                             {task.step}
                           </span>
-                          <div className="flex flex-wrap items-center mt-1" style={{ gap: '6px' }}>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
                             <span className="text-[10px] font-mono text-text-muted">{task.recipeTitle}</span>
                             <span className="text-[10px] font-mono text-accent-orange">{task.duration} мин</span>
                             <span className={`text-[10px] px-1.5 py-0.5 border rounded ${EQUIPMENT_COLORS[task.equipment] || 'bg-rift'} border-elevated text-text-secondary`}>
@@ -323,8 +322,7 @@ export function PrepPage() {
       {/* Freeze button */}
       {completedCount > 0 && (
         <button onClick={handleFreezeCompleted}
-          className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-frost to-frost/70 text-void font-heading font-semibold rounded-button flex items-center justify-center"
-          style={{ gap: '8px' }}>
+          className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-frost to-frost/70 text-void font-heading font-semibold rounded-button flex items-center justify-center gap-2">
           <Snowflake className="w-5 h-5" /> Заморозить готовое
         </button>
       )}

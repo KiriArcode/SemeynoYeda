@@ -129,12 +129,11 @@ export function FreezerPage() {
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-heading text-2xl font-bold text-text-light flex items-center" style={{ gap: '8px' }}>
+        <h1 className="font-heading text-2xl font-bold text-text-light flex items-center gap-2">
           <Snowflake className="w-6 h-6 text-frost" /> Морозилка
         </h1>
         <button onClick={() => setShowAddForm(true)}
-          className="flex items-center px-4 py-2 text-sm font-heading font-semibold text-frost border border-frost/50 rounded-button hover:bg-frost/10 transition-colors"
-          style={{ gap: '6px' }}>
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-frost border border-frost/50 rounded-button hover:bg-frost/10 transition-colors">
           <Plus className="w-4 h-4" /> Добавить
         </button>
       </div>
@@ -177,7 +176,7 @@ export function FreezerPage() {
                 <option value="kristina">Кристина</option>
               </select>
             </div>
-            <div className="grid grid-cols-2" style={{ gap: '12px' }}>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Порции</label>
                 <input type="number" min={1} value={formPortions} onChange={e => setFormPortions(+e.target.value)} className={inputClass} />
@@ -212,7 +211,7 @@ export function FreezerPage() {
               <div key={item.id} className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="flex items-center flex-wrap" style={{ gap: '8px' }}>
+                      <div className="flex items-center flex-wrap gap-2">
                       <h3 className="text-sm font-heading font-semibold text-text-light">{item.name}</h3>
                       {item.forWhom && (
                         <span
@@ -227,17 +226,17 @@ export function FreezerPage() {
                         </span>
                       )}
                       {item.location && (
-                        <span className="text-[10px] px-2 py-0.5 bg-rift border border-nebula text-text-dim font-body" style={{ borderRadius: '9999px' }}>
+                        <span className="text-[10px] px-2 py-0.5 bg-rift border border-nebula text-text-dim font-body rounded-full">
                           {item.location}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center mt-1 text-xs font-body text-text-dim" style={{ gap: '12px' }}>
+                    <div className="flex items-center gap-3 mt-1 text-xs font-body text-text-dim">
                       <span>Заморожено: {new Date(item.frozenDate).toLocaleDateString('ru-RU')}</span>
                       <span className={expiry.color}>До: {new Date(item.expiryDate).toLocaleDateString('ru-RU')} ({expiry.label})</span>
                     </div>
                   </div>
-                  <div className="flex items-center" style={{ gap: '4px' }}>
+                  <div className="flex items-center gap-1">
                     <button onClick={() => setDeleteItem(item)} className="p-1 text-text-ghost hover:text-ramen transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -250,10 +249,9 @@ export function FreezerPage() {
                     <span className="text-xs font-mono text-text-mid">
                       {item.portionsRemaining} / {item.portionsOriginal} порц.
                     </span>
-                    <div className="flex items-center" style={{ gap: '4px' }}>
+                    <div className="flex items-center gap-1">
                       <button onClick={() => handleUsePortions(item, 1)} disabled={item.portionsRemaining <= 0}
-                        className="px-2 py-0.5 text-xs font-heading font-semibold text-frost border border-frost/40 rounded-button hover:bg-frost/10 transition-colors disabled:opacity-30"
-                        style={{ gap: '2px' }}>
+                        className="px-2 py-0.5 text-xs font-heading font-semibold text-frost border border-frost/40 rounded-button hover:bg-frost/10 transition-colors disabled:opacity-30 gap-0.5">
                         <Minus className="w-3 h-3 inline" /> 1
                       </button>
                     </div>

@@ -111,7 +111,7 @@ export function WeekStats({ weekMenu }: WeekStatsProps) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between text-left bg-card rounded-md py-2.5 px-3 border border-nebula/60"
       >
-        <div className="flex items-center" style={{ gap: '8px' }}>
+        <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-portal" />
           <span className="text-sm font-heading font-semibold text-text-light">Разнообразие недели</span>
         </div>
@@ -123,7 +123,7 @@ export function WeekStats({ weekMenu }: WeekStatsProps) {
           {/* Category bar chart */}
           <div className="space-y-1.5">
             {stats.map(s => (
-              <div key={s.category} className="flex items-center" style={{ gap: '8px' }}>
+              <div key={s.category} className="flex items-center gap-2">
                 <span className="text-xs font-body text-text-dim w-20 text-right">{s.label}</span>
                 <div className="flex-1 h-4 bg-rift rounded-sm overflow-hidden">
                   <div
@@ -140,7 +140,7 @@ export function WeekStats({ weekMenu }: WeekStatsProps) {
           {warnings.length > 0 && (
             <div className="space-y-1 pt-2 border-t border-nebula">
               {warnings.map((w, i) => (
-                <div key={i} className="flex items-start text-xs text-ramen font-body" style={{ gap: '6px' }}>
+                <div key={i} className="flex items-start gap-1.5 text-xs text-ramen font-body">
                   <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                   <span>{w}</span>
                 </div>

@@ -8,17 +8,24 @@ import type {
   BatchPlan,
   CookingSession,
   ChefModeSettings,
+  SyncMetadata,
 } from '../data/schema';
 
+/**
+ * Каждая строка в IndexedDB может содержать метаданные синхронизации.
+ * Это позволяет избежать `as any` при put/get операциях.
+ */
+type Row<T> = T & { _sync?: SyncMetadata };
+
 const db = new Dexie('SemeynoYedaDB') as Dexie & {
-  recipes: Table<Recipe, 'id'>;
-  menus: Table<WeekMenu, 'id'>;
-  freezer: Table<FreezerItem, 'id'>;
-  shopping: Table<ShoppingItem, 'id'>;
-  prepPlans: Table<PrepPlan, 'id'>;
-  batchPlans: Table<BatchPlan, 'id'>;
-  cookingSessions: Table<CookingSession, 'id'>;
-  chefSettings: Table<ChefModeSettings, 'id'>;
+  recipes: Table<Row<Recipe>, string>;
+  menus: Table<Row<WeekMenu>, string>;
+  freezer: Table<Row<FreezerItem>, string>;
+  shopping: Table<Row<ShoppingItem>, string>;
+  prepPlans: Table<Row<PrepPlan>, string>;
+  batchPlans: Table<Row<BatchPlan>, string>;
+  cookingSessions: Table<Row<CookingSession>, string>;
+  chefSettings: Table<Row<ChefModeSettings>, string>;
 };
 
 // Версия 1: базовая схема

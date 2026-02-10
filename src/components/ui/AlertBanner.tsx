@@ -33,7 +33,7 @@ export function AlertBanner({ type, message, className = '', onDismiss }: AlertB
 
   return (
     <div className={`flex items-center justify-between px-3 py-2 rounded-button border ${style.bg} ${style.border} ${className}`}>
-      <div className="flex items-center" style={{ gap: '8px' }}>
+      <div className="flex items-center gap-2">
         <span className={style.icon}>{ICONS[type]}</span>
         <span className={`text-xs font-body ${style.text}`}>{message}</span>
       </div>

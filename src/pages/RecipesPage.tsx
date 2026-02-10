@@ -153,8 +153,7 @@ export function RecipesPage() {
           {pageTitle}
         </h1>
         <Link to="/recipe/new"
-          className="flex items-center px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
-          style={{ gap: '6px' }}>
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors">
           <Plus className="w-4 h-4" /> Новый
         </Link>
       </div>
@@ -180,35 +179,35 @@ export function RecipesPage() {
       </div>
 
       {/* Person filter */}
-      <div className="flex flex-wrap mb-3" style={{ gap: '6px' }}>
+      <div className="flex flex-wrap mb-3 gap-1.5">
         {([['all', 'Все'] as const, ['kolya', 'Коля'] as const, ['kristina', 'Кристина'] as const]).map(([val, label]) => (
           <button key={val} onClick={() => setPersonFilter(val)}
-            className={`px-3 py-1.5 text-xs font-heading font-semibold border transition-colors ${
+            className={`px-3 py-1.5 text-xs font-heading font-semibold border transition-colors rounded-full ${
               personFilter === val
                 ? 'bg-portal/20 text-portal border-portal/50'
                 : 'bg-rift text-text-dim border-nebula hover:border-portal/30'
-            }`} style={{ borderRadius: '9999px' }}>
+            }`}>
             {label}
           </button>
         ))}
       </div>
 
       {/* Quick filters */}
-      <div className="flex flex-wrap mb-4" style={{ gap: '6px' }}>
+      <div className="flex flex-wrap mb-4 gap-1.5">
         <button onClick={() => setQuickFilter(quickFilter === 'quick-breakfast' ? 'none' : 'quick-breakfast')}
-          className={`flex items-center px-3 py-1.5 text-xs font-heading font-semibold border transition-colors ${
+          className={`flex items-center gap-1 px-3 py-1.5 text-xs font-heading font-semibold border transition-colors rounded-full ${
             quickFilter === 'quick-breakfast'
               ? 'bg-miso/20 text-miso border-miso/50'
               : 'bg-rift text-text-dim border-nebula hover:border-miso/30'
-          }`} style={{ borderRadius: '9999px', gap: '4px' }}>
+          }`}>
           <Zap className="w-3 h-3" /> Быстрый завтрак
         </button>
         <button onClick={() => setQuickFilter(quickFilter === 'packable' ? 'none' : 'packable')}
-          className={`flex items-center px-3 py-1.5 text-xs font-heading font-semibold border transition-colors ${
+          className={`flex items-center gap-1 px-3 py-1.5 text-xs font-heading font-semibold border transition-colors rounded-full ${
             quickFilter === 'packable'
               ? 'bg-miso/20 text-miso border-miso/50'
               : 'bg-rift text-text-dim border-nebula hover:border-miso/30'
-          }`} style={{ borderRadius: '9999px', gap: '4px' }}>
+          }`}>
           <Briefcase className="w-3 h-3" /> С собой на работу
         </button>
       </div>
@@ -245,13 +244,13 @@ export function RecipesPage() {
               to={`/recipe/${recipe.id}`}
               className="bg-dimension border border-nebula rounded-card p-4 shadow-card hover:border-portal/30 hover:shadow-glow transition-all cursor-pointer block card-hover"
             >
-              <div className="flex items-start justify-between mb-2" style={{ gap: '10px' }}>
+              <div className="flex items-start justify-between mb-2 gap-2.5">
                 <h3 className="font-heading font-semibold text-text-light">
                   {recipe.title}
                 </h3>
                 <span
-                  className="flex-shrink-0 text-xs px-3 py-1 font-heading font-semibold border"
-                  style={{ borderRadius: '9999px', ...MEMBER_BADGE[recipe.suitableFor] }}
+                  className="flex-shrink-0 text-xs px-3 py-1 font-heading font-semibold border rounded-full"
+                  style={MEMBER_BADGE[recipe.suitableFor]}
                 >
                   {MEMBER_LABELS[recipe.suitableFor]}
                 </span>
@@ -259,17 +258,16 @@ export function RecipesPage() {
               {recipe.subtitle && (
                 <p className="text-sm text-text-dim font-body mb-2">{recipe.subtitle}</p>
               )}
-              <div className="flex items-center text-xs font-mono text-portal mb-2" style={{ gap: '8px' }}>
+              <div className="flex items-center gap-2 text-xs font-mono text-portal mb-2">
                 <span>⏱ {recipe.totalTime} мин</span>
                 <span className="text-text-dim">·</span>
                 <span>{recipe.servings} порций</span>
               </div>
               {recipe.tags.length > 0 && (
-                <div className="flex flex-wrap" style={{ gap: '6px' }}>
+                <div className="flex flex-wrap gap-1.5">
                   {recipe.tags.map((tag) => (
                     <span key={tag}
-                      className={`text-[11px] px-2.5 py-0.5 font-heading border ${getTagStyle(tag)}`}
-                      style={{ borderRadius: '9999px' }}>
+                      className={`text-[11px] px-2.5 py-0.5 font-heading border rounded-full ${getTagStyle(tag)}`}>
                       {TAG_LABELS[tag] || tag}
                     </span>
                   ))}

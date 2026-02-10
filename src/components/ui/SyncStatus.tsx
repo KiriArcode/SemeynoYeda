@@ -45,7 +45,7 @@ export function SyncStatus() {
 
   if (!isOnline) {
     return (
-      <div className="flex items-center text-xs text-text-muted" style={{ gap: '6px' }}>
+      <div className="flex items-center gap-1.5 text-xs text-text-muted">
         <span>⚠️</span>
         <span>Офлайн режим</span>
       </div>
@@ -54,7 +54,7 @@ export function SyncStatus() {
 
   if (failedCount > 0) {
     return (
-      <div className="flex items-center text-xs text-ramen" style={{ gap: '6px' }}>
+      <div className="flex items-center gap-1.5 text-xs text-ramen">
         <span>❌</span>
         <span>Ошибки синхронизации ({failedCount})</span>
       </div>
@@ -63,7 +63,7 @@ export function SyncStatus() {
 
   if (pendingCount > 0) {
     return (
-      <div className="flex items-center text-xs text-portal" style={{ gap: '6px' }}>
+      <div className="flex items-center gap-1.5 text-xs text-portal">
         <span>🔄</span>
         <span>Синхронизация... ({pendingCount})</span>
       </div>
@@ -71,7 +71,7 @@ export function SyncStatus() {
   }
 
   return (
-    <div className="flex items-center text-xs text-portal-dim" style={{ gap: '6px' }}>
+      <div className="flex items-center gap-1.5 text-xs text-portal-dim">
       <span>✓</span>
       <span>Синхронизировано</span>
     </div>

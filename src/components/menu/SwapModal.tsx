@@ -88,8 +88,8 @@ export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterFo
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-body text-text-light">{r.title}</span>
                   <span
-                    className="text-[10px] px-2 py-0.5 font-heading font-semibold border"
-                    style={{ borderRadius: '9999px', ...MEMBER_BADGE[r.suitableFor] }}
+                    className="text-[10px] px-2 py-0.5 font-heading font-semibold border rounded-full"
+                    style={MEMBER_BADGE[r.suitableFor]}
                   >
                     {r.suitableFor === 'kolya' ? 'Коля' : r.suitableFor === 'kristina' ? 'Кристина' : 'Оба'}
                   </span>
