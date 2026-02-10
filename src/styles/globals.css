@@ -49,7 +49,7 @@
      TEXT — hierarchy
      ══════════════════════════════════════ */
   --color-text-primary: #E8ECF4;
-  --color-text-light: #F0EDE8;
+  --color-text-light: rgb(111, 70, 82);
   --color-text-secondary: #8892A6;
   --color-text-mid: #9BA3B2;
   --color-text-muted: #525D72;

@@ -4,7 +4,7 @@ import { logger } from '../lib/logger';
 import { useShoppingList } from '../hooks/useShoppingList';
 import { ShoppingSettings } from '../components/shopping/ShoppingSettings';
 import { Modal } from '../components/ui/Modal';
-import { CheckCircle2, ShoppingCart, RefreshCw, Trash2 } from 'lucide-react';
+import { CheckCircle2, ShoppingCart, RefreshCw, Trash2, Plus } from 'lucide-react';
 import type { Unit } from '../data/schema';
 
 export function ShoppingPage() {
@@ -92,11 +92,7 @@ export function ShoppingPage() {
   const categories: Array<'мясо' | 'молочка' | 'овощи' | 'крупы' | 'другое'> = ['мясо', 'молочка', 'овощи', 'крупы', 'другое'];
 
   function handleFilterClick(f: 'all' | 'auto' | 'manual' | 'missing') {
-    if (f === 'manual') {
-      setShowManualForm(true);
-    } else {
-      setFilter(f);
-    }
+    setFilter(f);
   }
 
   async function handleManualAdd() {
@@ -198,7 +194,7 @@ export function ShoppingPage() {
 
       {/* Фильтры и массовые операции */}
       <div className="mb-4 space-y-3">
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto items-center">
           {(['all', 'auto', 'manual', 'missing'] as const).map((f) => (
             <button
               key={f}
@@ -215,6 +211,13 @@ export function ShoppingPage() {
               {f === 'missing' && 'Отсутствует'}
             </button>
           ))}
+          <button
+            onClick={() => setShowManualForm(true)}
+            className="ml-auto px-3 py-1 rounded-button font-heading font-semibold text-xs whitespace-nowrap bg-portal/20 border border-portal/50 text-portal hover:bg-portal/30 transition-colors flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Добавить элемент
+          </button>
         </div>
         
         {filteredItems.length > 0 && (
