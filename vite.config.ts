@@ -27,9 +27,10 @@ export default defineConfig({
         // Отключаем минификацию SW (terser), чтобы сборка не падала с "Unexpected early exit"
         // на Vercel и в CI (race между rollup и workbox-build).
         mode: 'development',
-        // Не кэшируем index.html — иначе после деплоя SW отдаёт старый HTML
-        // со ссылками на удалённые чанки → 404 на RecipesPage, FreezerPage и т.д.
-        globPatterns: ['**/*.{js,css,ico,png,svg,json,woff2}'],
+        // Включаем index.html в precache — иначе createHandlerBoundToURL('index.html') падает.
+        // Раньше исключали index.html, чтобы после деплоя не отдавать старый HTML, но тогда
+        // SW ломается с "non-precached-url". С autoUpdate новый SW активируется при следующей загрузке.
+        globPatterns: ['**/*.html', '**/*.{js,css,ico,png,svg,json,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

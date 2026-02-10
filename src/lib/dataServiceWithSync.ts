@@ -169,7 +169,7 @@ function buildCrud<T extends { id: string }>(
 const recipesCrud = buildCrud<Recipe>(db.recipes, apiDataService.recipes, 'recipes', 'updatedAt');
 const menusCrud = buildCrud<WeekMenu>(db.menus, apiDataService.menus, 'menus', 'createdAt');
 const freezerCrud = buildCrud<FreezerItem>(db.freezer, apiDataService.freezer, 'freezer', 'frozenDate');
-const shoppingCrud = buildCrud<ShoppingItem>(db.shopping, apiDataService.shopping, 'shopping');
+// shopping использует ingredient как PK в IndexedDB (не id)
 const prepPlansCrud = buildCrud<PrepPlan>(db.prepPlans, apiDataService.prepPlans, 'prepPlans', 'date');
 const cookingSessionsCrud = buildCrud<CookingSession>(db.cookingSessions, apiDataService.cookingSessions, 'cookingSessions', 'date');
 
@@ -233,8 +233,67 @@ export const dataServiceWithSync = {
   freezer: freezerCrud,
 
   shopping: {
-    ...shoppingCrud,
-    /** Массовая запись в IndexedDB + sync */
+    list: async (): Promise<ShoppingItem[]> => {
+      try {
+        const rows: WithSync<ShoppingItem>[] = await db.shopping.toArray();
+        triggerSync();
+        return stripSyncArray(rows);
+      } catch (error) {
+        logger.error('[dataService.shopping.list]', error);
+        if (hasApi && navigator.onLine) return apiDataService.shopping.list();
+        return [];
+      }
+    },
+
+    create: async (item: ShoppingItem): Promise<ShoppingItem> => {
+      const now = new Date().toISOString();
+      const row: WithSync<ShoppingItem> = { ...item, _sync: pendingSync(now) };
+      try {
+        await db.shopping.put(row);
+        triggerSync();
+        return stripSync(row);
+      } catch (error) {
+        logger.error('[dataService.shopping.create]', error);
+        throw error;
+      }
+    },
+
+    update: async (ingredient: string, updates: Partial<ShoppingItem>): Promise<ShoppingItem> => {
+      try {
+        const existing: WithSync<ShoppingItem> | undefined = await db.shopping.get(ingredient);
+        if (!existing) throw new Error(`ShoppingItem ${ingredient} not found`);
+
+        const now = new Date().toISOString();
+        const updated: WithSync<ShoppingItem> = {
+          ...existing,
+          ...updates,
+          ingredient,
+          _sync: pendingSync(now, existing._sync?.retryCount || 0),
+        } as WithSync<ShoppingItem>;
+
+        await db.shopping.put(updated);
+        triggerSync();
+        return stripSync(updated);
+      } catch (error) {
+        logger.error('[dataService.shopping.update]', error);
+        throw error;
+      }
+    },
+
+    delete: async (ingredient: string): Promise<void> => {
+      try {
+        await db.shopping.delete(ingredient);
+        if (hasApi && navigator.onLine) {
+          apiDataService.shopping.delete(ingredient).catch((e) =>
+            logger.error('[dataService.shopping.delete] Neon:', e),
+          );
+        }
+      } catch (error) {
+        logger.error('[dataService.shopping.delete]', error);
+        throw error;
+      }
+    },
+
     bulkPut: async (items: ShoppingItem[]): Promise<ShoppingItem[]> => {
       const now = new Date().toISOString();
       const rows: WithSync<ShoppingItem>[] = items.map((item) => ({

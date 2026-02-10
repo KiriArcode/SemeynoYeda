@@ -196,19 +196,22 @@ class SyncService {
 
       for (const item of pendingItems) {
         const entity = item as unknown as EntityWithId & { _sync?: SyncMetadata };
-        const entityId = entity.id;
+        // shopping использует ingredient как ключ в IndexedDB и API
+        const dbKey = tableName === 'shopping'
+          ? (item as ShoppingItem).ingredient
+          : entity.id;
 
         try {
           const { _sync, ...itemWithoutSync } = item;
 
           // Определяем операцию: create, update или delete
-          const existing = await db.table(tableName).get(entityId) as SyncableItem | undefined;
+          const existing = await db.table(tableName).get(dbKey) as SyncableItem | undefined;
           const isNew = !existing || !existing._sync?.lastSyncedAt;
 
           if (isNew) {
             await this.createInNeon(tableName, itemWithoutSync);
           } else {
-            await this.updateInNeon(tableName, entityId, itemWithoutSync);
+            await this.updateInNeon(tableName, dbKey, itemWithoutSync);
           }
 
           // Обновляем метаданные синхронизации
@@ -220,11 +223,11 @@ class SyncService {
               retryCount: 0,
             },
           };
-          await db.table(tableName).update(entityId, syncUpdate);
+          await db.table(tableName).update(dbKey, syncUpdate);
 
-          logger.log(`[SyncService] Синхронизировано ${tableName}:${entityId}`);
+          logger.log(`[SyncService] Синхронизировано ${tableName}:${dbKey}`);
         } catch (error) {
-          logger.error(`[SyncService] Ошибка синхронизации ${tableName}:${entityId}:`, error);
+          logger.error(`[SyncService] Ошибка синхронизации ${tableName}:${dbKey}:`, error);
 
           // Обновляем статус на 'error'
           const retryCount = (item._sync?.retryCount || 0) + 1;
@@ -237,7 +240,7 @@ class SyncService {
               retryCount,
             },
           };
-          await db.table(tableName).update(entityId, failUpdate);
+          await db.table(tableName).update(dbKey, failUpdate);
         }
       }
     } catch (error) {
@@ -293,6 +296,7 @@ class SyncService {
         await apiDataService.freezer.update(id, item as Partial<FreezerItem>);
         break;
       case 'shopping':
+        // id здесь — ingredient (dbKey для shopping)
         await apiDataService.shopping.update(id, item as Partial<ShoppingItem>);
         break;
       case 'prepPlans':

@@ -109,17 +109,28 @@ db.version(5).stores({
   chefSettings: 'id',
 });
 
-// Версия 6: shopping — id как primary key (совмещение с SQL schema)
+// Версия 6: shopping — оставляем ingredient как PK (IndexedDB не поддерживает смену key path).
+// Добавляем индекс id, upgrade задаёт id существующим записям.
 db.version(6)
   .stores({
     recipes: 'id, slug, category, *tags, suitableFor',
     menus: 'id, weekStart, shoppingDay, createdAt',
     freezer: 'id, recipeId, expiryDate, batchId',
-    shopping: 'id, ingredient, category, checked, markedMissing',
+    shopping: 'ingredient, id, category, checked, markedMissing',
     prepPlans: 'id, date',
     batchPlans: 'id, date',
     cookingSessions: 'id, date, mealType',
     chefSettings: 'id',
+  })
+  .upgrade((tx) => {
+    return tx
+      .table('shopping')
+      .toCollection()
+      .modify((item: ShoppingItem & { id?: string }) => {
+        if (!item.id) {
+          item.id = crypto.randomUUID();
+        }
+      });
   });
 
 export { db };

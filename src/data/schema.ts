@@ -160,7 +160,7 @@ export interface WeekMenu {
 
 /** Элемент списка покупок */
 export interface ShoppingItem {
-  id: string;                 // PK, совпадает с SQL schema (shopping.id)
+  id?: string;                // опционально; IndexedDB и API используют ingredient как ключ
   ingredient: string;
   totalAmount: number;
   unit: Unit;
