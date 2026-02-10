@@ -11,6 +11,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg'],
+      // Ensure icon is copied to dist
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+      },
       manifest: {
         name: 'SemeynoYeda — Семейная еда',
         short_name: 'СемейноЕда',
@@ -20,7 +24,14 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         icons: [
-          { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { 
+            src: '/icons/icon.svg', 
+            sizes: 'any', 
+            type: 'image/svg+xml', 
+            purpose: 'any maskable' 
+          },
+          // TODO: Create PNG versions (192x192 and 512x512) for better browser compatibility
+          // Use: convert -background "#0B0E14" -size 192x192 public/icons/icon.svg public/icons/icon-192.png
         ],
       },
       workbox: {

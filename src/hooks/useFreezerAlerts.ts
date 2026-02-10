@@ -21,8 +21,12 @@ export function useFreezerAlerts(weekMenu: WeekMenu | null) {
       const items = await dataService.freezer.list();
       const newAlerts: FreezerAlert[] = [];
       const now = new Date();
+      const seenItemIds = new Set<string>(); // Prevent duplicate alerts for same item
 
       for (const item of items) {
+        // Skip if we already have an alert for this item
+        if (seenItemIds.has(item.id)) continue;
+
         // Low stock
         if (item.portionsRemaining <= 2 && item.portionsRemaining > 0) {
           newAlerts.push({
@@ -30,6 +34,8 @@ export function useFreezerAlerts(weekMenu: WeekMenu | null) {
             message: `${item.name} — осталось ${item.portionsRemaining} порц.`,
             itemId: item.id,
           });
+          seenItemIds.add(item.id);
+          continue; // Only show one alert per item (prioritize low stock)
         }
 
         // Expiring within 3 days
@@ -41,12 +47,14 @@ export function useFreezerAlerts(weekMenu: WeekMenu | null) {
             message: `${item.name} истекает через ${daysUntilExpiry} дн.`,
             itemId: item.id,
           });
+          seenItemIds.add(item.id);
         } else if (daysUntilExpiry <= 0) {
           newAlerts.push({
             type: 'expiring',
             message: `${item.name} — срок истёк!`,
             itemId: item.id,
           });
+          seenItemIds.add(item.id);
         }
       }
 

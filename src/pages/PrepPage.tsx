@@ -64,9 +64,21 @@ export function PrepPage() {
   }
 
   async function handleGenerate() {
-    if (!weekMenu) return;
+    if (!weekMenu) {
+      logger.error('[PrepPage] No week menu available');
+      return;
+    }
     logger.log('[PrepPage] Generating batch plan...');
-    await generateBatchPlan(weekMenu);
+    try {
+      const newPlan = await generateBatchPlan(weekMenu);
+      if (newPlan) {
+        logger.log('[PrepPage] Plan generated successfully:', newPlan.id);
+      } else {
+        logger.warn('[PrepPage] No plan generated - possibly no freezable recipes found');
+      }
+    } catch (error) {
+      logger.error('[PrepPage] Failed to generate plan:', error);
+    }
   }
 
   async function handleFreezeCompleted() {

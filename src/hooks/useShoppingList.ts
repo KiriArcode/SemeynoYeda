@@ -236,6 +236,27 @@ export function useShoppingList() {
     }
   }
 
+  async function bulkToggleChecked(ingredients: string[]) {
+    if (ingredients.length === 0) return;
+    const allItems = await dataService.shopping.list();
+    const updatedItems = allItems.map((item) => {
+      if (ingredients.includes(item.ingredient)) {
+        return { ...item, checked: !item.checked };
+      }
+      return item;
+    });
+    await dataService.shopping.bulkPut(updatedItems);
+    await loadItems();
+  }
+
+  async function bulkDelete(ingredients: string[]) {
+    if (ingredients.length === 0) return;
+    const allItems = await dataService.shopping.list();
+    const remainingItems = allItems.filter((item) => !ingredients.includes(item.ingredient));
+    await dataService.shopping.bulkPut(remainingItems);
+    await loadItems();
+  }
+
   return {
     items,
     loading,
@@ -248,5 +269,7 @@ export function useShoppingList() {
     clearChecked,
     addMissingIngredients,
     generateShoppingList,
+    bulkToggleChecked,
+    bulkDelete,
   };
 }

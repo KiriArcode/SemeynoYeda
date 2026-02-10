@@ -201,7 +201,7 @@ h1, h2 {
    ══════════════════════════════════════ */
 body {
   font-family: var(--font-body);
-  color: var(--text-light);
+  color: rgb(90, 98, 112);
   background: var(--void);
   -webkit-font-smoothing: antialiased;
   margin: 0;

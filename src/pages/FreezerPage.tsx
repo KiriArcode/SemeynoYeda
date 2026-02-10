@@ -76,10 +76,15 @@ export function FreezerPage() {
 
   async function handleDelete() {
     if (!deleteItem) return;
-    logger.log('[FreezerPage] Deleting:', deleteItem.name);
-    await dataService.freezer.delete(deleteItem.id);
-    setItems(prev => prev.filter(i => i.id !== deleteItem.id));
-    setDeleteItem(null);
+    try {
+      logger.log('[FreezerPage] Deleting:', deleteItem.name);
+      await dataService.freezer.delete(deleteItem.id);
+      setItems(prev => prev.filter(i => i.id !== deleteItem.id));
+      setDeleteItem(null);
+    } catch (error) {
+      logger.error('[FreezerPage] Failed to delete item:', error);
+      // Keep modal open on error so user can retry
+    }
   }
 
   function resetForm() {
@@ -237,7 +242,14 @@ export function FreezerPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setDeleteItem(item)} className="p-1 text-text-ghost hover:text-ramen transition-colors">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteItem(item);
+                      }} 
+                      className="p-1 text-text-ghost hover:text-ramen transition-colors"
+                      aria-label="Удалить"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

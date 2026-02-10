@@ -235,8 +235,8 @@ export function MenuPage() {
       <WeekStats weekMenu={weekMenu} />
 
       {/* Freezer alerts */}
-      {alerts.map((alert, i) => (
-        <AlertBanner key={i} type={alert.type} message={alert.message} className="mb-3" />
+      {alerts.map((alert) => (
+        <AlertBanner key={alert.itemId || alert.message} type={alert.type} message={alert.message} className="mb-3" />
       ))}
 
       {/* Days with accordion MealSlots */}
@@ -268,16 +268,27 @@ export function MenuPage() {
 
               {/* Meals inside a card container with accordion */}
               <div className="mx-3 mb-3 bg-card border border-elevated rounded-card overflow-hidden">
-                {day.meals.map((meal, index) => (
-                  <MealSlot
-                    key={`${day.date}-${meal.mealType}-${index}`}
-                    slot={meal}
-                    date={day.date}
-                    onUpdate={(updated) => handleMealSlotUpdate(day.date, index, updated)}
-                    isExpanded={expandedMeals[day.date] === index}
-                    onToggle={() => handleToggleMeal(day.date, index)}
-                  />
-                ))}
+                {day.meals.map((meal, index) => {
+                  const mealTypeLabel = MEAL_FILTERS.find(f => f.value === meal.mealType)?.label || meal.mealType;
+                  return (
+                    <div key={`${day.date}-${meal.mealType}-${index}`}>
+                      {mealFilter === 'all' && (
+                        <div className="px-4 pt-2 pb-1">
+                          <span className="text-[10px] font-mono text-portal-dim tracking-[1.5px] uppercase">
+                            {mealTypeLabel.replace(/[^\w\s]/g, '').trim()}
+                          </span>
+                        </div>
+                      )}
+                      <MealSlot
+                        slot={meal}
+                        date={day.date}
+                        onUpdate={(updated) => handleMealSlotUpdate(day.date, index, updated)}
+                        isExpanded={expandedMeals[day.date] === index}
+                        onToggle={() => handleToggleMeal(day.date, index)}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

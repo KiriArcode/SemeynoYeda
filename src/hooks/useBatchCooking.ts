@@ -44,7 +44,10 @@ export function useBatchCooking() {
     (async () => {
       try {
         const latest = await db.batchPlans.orderBy('date').reverse().first();
-        if (!cancelled && latest) setPlan(latest);
+        if (!cancelled && latest) {
+          setPlan(latest);
+          logger.log('[useBatchCooking] Loaded saved plan:', latest.id);
+        }
       } catch (e) {
         logger.error('[useBatchCooking] Load saved plan:', e);
       } finally {
@@ -80,10 +83,13 @@ export function useBatchCooking() {
       );
 
       if (freezableRecipes.length === 0) {
-        logger.log('[useBatchCooking] No freezable recipes found');
+        logger.log('[useBatchCooking] No freezable recipes found in menu');
         setLoading(false);
+        // Show message to user - but don't return null immediately, let them know
         return null;
       }
+
+      logger.log(`[useBatchCooking] Found ${freezableRecipes.length} freezable recipes`);
 
       // 4. Check freezer inventory
       const freezerItems = await dataService.freezer.list();
@@ -190,6 +196,7 @@ export function useBatchCooking() {
       await db.batchPlans.put(newPlan);
       setPlan(newPlan);
       setLoading(false);
+      logger.log('[useBatchCooking] Plan saved and state updated');
       return newPlan;
     } catch (error) {
       logger.error('[useBatchCooking] Error generating plan:', error);
