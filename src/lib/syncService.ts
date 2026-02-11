@@ -324,6 +324,13 @@ class SyncService {
   }
 
   /**
+   * Сразу отправить pending-рецепты в Neon (для Wabba: голоса не теряются после смены экрана/деплоя).
+   */
+  async syncRecipesNow(): Promise<void> {
+    await this.syncToNeon('recipes');
+  }
+
+  /**
    * Синхронизация всех таблиц
    */
   async syncAll(): Promise<void> {

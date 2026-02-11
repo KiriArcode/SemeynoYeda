@@ -143,6 +143,9 @@ export async function updateRecipe(id: string, recipe: Partial<Recipe>): Promise
     if (!existing) return null;
 
     const merged = { ...existing, ...recipe, updatedAt: new Date().toISOString() };
+    if (merged.wabbaRatings != null) {
+      console.log('[recipeRepo] Writing wabba_ratings for recipe', id, JSON.stringify(merged.wabbaRatings));
+    }
     const sql = getDb();
     const db = appToDb(merged as unknown as Record<string, unknown>);
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dataService } from '../lib/dataService';
+import { syncService } from '../lib/syncService';
 import { logger } from '../lib/logger';
 import type { Recipe, FamilyMember, WabbaRating, WabbaRatings } from '../data/schema';
 
@@ -72,6 +73,8 @@ export function useWabba(evaluator: FamilyMember | null) {
       await dataService.recipes.update(recipe.id, updated);
       setCards((prev) => prev.filter((r) => r.id !== recipe.id));
       logger.log(`[useWabba] Swiped ${recipe.title} ${rating} by ${evaluator}`);
+      // Сразу пушим в Neon, чтобы голоса сохранялись после смены участника и после деплоя
+      syncService.syncRecipesNow().catch((e) => logger.error('[useWabba] syncRecipesNow:', e));
     },
     [evaluator]
   );
