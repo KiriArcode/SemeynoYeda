@@ -18,6 +18,7 @@ const TAG_LABELS: Record<DietTag, string> = {
   'packable': 'С собой',
   'low-calorie': 'Низкокалорийное',
   'blanch-before-freeze': 'Бланширование перед заморозкой',
+  'double-coating': 'Двойное покрытие',
 };
 
 const MEMBER_LABELS: Record<FamilyMember, string> = {
@@ -44,6 +45,7 @@ function getTagStyle(tag: DietTag): string {
     case 'rich-feel': return 'bg-[#280D1A] text-kristina border-[#401A2D]';
     case 'low-calorie': return 'bg-[#0D2818] text-portal border-[#1A4030]';
     case 'blanch-before-freeze': return 'bg-[#0D1B28] text-frost border-[#1A3040]';
+    case 'double-coating': return 'bg-[#1A1B28] text-matcha border-[#2A3040]';
     default: return 'bg-nebula text-text-dim border-text-ghost';
   }
 }
@@ -91,7 +93,7 @@ export function RecipesPage() {
 
     // Tag filter from URL
     if (selectedTag) {
-      const validTags: DietTag[] = ['gastritis-safe', 'soft-texture', 'rich-feel', 'freezable', 'quick', 'prep-day', 'batch-cooking', 'overnight', 'packable', 'low-calorie', 'blanch-before-freeze'];
+      const validTags: DietTag[] = ['gastritis-safe', 'soft-texture', 'rich-feel', 'freezable', 'quick', 'prep-day', 'batch-cooking', 'overnight', 'packable', 'low-calorie', 'blanch-before-freeze', 'double-coating'];
       if (validTags.includes(selectedTag as DietTag)) {
         filtered = filtered.filter((recipe) => recipe.tags.includes(selectedTag as DietTag));
       }

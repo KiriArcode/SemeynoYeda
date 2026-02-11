@@ -13,7 +13,7 @@
 | Поле | Допустимые значения |
 |------|---------------------|
 | `category` | `'main'` \| `'sauce'` \| `'side'` \| `'breakfast'` \| `'snack'` \| `'soup'` \| `'dessert'` |
-| `tags` | массив из: `'gastritis-safe'` \| `'soft-texture'` \| `'rich-feel'` \| `'freezable'` \| `'quick'` \| `'prep-day'` \| `'batch-cooking'` \| `'overnight'` \| `'packable'` \| `'low-calorie'` \| `'blanch-before-freeze'` |
+| `tags` | массив из: `'gastritis-safe'` \| `'soft-texture'` \| `'rich-feel'` \| `'freezable'` \| `'quick'` \| `'prep-day'` \| `'batch-cooking'` \| `'overnight'` \| `'packable'` \| `'low-calorie'` \| `'blanch-before-freeze'` \| `'double-coating'` |
 | `suitableFor` | `'kolya'` \| `'kristina'` \| `'both'` |
 | `wabbaRatings` | `null` или объект `{ "kolya"?: "like" | "dislike", "kristina"?: "like" | "dislike" }` |
 | `excludedFromMenu` | `false` (по умолчанию) или `true` (оба участника свайпнули влево) |
@@ -178,7 +178,7 @@
 Используйте следующий промпт для генерации рецептов в нужном формате:
 
 ```
-Создай рецепт в формате JSON со следующей структурой:
+Создай рецепты в формате JSON со следующей структурой:
 
 {
   "id": "seed-<slug>",
@@ -242,6 +242,7 @@
 - Для замороженных блюд обязательно добавь reheating инструкции для каждого члена семьи
 - Время готовки (cookTime) должно быть суммой всех duration в steps
 - prepTime - время подготовки ингредиентов без использования плиты/духовки
+- Если используется техника "двойное покрытие" (сначала бланширование в молоке для удаления запаха, затем готовка с соусом), добавь тег "double-coating"
 ```
 
 ---

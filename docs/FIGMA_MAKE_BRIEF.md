@@ -21,7 +21,7 @@
 ### 1. Рецепты
 - CRUD рецептов (создание, просмотр, редактирование, удаление).
 - Категории: основные блюда, соусы, гарниры, завтраки, полдники, супы, десерты.
-- Теги: gastritis-safe, soft-texture, rich-feel, freezable, quick, prep-day, batch-cooking, overnight, packable, low-calorie.
+- Теги: gastritis-safe, soft-texture, rich-feel, freezable, quick, prep-day, batch-cooking, overnight, packable, low-calorie, blanch-before-freeze, double-coating.
 - Пометка «для кого»: один человек, второй, оба.
 - Поля рецепта: название, подзаголовок, категория, теги, ингредиенты (количество + единицы), шаги приготовления, оборудование, время (подготовка / готовка / всего), хранение (холодильник, морозилка, вакуум), заметки.
 - Поиск по названию в реальном времени.

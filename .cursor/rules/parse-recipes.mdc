@@ -39,6 +39,7 @@ When the user pastes raw recipe text, parse ALL recipes and insert them into `sr
 | Portable for office lunch | `packable` |
 | Low calorie / diet recipe | `low-calorie` |
 | Raw/semi-raw vegetables frozen with vacuum | `blanch-before-freeze` (steps: blanch → cool → vacuum) |
+| Double coating technique: blanch in milk first (removes odor), then cook with sauce | `double-coating` (steps: blanch in milk → cook with sauce) |
 
 ## ID Convention
 
