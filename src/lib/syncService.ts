@@ -59,6 +59,11 @@ class SyncService {
   private syncInProgress: Set<TableName> = new Set();
   private initialized = false;
 
+  /** Store для shopping — shoppingById (keyPath id). Dexie не поддерживает смену keyPath у существующего store. */
+  private getTable(tableName: TableName) {
+    return tableName === 'shopping' ? db.shoppingById : db.table(tableName);
+  }
+
   constructor() {
     // Слушаем события онлайн/офлайн
     if (typeof window !== 'undefined') {
@@ -165,7 +170,7 @@ class SyncService {
         };
       });
 
-      await db.table(tableName).bulkPut(itemsWithSync);
+      await this.getTable(tableName).bulkPut(itemsWithSync);
       logger.log(`[SyncService] Синхронизировано ${items.length} записей из ${tableName}`);
     } catch (error) {
       logger.error(`[SyncService] Ошибка синхронизации ${tableName}:`, error);
@@ -184,7 +189,7 @@ class SyncService {
 
     try {
       // Находим все записи со статусом 'pending' или 'error'
-      const allItems = await db.table(tableName).toArray() as SyncableItem[];
+      const allItems = await this.getTable(tableName).toArray() as SyncableItem[];
       const pendingItems = allItems.filter((item) => {
         const sync = item._sync;
         return sync && (sync.syncStatus === 'pending' || sync.syncStatus === 'error');
@@ -205,7 +210,7 @@ class SyncService {
           const { _sync, ...itemWithoutSync } = item;
 
           // Определяем операцию: create, update или delete
-          const existing = await db.table(tableName).get(dbKey) as SyncableItem | undefined;
+          const existing = await this.getTable(tableName).get(dbKey) as SyncableItem | undefined;
           const isNew = !existing || !existing._sync?.lastSyncedAt;
 
           if (isNew) {
@@ -236,7 +241,7 @@ class SyncService {
               retryCount: 0,
             },
           };
-          await db.table(tableName).update(dbKey, syncUpdate);
+          await this.getTable(tableName).update(dbKey, syncUpdate);
 
           logger.log(`[SyncService] Синхронизировано ${tableName}:${dbKey}`);
         } catch (error) {
@@ -253,7 +258,7 @@ class SyncService {
               retryCount,
             },
           };
-          await db.table(tableName).update(dbKey, failUpdate);
+          await this.getTable(tableName).update(dbKey, failUpdate);
         }
       }
     } catch (error) {
@@ -408,7 +413,7 @@ class SyncService {
     let failedCount = 0;
 
     for (const table of tables) {
-      const items = await db.table(table).toArray() as SyncableItem[];
+      const items = await this.getTable(table).toArray() as SyncableItem[];
       for (const item of items) {
         const sync = item._sync;
         if (sync) {

@@ -17,11 +17,13 @@ import type {
  */
 type Row<T> = T & { _sync?: SyncMetadata };
 
+/** Store shopping с keyPath id (миграция v8). Старый store "shopping" с keyPath ingredient не переопределяем — Dexie не поддерживает смену primary key. */
 const db = new Dexie('SemeynoYedaDB') as Dexie & {
   recipes: Table<Row<Recipe>, string>;
   menus: Table<Row<WeekMenu>, string>;
   freezer: Table<Row<FreezerItem>, string>;
   shopping: Table<Row<ShoppingItem>, string>;
+  shoppingById: Table<Row<ShoppingItem>, string>;
   prepPlans: Table<Row<PrepPlan>, string>;
   batchPlans: Table<Row<BatchPlan>, string>;
   cookingSessions: Table<Row<CookingSession>, string>;
@@ -170,34 +172,7 @@ db.version(8)
       });
   });
 
-// Версия 9: shopping с keyPath id, копирование из shoppingById
-db.version(9)
-  .stores({
-    recipes: 'id, slug, category, *tags, suitableFor, createdAt',
-    menus: 'id, weekStart, shoppingDay, createdAt',
-    freezer: 'id, recipeId, expiryDate, batchId',
-    shopping: 'id, ingredient, unit, category, checked, markedMissing',
-    shoppingById: 'id, ingredient, unit, category, checked, markedMissing',
-    prepPlans: 'id, date',
-    batchPlans: 'id, date',
-    cookingSessions: 'id, date, mealType',
-    chefSettings: 'id',
-  })
-  .upgrade((tx) => {
-    const txAny = tx as { table(n: string): { toArray(): Promise<Row<ShoppingItem>[]>; bulkPut(x: unknown[]): Promise<unknown> } };
-    return txAny.table('shoppingById').toArray().then((rows) => tx.table('shopping').bulkPut(rows));
-  });
-
-// Версия 10: убираем временную таблицу shoppingById из схемы
-db.version(10).stores({
-  recipes: 'id, slug, category, *tags, suitableFor, createdAt',
-  menus: 'id, weekStart, shoppingDay, createdAt',
-  freezer: 'id, recipeId, expiryDate, batchId',
-  shopping: 'id, ingredient, unit, category, checked, markedMissing',
-  prepPlans: 'id, date',
-  batchPlans: 'id, date',
-  cookingSessions: 'id, date, mealType',
-  chefSettings: 'id',
-});
+// Версии 9 и 10 убраны: Dexie не поддерживает смену primary key у существующего store.
+// Используем shoppingById (keyPath id) для всех операций; старый store "shopping" остаётся в схеме для совместимости версий 1–8.
 
 export { db };

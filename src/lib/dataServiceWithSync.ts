@@ -234,7 +234,7 @@ export const dataServiceWithSync = {
   shopping: {
     list: async (): Promise<ShoppingItem[]> => {
       try {
-        const rows: WithSync<ShoppingItem>[] = await db.shopping.toArray();
+        const rows: WithSync<ShoppingItem>[] = await db.shoppingById.toArray();
         triggerSync();
         return stripSyncArray(rows);
       } catch (error) {
@@ -246,7 +246,7 @@ export const dataServiceWithSync = {
 
     get: async (id: string): Promise<ShoppingItem | null> => {
       try {
-        const row: WithSync<ShoppingItem> | undefined = await db.shopping.get(id);
+        const row: WithSync<ShoppingItem> | undefined = await db.shoppingById.get(id);
         if (!row) return null;
         triggerSync();
         return stripSync(row);
@@ -261,7 +261,7 @@ export const dataServiceWithSync = {
       const withId = { ...item, id: item.id || crypto.randomUUID() };
       const row: WithSync<ShoppingItem> = { ...withId, _sync: pendingSync(now) };
       try {
-        await db.shopping.put(row);
+        await db.shoppingById.put(row);
         triggerSync();
         return stripSync(row);
       } catch (error) {
@@ -272,7 +272,7 @@ export const dataServiceWithSync = {
 
     update: async (id: string, updates: Partial<ShoppingItem>): Promise<ShoppingItem> => {
       try {
-        const existing: WithSync<ShoppingItem> | undefined = await db.shopping.get(id);
+        const existing: WithSync<ShoppingItem> | undefined = await db.shoppingById.get(id);
         if (!existing) throw new Error(`ShoppingItem ${id} not found`);
 
         const now = new Date().toISOString();
@@ -283,7 +283,7 @@ export const dataServiceWithSync = {
           _sync: pendingSync(now, existing._sync?.retryCount || 0),
         } as WithSync<ShoppingItem>;
 
-        await db.shopping.put(updated);
+        await db.shoppingById.put(updated);
         triggerSync();
         return stripSync(updated);
       } catch (error) {
@@ -294,7 +294,7 @@ export const dataServiceWithSync = {
 
     delete: async (id: string): Promise<void> => {
       try {
-        await db.shopping.delete(id);
+        await db.shoppingById.delete(id);
         if (hasApi && navigator.onLine) {
           apiDataService.shopping.delete(id).catch((e) =>
             logger.error('[dataService.shopping.delete] Neon:', e),
@@ -315,7 +315,7 @@ export const dataServiceWithSync = {
       }));
 
       try {
-        await db.shopping.bulkPut(rows);
+        await db.shoppingById.bulkPut(rows);
         triggerSync();
         return stripSyncArray(rows);
       } catch (error) {
