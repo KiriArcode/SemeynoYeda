@@ -36,8 +36,7 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
 
   const modal = (
     <div
-      className="fixed inset-0 flex items-center justify-center p-4 bg-void/85 backdrop-blur-[8px]"
-      style={{ zIndex: 2147483647 }}
+      className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 bg-void/85 backdrop-blur-[8px]"
       onClick={onClose}
     >
       <div
