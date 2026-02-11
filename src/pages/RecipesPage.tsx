@@ -160,20 +160,24 @@ export function RecipesPage() {
         </h1>
         <div className="flex items-center gap-2">
           <button
+            type="button"
+            data-testid="recipes-import-btn"
             onClick={() => {
               logger.log('[RecipesPage] Импорт нажат');
               setShowImportModal(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors cursor-pointer"
           >
             <Upload className="w-4 h-4" /> Импорт
           </button>
           <button
+            type="button"
+            data-testid="recipes-ai-prompt-btn"
             onClick={() => {
               logger.log('[RecipesPage] AI Промпт нажат');
               setShowAIPromptGenerator(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors cursor-pointer"
             title="Сгенерировать промпт для AI (Gemini/Claude)"
           >
             <Sparkles className="w-4 h-4" /> AI Промпт
