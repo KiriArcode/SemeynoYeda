@@ -78,6 +78,11 @@ export function RecipesPage() {
     filterRecipes();
   }, [recipes, searchQuery, selectedCategory, selectedTag, personFilter, quickFilter]);
 
+  // Temporary debug: confirm state updates reach re-render
+  useEffect(() => {
+    console.log('[RecipesPage] modal state (temporary debug)', { showImportModal, showAIPromptGenerator });
+  }, [showImportModal, showAIPromptGenerator]);
+
   async function loadRecipes() {
     try {
       const allRecipes = await dataService.recipes.list();

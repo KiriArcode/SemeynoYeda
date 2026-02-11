@@ -34,6 +34,7 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
 
   if (!isOpen) return null;
 
+  console.log('[Modal] rendering overlay (temporary debug)', title);
   const modal = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-void/85 backdrop-blur-[8px]"

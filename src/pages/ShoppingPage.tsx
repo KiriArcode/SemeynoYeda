@@ -28,6 +28,11 @@ export function ShoppingPage() {
     }
   }, [loading]);
 
+  // Temporary debug: confirm modal state updates
+  useEffect(() => {
+    console.log('[ShoppingPage] showManualForm (temporary debug)', showManualForm);
+  }, [showManualForm]);
+
   async function autoGenerateList() {
     setGenerating(true);
     try {

@@ -25,6 +25,11 @@ export function FreezerPage() {
     loadData();
   }, []);
 
+  // Temporary debug: confirm delete modal state
+  useEffect(() => {
+    console.log('[FreezerPage] deleteItem modal (temporary debug)', deleteItem ? deleteItem.name : null);
+  }, [deleteItem]);
+
   async function loadData() {
     try {
       const [freezerItems, allRecipes] = await Promise.all([
