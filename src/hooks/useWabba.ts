@@ -15,16 +15,26 @@ export function useWabba(evaluator: FamilyMember | null) {
     try {
       const cutoff = new Date(Date.now() - TWO_WEEKS_MS).toISOString();
       const all = await dataService.recipes.list();
-      const recent = all.filter((r) => r.createdAt >= cutoff);
-      const unrated = recent.filter((r) => {
+      
+      // Фильтр: исключаем рецепты, где оба участника уже оценили
+      const filterUnrated = (r: Recipe) => {
         const ratings = r.wabbaRatings;
         if (!ratings) return true;
         if (ratings[evaluator]) return false; // уже оценил этот участник
         if (ratings.kolya && ratings.kristina) return false; // оба оценили — не показываем
         return true;
-      });
+      };
+      
+      // Сначала ищем рецепты за последние 14 дней
+      const recent = all.filter((r) => r.createdAt >= cutoff && filterUnrated(r));
+      
+      // Если нет рецептов за 14 дней, показываем все неоценённые (игнорируя время создания)
+      const unrated = recent.length > 0 
+        ? recent 
+        : all.filter(filterUnrated);
+      
       setCards(unrated);
-      logger.log(`[useWabba] Loaded ${unrated.length} cards for ${evaluator}`);
+      logger.log(`[useWabba] Loaded ${unrated.length} cards for ${evaluator} (${recent.length > 0 ? 'recent' : 'all'})`);
     } catch (error) {
       logger.error('[useWabba] Failed to load cards:', error);
       setCards([]);

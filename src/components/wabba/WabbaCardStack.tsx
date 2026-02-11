@@ -22,6 +22,8 @@ export function WabbaCardStack({ cards, evaluator, onSwipe, loading }: WabbaCard
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
   const opacity = useTransform(x, [-200, -50, 50, 200], [0.5, 1, 1, 0.5]);
+  const leftOpacity = useTransform(x, [-200, -50], [1, 0]);
+  const rightOpacity = useTransform(x, [50, 200], [0, 1]);
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
     const threshold = 80;
@@ -78,7 +80,7 @@ export function WabbaCardStack({ cards, evaluator, onSwipe, loading }: WabbaCard
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <p className="font-body text-text-secondary text-center">
-          Нет рецептов за последние 2 недели или все уже оценены
+          Все рецепты уже оценены
         </p>
       </div>
     );
@@ -112,17 +114,13 @@ export function WabbaCardStack({ cards, evaluator, onSwipe, loading }: WabbaCard
         >
           <motion.div
             className="absolute top-8 left-8 w-20 h-20 rounded-full border-4 border-kristina/50 flex items-center justify-center bg-kristina/20 text-kristina pointer-events-none"
-            style={{
-              opacity: useTransform(x, [-200, -50], [1, 0]),
-            }}
+            style={{ opacity: leftOpacity }}
           >
             <X className="w-10 h-10" />
           </motion.div>
           <motion.div
             className="absolute top-8 right-8 w-20 h-20 rounded-full border-4 border-kolya/50 flex items-center justify-center bg-kolya/20 text-kolya pointer-events-none"
-            style={{
-              opacity: useTransform(x, [50, 200], [0, 1]),
-            }}
+            style={{ opacity: rightOpacity }}
           >
             <Heart className="w-10 h-10" />
           </motion.div>
