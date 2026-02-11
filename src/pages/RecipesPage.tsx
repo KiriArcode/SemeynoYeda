@@ -153,6 +153,7 @@ export function RecipesPage() {
   const pageTitle = selectedTag === 'prep-day' ? 'Заготовки' : 'Рецепты';
 
   function handleImportClick() {
+    console.log('[RecipesPage] Импорт нажат (temporary debug)');
     logger.log('[RecipesPage] Импорт нажат');
     setShowImportModal(true);
   }
