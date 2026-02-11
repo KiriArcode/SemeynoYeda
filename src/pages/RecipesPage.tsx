@@ -159,6 +159,7 @@ export function RecipesPage() {
   }
 
   function handleAIPromptClick() {
+    console.log('[RecipesPage] AI Промпт нажат (temporary debug)');
     logger.log('[RecipesPage] AI Промпт нажат');
     setShowAIPromptGenerator(true);
   }

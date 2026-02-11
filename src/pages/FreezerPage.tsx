@@ -249,6 +249,7 @@ export function FreezerPage() {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
+                        console.log('[FreezerPage] Удалить продукт из морозилки нажато (temporary debug)', item.name);
                         setDeleteItem(item);
                       }} 
                       className="p-1 text-text-ghost hover:text-ramen transition-colors"

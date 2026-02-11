@@ -213,6 +213,7 @@ export function ShoppingPage() {
           ))}
           <button
             onClick={() => {
+              console.log('[ShoppingPage] Добавить элемент нажато (temporary debug)');
               logger.log('[ShoppingPage] Add item button clicked');
               setShowManualForm(true);
             }}
