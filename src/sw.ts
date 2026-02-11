@@ -36,5 +36,11 @@ registerRoute(
   })
 );
 
-self.skipWaiting();
-self.clients.claim();
+// Только активный worker может вызывать clients.claim() — делаем это в activate после skipWaiting.
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', () => {
+  self.clients.claim();
+});
