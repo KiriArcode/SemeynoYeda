@@ -34,9 +34,10 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
 
   if (!isOpen) return null;
 
+  const portalTarget = document.getElementById('modal-root') ?? document.body;
   const modal = (
     <div
-      className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 bg-void/85 backdrop-blur-[8px]"
+      className="fixed inset-0 flex items-center justify-center p-4 bg-void/85 backdrop-blur-[8px]"
       onClick={onClose}
     >
       <div
@@ -59,6 +60,5 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
     </div>
   );
 
-  // Portal — render at document.body level to escape any stacking context
-  return createPortal(modal, document.body);
+  return createPortal(modal, portalTarget);
 }

@@ -281,6 +281,17 @@ body {
   animation: portalFloat 12s ease-in-out infinite;
 }
 
+/* Modal portal: always on top, does not block when empty */
+#modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+}
+#modal-root > * {
+  pointer-events: auto;
+}
+
 /* ══════════════════════════════════════
    SCROLL SNAP
    ══════════════════════════════════════ */
