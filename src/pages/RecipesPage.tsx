@@ -161,7 +161,7 @@ export function RecipesPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              console.log('[RecipesPage] Импорт нажат');
+              logger.log('[RecipesPage] Импорт нажат');
               setShowImportModal(true);
             }}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
@@ -170,7 +170,7 @@ export function RecipesPage() {
           </button>
           <button
             onClick={() => {
-              console.log('[RecipesPage] AI Промпт нажат');
+              logger.log('[RecipesPage] AI Промпт нажат');
               setShowAIPromptGenerator(true);
             }}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
