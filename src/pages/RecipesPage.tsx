@@ -152,6 +152,16 @@ export function RecipesPage() {
 
   const pageTitle = selectedTag === 'prep-day' ? 'Заготовки' : 'Рецепты';
 
+  function handleImportClick() {
+    logger.log('[RecipesPage] Импорт нажат');
+    setShowImportModal(true);
+  }
+
+  function handleAIPromptClick() {
+    logger.log('[RecipesPage] AI Промпт нажат');
+    setShowAIPromptGenerator(true);
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
       <div className="flex items-center justify-between mb-6">
@@ -162,10 +172,7 @@ export function RecipesPage() {
           <button
             type="button"
             data-testid="recipes-import-btn"
-            onClick={() => {
-              logger.log('[RecipesPage] Импорт нажат');
-              setShowImportModal(true);
-            }}
+            onClick={handleImportClick}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors cursor-pointer"
           >
             <Upload className="w-4 h-4" /> Импорт
@@ -173,10 +180,7 @@ export function RecipesPage() {
           <button
             type="button"
             data-testid="recipes-ai-prompt-btn"
-            onClick={() => {
-              logger.log('[RecipesPage] AI Промпт нажат');
-              setShowAIPromptGenerator(true);
-            }}
+            onClick={handleAIPromptClick}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors cursor-pointer"
             title="Сгенерировать промпт для AI (Gemini/Claude)"
           >
