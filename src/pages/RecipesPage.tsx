@@ -3,8 +3,9 @@ import { useLocation, Link } from 'react-router-dom';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
 import type { Recipe, DietTag, FamilyMember } from '../data/schema';
-import { Search, Plus, Briefcase, Zap, Upload } from 'lucide-react';
+import { Search, Plus, Briefcase, Zap, Upload, Sparkles } from 'lucide-react';
 import { RecipeImportModal } from '../components/recipe/RecipeImportModal';
+import { AIPromptGenerator } from '../components/recipe/AIPromptGenerator';
 
 const TAG_LABELS: Record<DietTag, string> = {
   'gastritis-safe': 'Щадящее',
@@ -61,6 +62,7 @@ export function RecipesPage() {
   const [quickFilter, setQuickFilter] = useState<'none' | 'quick-breakfast' | 'packable'>('none');
   const [loading, setLoading] = useState(true);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showAIPromptGenerator, setShowAIPromptGenerator] = useState(false);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -158,10 +160,23 @@ export function RecipesPage() {
         </h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowImportModal(true)}
+            onClick={() => {
+              logger.log('[RecipesPage] Import button clicked');
+              setShowImportModal(true);
+            }}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
           >
             <Upload className="w-4 h-4" /> Импорт
+          </button>
+          <button
+            onClick={() => {
+              logger.log('[RecipesPage] AI Prompt Generator button clicked');
+              setShowAIPromptGenerator(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
+            title="Сгенерировать промпт для AI (Gemini/Claude)"
+          >
+            <Sparkles className="w-4 h-4" /> AI Промпт
           </button>
           <Link to="/recipe/new"
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors">
@@ -292,10 +307,20 @@ export function RecipesPage() {
 
       <RecipeImportModal
         isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
+        onClose={() => {
+          logger.log('[RecipesPage] Import modal closed');
+          setShowImportModal(false);
+        }}
         onImportComplete={(count) => {
           logger.log(`[RecipesPage] Imported ${count} recipes`);
           loadRecipes();
+        }}
+      />
+      <AIPromptGenerator
+        isOpen={showAIPromptGenerator}
+        onClose={() => {
+          logger.log('[RecipesPage] AI Prompt Generator closed');
+          setShowAIPromptGenerator(false);
         }}
       />
     </div>
