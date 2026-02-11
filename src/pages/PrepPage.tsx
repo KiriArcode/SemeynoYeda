@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
-import type { WeekMenu, FreezerItem, EquipmentId } from '../data/schema';
+import type { WeekMenu, FreezerItem, EquipmentId, Recipe } from '../data/schema';
 import { useBatchCooking } from '../hooks/useBatchCooking';
 import { nanoid } from 'nanoid';
 import { CheckCircle2, Clock, ChefHat, Snowflake, Play, BarChart3 } from 'lucide-react';
@@ -46,10 +46,13 @@ function generateTip(taskIndex: number, phaseTasks: { equipment: string; step: s
 export function PrepPage() {
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
   const [loading, setLoading] = useState(true);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
+  const [freezerItems, setFreezerItems] = useState<FreezerItem[]>([]);
   const { plan, loading: planLoading, generateBatchPlan, toggleTask } = useBatchCooking();
 
   useEffect(() => {
     loadMenu();
+    loadRecipesAndFreezer();
   }, []);
 
   async function loadMenu() {
@@ -60,6 +63,19 @@ export function PrepPage() {
       logger.error('[PrepPage] Error:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadRecipesAndFreezer() {
+    try {
+      const [recipes, freezer] = await Promise.all([
+        dataService.recipes.list(),
+        dataService.freezer.list(),
+      ]);
+      setAllRecipes(recipes);
+      setFreezerItems(freezer);
+    } catch (error) {
+      logger.error('[PrepPage] Error loading recipes/freezer:', error);
     }
   }
 
@@ -282,6 +298,18 @@ export function PrepPage() {
               {phaseTasks.map((task, taskIdx) => {
                 const isParallel = canRunParallel(taskIdx, phaseTasks);
                 const tip = generateTip(taskIdx, phaseTasks);
+                
+                // Check if this task is for a component recipe
+                const taskRecipe = allRecipes.find(r => r.id === task.recipeId);
+                const isComponent = taskRecipe && (taskRecipe.category === 'sauce' || 
+                  taskRecipe.tags.includes('prep-day') || 
+                  taskRecipe.tags.includes('freezable'));
+                
+                // Check if component is available in freezer
+                const componentInFreezer = isComponent 
+                  ? freezerItems.find(item => item.recipeId === task.recipeId && item.portionsRemaining > 0)
+                  : null;
+                const isComponentAvailable = !!componentInFreezer;
 
                 return (
                   <div key={task.id}>
@@ -300,11 +328,30 @@ export function PrepPage() {
                           <div className="w-[22px] h-[22px] rounded-md border border-elevated flex-shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <span className={`text-sm font-heading font-medium ${task.completed ? 'text-text-muted line-through' : 'text-text-primary'}`}>
-                            {task.step}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-heading font-medium ${task.completed ? 'text-text-muted line-through' : 'text-text-primary'}`}>
+                              {task.step}
+                            </span>
+                            {isComponent && (
+                              <div className="flex items-center gap-1">
+                                {isComponentAvailable ? (
+                                  <>
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-portal" aria-label="Есть готовый" />
+                                    <Snowflake className="w-3 h-3 text-frost" aria-label="Заморожен" />
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-text-muted" title="Требует приготовления">⚙️</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
                             <span className="text-[10px] font-mono text-text-muted">{task.recipeTitle}</span>
+                            {isComponent && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-plasma/20 text-plasma border border-plasma/30 rounded-full">
+                                Компонент
+                              </span>
+                            )}
                             <span className="text-[10px] font-mono text-accent-orange">{task.duration} мин</span>
                             <span className={`text-[10px] px-1.5 py-0.5 border rounded ${EQUIPMENT_COLORS[task.equipment] || 'bg-rift'} border-elevated text-text-secondary`}>
                               {EQUIPMENT_LABELS[task.equipment] || task.equipment}

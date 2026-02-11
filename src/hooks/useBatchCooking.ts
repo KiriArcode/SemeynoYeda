@@ -4,6 +4,7 @@ import { logger } from '../lib/logger';
 import { db } from '../lib/db';
 import type { WeekMenu, Recipe, BatchTask, BatchPlan, EquipmentId } from '../data/schema';
 import { nanoid } from 'nanoid';
+import { findRecipeByIngredientName } from '../lib/recipeNesting';
 
 /** Phase labels for batch cooking workflow */
 const PHASE_LABELS: Record<number, string> = {
@@ -77,19 +78,47 @@ export function useBatchCooking() {
         if (recipeIds.has(r.id)) recipeMap.set(r.id, r);
       }
 
-      // 3. Filter to freezable recipes
+      // 3. Filter to freezable recipes and sauces
       const freezableRecipes = Array.from(recipeMap.values()).filter(
         r => r.tags.includes('freezable') || r.tags.includes('prep-day') || r.tags.includes('batch-cooking')
       );
 
-      if (freezableRecipes.length === 0) {
-        logger.log('[useBatchCooking] No freezable recipes found in menu');
+      // 3a. Include sauces (category: 'sauce') that are freezable or prep-day
+      const sauces = Array.from(recipeMap.values()).filter(
+        r => r.category === 'sauce' && (r.tags.includes('freezable') || r.tags.includes('prep-day'))
+      );
+
+      // 3b. Find component recipes (ingredients that match recipe titles)
+      const componentRecipes = new Set<Recipe>();
+      for (const recipe of Array.from(recipeMap.values())) {
+        for (const ingredient of recipe.ingredients) {
+          const componentRecipe = findRecipeByIngredientName(ingredient.name, allRecipes);
+          if (
+            componentRecipe &&
+            (componentRecipe.tags.includes('prep-day') ||
+             componentRecipe.tags.includes('freezable') ||
+             componentRecipe.category === 'sauce')
+          ) {
+            componentRecipes.add(componentRecipe);
+          }
+        }
+      }
+
+      // Combine all recipes for prep
+      const allPrepRecipes = new Set<Recipe>();
+      freezableRecipes.forEach(r => allPrepRecipes.add(r));
+      sauces.forEach(r => allPrepRecipes.add(r));
+      componentRecipes.forEach(r => allPrepRecipes.add(r));
+
+      const prepRecipesArray = Array.from(allPrepRecipes);
+
+      if (prepRecipesArray.length === 0) {
+        logger.log('[useBatchCooking] No recipes for prep found in menu');
         setLoading(false);
-        // Show message to user - but don't return null immediately, let them know
         return null;
       }
 
-      logger.log(`[useBatchCooking] Found ${freezableRecipes.length} freezable recipes`);
+      logger.log(`[useBatchCooking] Found ${prepRecipesArray.length} recipes for prep (${freezableRecipes.length} freezable, ${sauces.length} sauces, ${componentRecipes.size} components)`);
 
       // 4. Check freezer inventory
       const freezerItems = await dataService.freezer.list();
@@ -122,7 +151,7 @@ export function useBatchCooking() {
 
       // 6. Generate tasks
       const tasks: BatchTask[] = [];
-      for (const recipe of freezableRecipes) {
+      for (const recipe of prepRecipesArray) {
         const usageCount = recipeUsageCount.get(recipe.id) || 1;
         const stockPortions = freezerStock.get(recipe.id) || 0;
         const neededPortions = Math.max(0, recipe.servings * usageCount - stockPortions);

@@ -246,8 +246,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // POST /api/data/:resource
     if (req.method === 'POST' && !id) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const item = await handler.create(body);
-      return sendResponse(201, item);
+      try {
+        const item = await handler.create(body);
+        return sendResponse(201, item);
+      } catch (error) {
+        // Check if it's a duplicate error
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('already exists')) {
+          return sendResponse(409, {
+            error: 'Duplicate recipe',
+            message: errorMessage,
+            code: 'DUPLICATE_RECIPE',
+          });
+        }
+        throw error;
+      }
     }
 
     // PUT /api/data/:resource/:id

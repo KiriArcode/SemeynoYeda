@@ -3,7 +3,8 @@ import { useLocation, Link } from 'react-router-dom';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
 import type { Recipe, DietTag, FamilyMember } from '../data/schema';
-import { Search, Plus, Briefcase, Zap } from 'lucide-react';
+import { Search, Plus, Briefcase, Zap, Upload } from 'lucide-react';
+import { RecipeImportModal } from '../components/recipe/RecipeImportModal';
 
 const TAG_LABELS: Record<DietTag, string> = {
   'gastritis-safe': 'Щадящее',
@@ -57,6 +58,7 @@ export function RecipesPage() {
   const [personFilter, setPersonFilter] = useState<FamilyMember | 'all'>('all');
   const [quickFilter, setQuickFilter] = useState<'none' | 'quick-breakfast' | 'packable'>('none');
   const [loading, setLoading] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -152,10 +154,18 @@ export function RecipesPage() {
         <h1 className="font-heading text-2xl font-bold text-text-light">
           {pageTitle}
         </h1>
-        <Link to="/recipe/new"
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors">
-          <Plus className="w-4 h-4" /> Новый
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
+          >
+            <Upload className="w-4 h-4" /> Импорт
+          </button>
+          <Link to="/recipe/new"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors">
+            <Plus className="w-4 h-4" /> Новый
+          </Link>
+        </div>
       </div>
 
       {selectedTag === 'prep-day' && (
@@ -277,6 +287,15 @@ export function RecipesPage() {
           ))}
         </div>
       )}
+
+      <RecipeImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={(count) => {
+          logger.log(`[RecipesPage] Imported ${count} recipes`);
+          loadRecipes();
+        }}
+      />
     </div>
   );
 }

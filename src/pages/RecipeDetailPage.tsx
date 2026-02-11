@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
 import type { Recipe, DietTag, FamilyMember, EquipmentId } from '../data/schema';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, Snowflake } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
+import { getComponentRecipe, extractComponentNamesFromText } from '../lib/recipeNesting';
+import { useMultipleComponentAvailability } from '../hooks/useComponentAvailability';
 
 const TAG_LABELS: Record<DietTag, string> = {
   'gastritis-safe': 'Щадящее',
@@ -71,12 +73,14 @@ export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadRecipe(id);
+      loadAllRecipes();
     }
   }, [id]);
 
@@ -90,6 +94,21 @@ export function RecipeDetailPage() {
       setLoading(false);
     }
   }
+
+  async function loadAllRecipes() {
+    try {
+      const recipes = await dataService.recipes.list();
+      setAllRecipes(recipes);
+    } catch (error) {
+      logger.error('Failed to load all recipes:', error);
+    }
+  }
+
+  // Get component availability for all ingredients
+  const componentAvailabilities = useMultipleComponentAvailability(
+    recipe?.ingredients || [],
+    allRecipes
+  );
 
   async function handleDelete() {
     if (!recipe) return;
@@ -251,15 +270,49 @@ export function RecipeDetailPage() {
       <div className="bg-card border border-elevated rounded-card p-5 mb-6 shadow-card">
         <h2 className="font-heading text-xl font-bold text-text-primary mb-4">Ингредиенты</h2>
         <ul className="space-y-2">
-          {recipe.ingredients.map((ingredient, index) => (
-            <li key={index} className="flex items-center gap-2 text-text-secondary font-body">
-              <span className="text-portal">•</span>
-              <span>
-                {ingredient.amount} {ingredient.unit} {ingredient.name}
-                {ingredient.note && <span className="text-text-muted"> ({ingredient.note})</span>}
-              </span>
-            </li>
-          ))}
+          {recipe.ingredients.map((ingredient, index) => {
+            const componentRecipe = getComponentRecipe(ingredient, allRecipes);
+            const availability = componentAvailabilities.get(ingredient.name);
+            const isComponent = !!componentRecipe;
+            const isAvailable = availability?.isAvailable || false;
+            const isFrozen = availability?.isFrozen || false;
+
+            return (
+              <li key={index} className="flex items-center gap-2 text-text-secondary font-body">
+                <span className="text-portal">•</span>
+                <span className="flex-1">
+                  {ingredient.amount} {ingredient.unit}{' '}
+                  {isComponent ? (
+                    <Link
+                      to={`/recipe/${componentRecipe.id}`}
+                      className="text-portal hover:text-portal-dim underline font-semibold transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {ingredient.name}
+                    </Link>
+                  ) : (
+                    ingredient.name
+                  )}
+                  {ingredient.note && <span className="text-text-muted"> ({ingredient.note})</span>}
+                </span>
+                    {isComponent && (
+                      <div className="flex items-center gap-1.5">
+                        {isAvailable && (
+                          <div className="flex items-center gap-1" title="Есть готовый">
+                            <CheckCircle2 className="w-4 h-4 text-portal" />
+                            {isFrozen && <Snowflake className="w-3.5 h-3.5 text-frost" aria-label="Заморожен" />}
+                          </div>
+                        )}
+                        {!isAvailable && (
+                          <span className="text-xs text-text-muted" title="Требует приготовления">
+                            ⚙️
+                          </span>
+                        )}
+                      </div>
+                    )}
+              </li>
+            );
+          })}
         </ul>
       </div>
 
@@ -267,28 +320,76 @@ export function RecipeDetailPage() {
       <div className="bg-card border border-elevated rounded-card p-5 shadow-card">
         <h2 className="font-heading text-xl font-bold text-text-primary mb-4">Приготовление</h2>
         <ol className="space-y-4">
-          {recipe.steps.map((step) => (
-            <li key={step.order} className="flex gap-3">
-              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-rift border border-elevated flex items-center justify-center text-sm font-heading font-semibold text-portal">
-                {step.order}
-              </span>
-              <div className="flex-1">
-                <p className="text-text-primary font-body mb-1">{step.text}</p>
-                {step.equipment && (
-                  <p className="text-sm text-text-muted font-body">
-                    {step.equipment.label}{step.equipment.settings && ` · ${step.equipment.settings}`}
-                  </p>
-                )}
-                {step.duration && <p className="text-xs font-mono text-portal mt-1">⏱ {step.duration} мин</p>}
-                {step.parallel && <span className="inline-block text-[10px] font-mono text-accent-cyan mt-1 mr-2">⚡ парал.</span>}
-                {step.tip && (
-                  <div className="mt-1.5 px-2.5 py-1.5 bg-portal-soft border-l-2 border-portal rounded text-xs text-portal font-body">
-                    💡 {step.tip}
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
+          {recipe.steps.map((step) => {
+            const componentMatches = extractComponentNamesFromText(step.text, allRecipes);
+            
+            // Render step text with clickable component links
+            const renderStepText = () => {
+              if (componentMatches.length === 0) {
+                return <p className="text-text-primary font-body mb-1">{step.text}</p>;
+              }
+
+              const parts: React.ReactNode[] = [];
+              let lastIndex = 0;
+
+              componentMatches.forEach((match, idx) => {
+                // Add text before match
+                if (match.startIndex > lastIndex) {
+                  parts.push(
+                    <span key={`text-${idx}`}>
+                      {step.text.substring(lastIndex, match.startIndex)}
+                    </span>
+                  );
+                }
+
+                // Add clickable component link
+                parts.push(
+                  <Link
+                    key={`link-${idx}`}
+                    to={`/recipe/${match.recipe.id}`}
+                    className="text-portal hover:text-portal-dim underline font-semibold transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {match.name}
+                  </Link>
+                );
+
+                lastIndex = match.endIndex;
+              });
+
+              // Add remaining text
+              if (lastIndex < step.text.length) {
+                parts.push(
+                  <span key="text-end">{step.text.substring(lastIndex)}</span>
+                );
+              }
+
+              return <p className="text-text-primary font-body mb-1">{parts}</p>;
+            };
+
+            return (
+              <li key={step.order} className="flex gap-3">
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-rift border border-elevated flex items-center justify-center text-sm font-heading font-semibold text-portal">
+                  {step.order}
+                </span>
+                <div className="flex-1">
+                  {renderStepText()}
+                  {step.equipment && (
+                    <p className="text-sm text-text-muted font-body">
+                      {step.equipment.label}{step.equipment.settings && ` · ${step.equipment.settings}`}
+                    </p>
+                  )}
+                  {step.duration && <p className="text-xs font-mono text-portal mt-1">⏱ {step.duration} мин</p>}
+                  {step.parallel && <span className="inline-block text-[10px] font-mono text-accent-cyan mt-1 mr-2">⚡ парал.</span>}
+                  {step.tip && (
+                    <div className="mt-1.5 px-2.5 py-1.5 bg-portal-soft border-l-2 border-portal rounded text-xs text-portal font-body">
+                      💡 {step.tip}
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </div>
 

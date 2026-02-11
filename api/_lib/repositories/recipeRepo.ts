@@ -54,8 +54,44 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
   }
 }
 
+export async function getRecipeByTitle(title: string): Promise<Recipe | null> {
+  try {
+    const sql = getDb();
+    const rows = await sql`SELECT * FROM recipes WHERE title = ${title}`;
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return row ? dbToApp<Recipe>(row as Record<string, unknown>) : null;
+  } catch (error) {
+    console.error('[recipeRepo.getRecipeByTitle] Error:', error);
+    throw error;
+  }
+}
+
+export async function getRecipeBySlug(slug: string): Promise<Recipe | null> {
+  try {
+    const sql = getDb();
+    const rows = await sql`SELECT * FROM recipes WHERE slug = ${slug}`;
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return row ? dbToApp<Recipe>(row as Record<string, unknown>) : null;
+  } catch (error) {
+    console.error('[recipeRepo.getRecipeBySlug] Error:', error);
+    throw error;
+  }
+}
+
 export async function createRecipe(recipe: Recipe): Promise<Recipe> {
   try {
+    // Check for duplicates by title or slug
+    const existingByTitle = await getRecipeByTitle(recipe.title);
+    const existingBySlug = await getRecipeBySlug(recipe.slug);
+    
+    if (existingByTitle || existingBySlug) {
+      const duplicateInfo = existingByTitle 
+        ? `title "${recipe.title}"`
+        : `slug "${recipe.slug}"`;
+      const existingId = existingByTitle?.id || existingBySlug?.id;
+      throw new Error(`Recipe with ${duplicateInfo} already exists (id: ${existingId})`);
+    }
+    
     const sql = getDb();
     const db = appToDb(recipe as unknown as Record<string, unknown>);
     
