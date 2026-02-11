@@ -137,7 +137,11 @@ export function FreezerPage() {
         <h1 className="font-heading text-2xl font-bold text-text-light flex items-center gap-2">
           <Snowflake className="w-6 h-6 text-frost" /> Морозилка
         </h1>
-        <button onClick={() => setShowAddForm(true)}
+        <button
+          onClick={() => {
+            logger.log('[FreezerPage] Add to freezer button clicked');
+            setShowAddForm(true);
+          }}
           className="flex items-center gap-1.5 px-4 py-2 text-sm font-heading font-semibold text-frost border border-frost/50 rounded-button hover:bg-frost/10 transition-colors">
           <Plus className="w-4 h-4" /> Добавить
         </button>

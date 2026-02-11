@@ -161,7 +161,10 @@ export function RecipeDetailPage() {
             <Pencil className="w-3.5 h-3.5" /> Изменить
           </Link>
           <button
-            onClick={() => setShowDeleteModal(true)}
+            onClick={() => {
+              logger.log('[RecipeDetailPage] Delete recipe button clicked');
+              setShowDeleteModal(true);
+            }}
             className="flex items-center gap-1 px-3 py-1.5 text-xs font-heading font-semibold text-ramen border border-ramen/40 rounded-button hover:bg-ramen/10 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" /> Удалить

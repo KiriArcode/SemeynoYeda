@@ -519,7 +519,10 @@ export function RecipeImportModal({ isOpen, onClose, onImportComplete }: RecipeI
             </div>
             <div className="border-t border-nebula pt-4">
               <button
-                onClick={() => setShowAIPromptGenerator(true)}
+                onClick={() => {
+                  logger.log('[RecipeImportModal] AI Prompt button clicked');
+                  setShowAIPromptGenerator(true);
+                }}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors w-full justify-center"
               >
                 <Sparkles className="w-4 h-4" />

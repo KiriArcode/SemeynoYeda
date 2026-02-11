@@ -267,7 +267,11 @@ export function MealSlot({ slot, onUpdate, onRequestSwap, isExpanded = true, onT
 
           {!showIngredientCheck && (
             <button
-              onClick={(e) => { e.stopPropagation(); setShowIngredientCheck(true); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                logger.log('[MealSlot] Ingredient check button clicked', { mealType: slot.mealType });
+                setShowIngredientCheck(true);
+              }}
               className="w-full mt-3 text-text-secondary font-heading font-semibold text-xs py-2 px-3 bg-[#1C2230] border border-nebula rounded-button transition-colors"
               type="button"
             >

@@ -212,7 +212,10 @@ export function ShoppingPage() {
             </button>
           ))}
           <button
-            onClick={() => setShowManualForm(true)}
+            onClick={() => {
+              logger.log('[ShoppingPage] Add item button clicked');
+              setShowManualForm(true);
+            }}
             className="ml-auto px-3 py-1 rounded-button font-heading font-semibold text-xs whitespace-nowrap bg-portal/20 border border-portal/50 text-portal hover:bg-portal/30 transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
