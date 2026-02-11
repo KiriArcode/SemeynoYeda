@@ -172,7 +172,7 @@ export interface WeekMenu {
 
 /** Элемент списка покупок */
 export interface ShoppingItem {
-  id?: string;                // опционально; IndexedDB и API используют ingredient как ключ
+  id: string;                 // первичный ключ в IndexedDB и для sync
   ingredient: string;
   totalAmount: number;
   unit: Unit;
@@ -216,6 +216,9 @@ export interface PrepTask {
   storageTime?: number;  // часов хранения после подготовки
 }
 
+/** Уровень вложенности: 1 = из меню, 2 = компонент (соус/бульон), 3 = компонент компонента */
+export type NestingLevel = 1 | 2 | 3;
+
 /** Задача batch cooking (заготовки) */
 export interface BatchTask {
   id: string;
@@ -229,6 +232,10 @@ export interface BatchTask {
   portions: number;             // сколько порций заготавливаем
   portionsByMember?: { kolya: number; kristina: number };  // персональные пакеты
   completed: boolean;
+  /** Уровень вложенности: 1 — из меню, 2 — бульоны/соусы, 3 — компоненты соусов (напр. бульон в соусе) */
+  nestingLevel?: NestingLevel;
+  /** Выполненная задача из старого плана, которой нет в новом — показывать внизу с кнопкой «Удалить» */
+  isOrphan?: boolean;
 }
 
 /** План batch cooking */

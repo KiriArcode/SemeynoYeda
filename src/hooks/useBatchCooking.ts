@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
 import { db } from '../lib/db';
-import type { WeekMenu, Recipe, BatchTask, BatchPlan, EquipmentId } from '../data/schema';
+import type { WeekMenu, Recipe, BatchTask, BatchPlan, EquipmentId, NestingLevel } from '../data/schema';
 import { nanoid } from 'nanoid';
 import { findRecipeByIngredientName } from '../lib/recipeNesting';
 
@@ -78,38 +78,55 @@ export function useBatchCooking() {
         if (recipeIds.has(r.id)) recipeMap.set(r.id, r);
       }
 
-      // 3. Filter to freezable recipes and sauces
+      // 3. Level 1: from menu — freezable, prep-day, batch-cooking, sauces
       const freezableRecipes = Array.from(recipeMap.values()).filter(
         r => r.tags.includes('freezable') || r.tags.includes('prep-day') || r.tags.includes('batch-cooking')
       );
-
-      // 3a. Include sauces (category: 'sauce') that are freezable or prep-day
-      const sauces = Array.from(recipeMap.values()).filter(
+      const saucesL1 = Array.from(recipeMap.values()).filter(
         r => r.category === 'sauce' && (r.tags.includes('freezable') || r.tags.includes('prep-day'))
       );
+      const level1Recipes = new Set<Recipe>([...freezableRecipes, ...saucesL1]);
 
-      // 3b. Find component recipes (ingredients that match recipe titles)
-      const componentRecipes = new Set<Recipe>();
-      for (const recipe of Array.from(recipeMap.values())) {
+      // 3b. Level 2: components of level 1 (бульоны, соусы — ингредиенты рецептов меню)
+      const level2Recipes = new Set<Recipe>();
+      for (const recipe of level1Recipes) {
         for (const ingredient of recipe.ingredients) {
-          const componentRecipe = findRecipeByIngredientName(ingredient.name, allRecipes);
+          const comp = findRecipeByIngredientName(ingredient.name, allRecipes);
           if (
-            componentRecipe &&
-            (componentRecipe.tags.includes('prep-day') ||
-             componentRecipe.tags.includes('freezable') ||
-             componentRecipe.category === 'sauce')
+            comp &&
+            (comp.tags.includes('prep-day') ||
+             comp.tags.includes('freezable') ||
+             comp.category === 'sauce' ||
+             comp.category === 'soup')
           ) {
-            componentRecipes.add(componentRecipe);
+            level2Recipes.add(comp);
           }
         }
       }
 
-      // Combine all recipes for prep
-      const allPrepRecipes = new Set<Recipe>();
-      freezableRecipes.forEach(r => allPrepRecipes.add(r));
-      sauces.forEach(r => allPrepRecipes.add(r));
-      componentRecipes.forEach(r => allPrepRecipes.add(r));
+      // 3c. Level 3: components of level 2 (напр. бульон внутри соуса)
+      const level3Recipes = new Set<Recipe>();
+      for (const recipe of level2Recipes) {
+        for (const ingredient of recipe.ingredients) {
+          const comp = findRecipeByIngredientName(ingredient.name, allRecipes);
+          if (
+            comp &&
+            (comp.tags.includes('prep-day') ||
+             comp.tags.includes('freezable') ||
+             comp.category === 'sauce' ||
+             comp.category === 'soup')
+          ) {
+            level3Recipes.add(comp);
+          }
+        }
+      }
 
+      const recipeToLevel = new Map<string, NestingLevel>();
+      level1Recipes.forEach(r => recipeToLevel.set(r.id, 1));
+      level2Recipes.forEach(r => recipeToLevel.set(r.id, 2));
+      level3Recipes.forEach(r => recipeToLevel.set(r.id, 3));
+
+      const allPrepRecipes = new Set<Recipe>([...level1Recipes, ...level2Recipes, ...level3Recipes]);
       const prepRecipesArray = Array.from(allPrepRecipes);
 
       if (prepRecipesArray.length === 0) {
@@ -118,7 +135,7 @@ export function useBatchCooking() {
         return null;
       }
 
-      logger.log(`[useBatchCooking] Found ${prepRecipesArray.length} recipes for prep (${freezableRecipes.length} freezable, ${sauces.length} sauces, ${componentRecipes.size} components)`);
+      logger.log(`[useBatchCooking] Found ${prepRecipesArray.length} recipes for prep (L1: ${level1Recipes.size}, L2: ${level2Recipes.size}, L3: ${level3Recipes.size})`);
 
       // 4. Check freezer inventory
       const freezerItems = await dataService.freezer.list();
@@ -161,6 +178,7 @@ export function useBatchCooking() {
           continue;
         }
 
+        const nestingLevel = recipeToLevel.get(recipe.id) ?? 1;
         // Create tasks from recipe steps
         for (const step of recipe.steps) {
           const eq = step.equipment?.id || recipe.equipment[0] || 'bowls';
@@ -176,6 +194,7 @@ export function useBatchCooking() {
             duration: step.duration || 10,
             portions: neededPortions,
             completed: false,
+            nestingLevel,
           });
         }
 
@@ -205,20 +224,59 @@ export function useBatchCooking() {
           portions: neededPortions,
           portionsByMember,
           completed: false,
+          nestingLevel,
         });
       }
 
       // Sort by phase, then by equipment
       tasks.sort((a, b) => a.phase - b.phase || a.equipment.localeCompare(b.equipment));
 
-      const totalTime = tasks.reduce((sum, t) => sum + t.duration, 0);
+      const newRecipeIds = new Set(tasks.map(t => t.recipeId));
+      const completedTasks: string[] = [];
+      const orphanTasks: BatchTask[] = [];
+
+      const oldPlan = await db.batchPlans.orderBy('date').reverse().first();
+      if (oldPlan?.completedTasks?.length) {
+        const oldCompletedByRecipe = new Map<string, boolean>();
+        for (const task of oldPlan.tasks) {
+          if (task.completed || oldPlan.completedTasks.includes(task.id)) {
+            oldCompletedByRecipe.set(task.recipeId, true);
+          }
+        }
+        const newRecipeIdsMarkedCompleted = new Set<string>();
+        for (const task of oldPlan.tasks) {
+          const wasCompleted = task.completed || oldPlan.completedTasks.includes(task.id);
+          if (!wasCompleted) continue;
+          if (newRecipeIds.has(task.recipeId)) {
+            if (!newRecipeIdsMarkedCompleted.has(task.recipeId)) {
+              newRecipeIdsMarkedCompleted.add(task.recipeId);
+              const newTaskIdsForRecipe = tasks.filter(t => t.recipeId === task.recipeId).map(t => t.id);
+              completedTasks.push(...newTaskIdsForRecipe);
+            }
+          } else {
+            orphanTasks.push({
+              ...task,
+              id: task.id,
+              isOrphan: true,
+            });
+            completedTasks.push(task.id);
+          }
+        }
+      }
+
+      const dedupCompleted = Array.from(new Set(completedTasks));
+      for (const t of tasks) {
+        if (dedupCompleted.includes(t.id)) t.completed = true;
+      }
+      const finalTasks = [...tasks, ...orphanTasks];
+      const totalTime = finalTasks.reduce((sum, t) => sum + t.duration, 0);
 
       const newPlan: BatchPlan = {
         id: nanoid(),
         date: new Date().toISOString().split('T')[0],
-        tasks,
+        tasks: finalTasks,
         totalTime,
-        completedTasks: [],
+        completedTasks: dedupCompleted,
       };
 
       logger.log(`[useBatchCooking] Generated plan: ${tasks.length} tasks, ~${totalTime} min`);
@@ -248,5 +306,18 @@ export function useBatchCooking() {
     });
   }, []);
 
-  return { plan, loading, generateBatchPlan, toggleTask };
+  const removeOrphanTask = useCallback((taskId: string) => {
+    setPlan(prev => {
+      if (!prev) return prev;
+      const task = prev.tasks.find(t => t.id === taskId);
+      if (!task?.isOrphan) return prev;
+      const tasks = prev.tasks.filter(t => t.id !== taskId);
+      const completedTasks = prev.completedTasks.filter(id => id !== taskId);
+      const next = { ...prev, tasks, completedTasks };
+      db.batchPlans.put(next).catch(e => logger.error('[useBatchCooking] Save after removeOrphan:', e));
+      return next;
+    });
+  }, []);
+
+  return { plan, loading, generateBatchPlan, toggleTask, removeOrphanTask };
 }

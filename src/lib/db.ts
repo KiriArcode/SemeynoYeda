@@ -144,4 +144,60 @@ db.version(7).stores({
   chefSettings: 'id',
 });
 
+// Версия 8: подготовка миграции shopping на id — копируем в shoppingById
+db.version(8)
+  .stores({
+    recipes: 'id, slug, category, *tags, suitableFor, createdAt',
+    menus: 'id, weekStart, shoppingDay, createdAt',
+    freezer: 'id, recipeId, expiryDate, batchId',
+    shopping: 'ingredient, id, category, checked, markedMissing',
+    shoppingById: 'id, ingredient, unit, category, checked, markedMissing',
+    prepPlans: 'id, date',
+    batchPlans: 'id, date',
+    cookingSessions: 'id, date, mealType',
+    chefSettings: 'id',
+  })
+  .upgrade((tx) => {
+    return tx
+      .table('shopping')
+      .toArray()
+      .then((items: (ShoppingItem & { id?: string })[]) => {
+        const withIds = items.map((item) => ({
+          ...item,
+          id: item.id ?? crypto.randomUUID(),
+        }));
+        return (tx as { table(n: string): { bulkPut(x: unknown[]): Promise<unknown> } }).table('shoppingById').bulkPut(withIds);
+      });
+  });
+
+// Версия 9: shopping с keyPath id, копирование из shoppingById
+db.version(9)
+  .stores({
+    recipes: 'id, slug, category, *tags, suitableFor, createdAt',
+    menus: 'id, weekStart, shoppingDay, createdAt',
+    freezer: 'id, recipeId, expiryDate, batchId',
+    shopping: 'id, ingredient, unit, category, checked, markedMissing',
+    shoppingById: 'id, ingredient, unit, category, checked, markedMissing',
+    prepPlans: 'id, date',
+    batchPlans: 'id, date',
+    cookingSessions: 'id, date, mealType',
+    chefSettings: 'id',
+  })
+  .upgrade((tx) => {
+    const txAny = tx as { table(n: string): { toArray(): Promise<Row<ShoppingItem>[]>; bulkPut(x: unknown[]): Promise<unknown> } };
+    return txAny.table('shoppingById').toArray().then((rows) => tx.table('shopping').bulkPut(rows));
+  });
+
+// Версия 10: убираем временную таблицу shoppingById из схемы
+db.version(10).stores({
+  recipes: 'id, slug, category, *tags, suitableFor, createdAt',
+  menus: 'id, weekStart, shoppingDay, createdAt',
+  freezer: 'id, recipeId, expiryDate, batchId',
+  shopping: 'id, ingredient, unit, category, checked, markedMissing',
+  prepPlans: 'id, date',
+  batchPlans: 'id, date',
+  cookingSessions: 'id, date, mealType',
+  chefSettings: 'id',
+});
+
 export { db };

@@ -1,7 +1,25 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
+import { applyMinWeightOrVolume } from '../lib/shoppingListUtils';
 import type { ShoppingItem, WeekMenu, Recipe } from '../data/schema';
+
+/** Добавляет из generated только те позиции, которых ещё нет в existing (по паре ingredient + unit). Ручные и missing из existing сохраняются. */
+export function mergeGeneratedIntoList(
+  existingItems: ShoppingItem[],
+  generatedItems: ShoppingItem[]
+): ShoppingItem[] {
+  const existingKeys = new Set(existingItems.map((i) => `${i.ingredient}_${i.unit}`));
+  const result = [...existingItems];
+  for (const g of generatedItems) {
+    const key = `${g.ingredient}_${g.unit}`;
+    if (!existingKeys.has(key)) {
+      result.push(g);
+      existingKeys.add(key);
+    }
+  }
+  return result;
+}
 
 export function useShoppingList() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
@@ -120,7 +138,10 @@ export function useShoppingList() {
       }
     });
 
-    return Array.from(ingredientMap.values());
+    return Array.from(ingredientMap.values()).map((item) => ({
+      ...item,
+      ...applyMinWeightOrVolume(item),
+    }));
   }
 
   function categorizeIngredient(name: string): ShoppingItem['category'] {
@@ -165,17 +186,20 @@ export function useShoppingList() {
   async function generateFromMenu(weekMenu: WeekMenu, missingIngredients: string[] = []) {
     const settings = weekMenu.shoppingSettings;
     if (settings?.autoGenerate) {
-      const newItems = await generateShoppingList(weekMenu, missingIngredients);
-      await dataService.shopping.bulkPut(newItems);
+      const existing = await dataService.shopping.list();
+      const generated = await generateShoppingList(weekMenu, missingIngredients);
+      const merged = mergeGeneratedIntoList(existing, generated);
+      await dataService.shopping.bulkPut(merged);
       await loadItems();
     }
   }
 
   async function addItem(
-    item: Omit<ShoppingItem, 'checked' | 'source'> & { source?: ShoppingItem['source'] }
+    item: Omit<ShoppingItem, 'checked' | 'source' | 'id'> & { source?: ShoppingItem['source']; id?: string }
   ) {
     const newItem: ShoppingItem = {
       ...item,
+      id: item.id ?? crypto.randomUUID(),
       checked: false,
       recipeIds: item.recipeIds || [],
       source: item.source || 'manual',
@@ -184,22 +208,21 @@ export function useShoppingList() {
     await loadItems();
   }
 
-  async function updateItem(ingredient: string, updates: Partial<ShoppingItem>) {
-    await dataService.shopping.update(ingredient, updates);
+  async function updateItem(id: string, updates: Partial<ShoppingItem>) {
+    await dataService.shopping.update(id, updates);
     await loadItems();
   }
 
-  async function toggleChecked(ingredient: string) {
-    const allItems = await dataService.shopping.list();
-    const item = allItems.find((i) => i.ingredient === ingredient);
+  async function toggleChecked(id: string) {
+    const item = items.find((i) => i.id === id);
     if (item) {
-      await dataService.shopping.update(ingredient, { checked: !item.checked });
+      await dataService.shopping.update(id, { checked: !item.checked });
       await loadItems();
     }
   }
 
-  async function deleteItem(ingredient: string) {
-    await dataService.shopping.delete(ingredient);
+  async function deleteItem(id: string) {
+    await dataService.shopping.delete(id);
     await loadItems();
   }
 
@@ -236,23 +259,22 @@ export function useShoppingList() {
     }
   }
 
-  async function bulkToggleChecked(ingredients: string[]) {
-    if (ingredients.length === 0) return;
+  async function bulkToggleChecked(ids: string[]) {
+    if (ids.length === 0) return;
     const allItems = await dataService.shopping.list();
-    const updatedItems = allItems.map((item) => {
-      if (ingredients.includes(item.ingredient)) {
-        return { ...item, checked: !item.checked };
-      }
-      return item;
-    });
+    const idSet = new Set(ids);
+    const updatedItems = allItems.map((item) =>
+      idSet.has(item.id) ? { ...item, checked: !item.checked } : item
+    );
     await dataService.shopping.bulkPut(updatedItems);
     await loadItems();
   }
 
-  async function bulkDelete(ingredients: string[]) {
-    if (ingredients.length === 0) return;
+  async function bulkDelete(ids: string[]) {
+    if (ids.length === 0) return;
     const allItems = await dataService.shopping.list();
-    const remainingItems = allItems.filter((item) => !ingredients.includes(item.ingredient));
+    const idSet = new Set(ids);
+    const remainingItems = allItems.filter((item) => !idSet.has(item.id));
     await dataService.shopping.bulkPut(remainingItems);
     await loadItems();
   }

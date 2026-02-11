@@ -2,28 +2,28 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as shoppingRepo from '../_lib/repositories/shoppingRepo.js';
 
 /**
- * Единый обработчик /api/shopping и /api/shopping/:ingredient (лимит 12 функций на Hobby).
+ * Единый обработчик /api/shopping и /api/shopping/:id (по id элемента списка).
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const slug = (req.query.slug as string[] | undefined) ?? [];
-  const ingredient = slug[0] ? decodeURIComponent(slug[0]) : '';
+  const id = slug[0] ? decodeURIComponent(slug[0]) : '';
 
   try {
-    if (ingredient) {
-      // /api/shopping/:ingredient
+    if (id) {
+      // /api/shopping/:id
       if (req.method === 'GET') {
-        const item = await shoppingRepo.getShoppingItemByIngredient(ingredient);
+        const item = await shoppingRepo.getShoppingItemById(id);
         if (!item) return res.status(404).json({ error: 'Shopping item not found' });
         return res.status(200).json(item);
       }
       if (req.method === 'PATCH') {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-        const item = await shoppingRepo.updateShoppingItem(ingredient, body);
+        const item = await shoppingRepo.updateShoppingItem(id, body);
         if (!item) return res.status(404).json({ error: 'Shopping item not found' });
         return res.status(200).json(item);
       }
       if (req.method === 'DELETE') {
-        await shoppingRepo.deleteShoppingItem(ingredient);
+        await shoppingRepo.deleteShoppingItem(id);
         return res.status(204).end();
       }
       return res.status(405).json({ error: 'Method not allowed' });

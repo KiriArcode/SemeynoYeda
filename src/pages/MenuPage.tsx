@@ -88,16 +88,19 @@ export function MenuPage() {
 
   async function createMenuFromTemplate() {
     logger.log('[MenuPage] Creating menu from template...');
+    console.log('[MenuPage] createMenuFromTemplate: start');
     setCreatingFromTemplate(true);
     setTemplateSuccess(false);
     try {
       const menu = getSeedWeekMenu();
       await dataService.menus.create(menu);
+      console.log('[MenuPage] createMenuFromTemplate: menu created', { id: menu.id, weekStart: menu.weekStart });
       await loadWeekMenu();
       setTemplateSuccess(true);
       setTimeout(() => setTemplateSuccess(false), 3000);
     } catch (error) {
       logger.error('[MenuPage] Failed to create menu from template:', error);
+      console.error('[MenuPage] createMenuFromTemplate: failed', error);
     } finally {
       setCreatingFromTemplate(false);
     }
@@ -106,6 +109,7 @@ export function MenuPage() {
   async function handleMealSlotUpdate(dayDate: string, mealIndex: number, updatedSlot: MealSlotType) {
     if (!weekMenu) return;
     logger.log(`[MenuPage] Updating slot ${mealIndex} on ${dayDate}`);
+    console.log('[MenuPage] handleMealSlotUpdate', { dayDate, mealIndex, recipeIds: updatedSlot.recipes.map(r => r.recipeId) });
     const updatedDays = weekMenu.days.map(day => {
       if (day.date !== dayDate) return day;
       return {
@@ -115,6 +119,7 @@ export function MenuPage() {
     });
     const updatedMenu = { ...weekMenu, days: updatedDays };
     await dataService.menus.update(updatedMenu.id, updatedMenu);
+    console.log('[MenuPage] handleMealSlotUpdate: menu saved', { menuId: updatedMenu.id });
     setWeekMenu(updatedMenu);
   }
 
@@ -196,9 +201,10 @@ export function MenuPage() {
                 onClick={createMenuFromTemplate}
                 disabled={creatingFromTemplate}
                 className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all hover:scale-105 disabled:opacity-60 flex items-center gap-2"
+                aria-label="Создать меню (創建列表)"
               >
                 <Copy className="w-4 h-4" />
-                {creatingFromTemplate ? 'Создаём...' : 'Создать меню из шаблона'}
+                {creatingFromTemplate ? 'Создаём...' : '創建列表'}
               </button>
               <Link
                 to="/recipes"
@@ -239,9 +245,10 @@ export function MenuPage() {
             onClick={createMenuFromTemplate}
             disabled={creatingFromTemplate}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
+            aria-label="Создать меню (創建列表)"
           >
             <Copy className="w-3.5 h-3.5" />
-            {creatingFromTemplate ? 'Создаём...' : 'Из шаблона'}
+            {creatingFromTemplate ? 'Создаём...' : '創建列表'}
           </button>
         </div>
       </div>
@@ -277,6 +284,17 @@ export function MenuPage() {
       {alerts.map((alert) => (
         <AlertBanner key={alert.itemId || alert.message} type={alert.type} message={alert.message} className="mb-3" />
       ))}
+
+      {/* Hint: обновить список покупок после смены блюд */}
+      {weekMenu && (
+        <p className="text-xs text-text-muted mb-3">
+          После смены блюд{' '}
+          <Link to="/shopping" className="text-portal hover:underline">
+            обновите список покупок
+          </Link>
+          .
+        </p>
+      )}
 
       {/* Days with accordion MealSlots */}
       <div className="space-y-4">

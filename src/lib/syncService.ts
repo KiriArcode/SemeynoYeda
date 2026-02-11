@@ -196,9 +196,9 @@ class SyncService {
 
       for (const item of pendingItems) {
         const entity = item as unknown as EntityWithId & { _sync?: SyncMetadata };
-        // shopping использует ingredient как ключ в IndexedDB и API
+        // shopping использует id как ключ в IndexedDB и API
         const dbKey = tableName === 'shopping'
-          ? (item as ShoppingItem).ingredient
+          ? (item as ShoppingItem).id
           : entity.id;
 
         try {
@@ -209,7 +209,20 @@ class SyncService {
           const isNew = !existing || !existing._sync?.lastSyncedAt;
 
           if (isNew) {
-            await this.createInNeon(tableName, itemWithoutSync);
+            try {
+              await this.createInNeon(tableName, itemWithoutSync);
+            } catch (createError) {
+              // Рецепты из seed уже могут быть в Neon → 409 Duplicate recipe
+              const isConflict =
+                tableName === 'recipes' &&
+                createError instanceof Error &&
+                (createError.message.includes('Duplicate') || createError.message.includes('Conflict'));
+              if (isConflict) {
+                await this.updateInNeon(tableName, dbKey, itemWithoutSync);
+              } else {
+                throw createError;
+              }
+            }
           } else {
             await this.updateInNeon(tableName, dbKey, itemWithoutSync);
           }
@@ -296,7 +309,6 @@ class SyncService {
         await apiDataService.freezer.update(id, item as Partial<FreezerItem>);
         break;
       case 'shopping':
-        // id здесь — ingredient (dbKey для shopping)
         await apiDataService.shopping.update(id, item as Partial<ShoppingItem>);
         break;
       case 'prepPlans':

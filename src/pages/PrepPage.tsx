@@ -4,7 +4,7 @@ import { logger } from '../lib/logger';
 import type { WeekMenu, FreezerItem, EquipmentId, Recipe } from '../data/schema';
 import { useBatchCooking } from '../hooks/useBatchCooking';
 import { nanoid } from 'nanoid';
-import { CheckCircle2, Clock, ChefHat, Snowflake, Play, BarChart3 } from 'lucide-react';
+import { CheckCircle2, Clock, ChefHat, Snowflake, Play, BarChart3, Trash2 } from 'lucide-react';
 
 const EQUIPMENT_LABELS: Record<EquipmentId, string> = {
   stove: '🔥 Плита', oven: '🔲 Духовка', 'air-grill': '🌀 Аэрогриль', 'e-grill': '⚡ Электрогриль',
@@ -48,7 +48,7 @@ export function PrepPage() {
   const [loading, setLoading] = useState(true);
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [freezerItems, setFreezerItems] = useState<FreezerItem[]>([]);
-  const { plan, loading: planLoading, generateBatchPlan, toggleTask } = useBatchCooking();
+  const { plan, loading: planLoading, generateBatchPlan, toggleTask, removeOrphanTask } = useBatchCooking();
 
   useEffect(() => {
     loadMenu();
@@ -195,9 +195,20 @@ export function PrepPage() {
   }
 
   const phases = [1, 2, 3, 4] as const;
+  const orphanTasks = plan.tasks.filter(t => t.isOrphan);
+  const mainTasks = plan.tasks.filter(t => !t.isOrphan);
   const completedCount = plan.completedTasks.length;
   const totalCount = plan.tasks.length;
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  const NESTING_LABELS: Record<number, string> = { 1: 'Меню', 2: '2', 3: '3' };
+
+  const menuRecipeIds = weekMenu
+    ? new Set(weekMenu.days.flatMap((d) => d.meals.flatMap((m) => m.recipes.map((r) => r.recipeId))))
+    : new Set<string>();
+  const planRecipeIds = [...new Set(mainTasks.map((t) => t.recipeId))];
+  const hasPlanRecipesNotInMenu =
+    plan.tasks.length > 0 && weekMenu && planRecipeIds.some((id) => !menuRecipeIds.has(id));
 
   // Equipment timeline data
   const equipmentUsage = new Map<string, { equipment: string; totalMinutes: number }>();
@@ -217,6 +228,20 @@ export function PrepPage() {
       <h1 className="font-heading text-2xl font-bold text-text-primary mb-4 flex items-center gap-2">
         <ChefHat className="w-6 h-6 text-portal" /> Заготовки выходного дня
       </h1>
+
+      {/* Hint: меню изменилось — пересоздать план */}
+      {hasPlanRecipesNotInMenu && (
+        <div className="bg-accent-orange/10 border border-accent-orange/30 rounded-card p-3 mb-4 flex items-center justify-between gap-3">
+          <span className="text-sm font-body text-text-light">Меню изменилось — пересоздать план?</span>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            className="flex-shrink-0 px-3 py-1.5 text-xs font-heading font-semibold bg-portal text-void rounded-button hover:bg-portal-dim transition-colors"
+          >
+            Пересоздать
+          </button>
+        </div>
+      )}
 
       {/* Summary card with progress */}
       <div className="bg-panel border border-elevated rounded-card p-4 mb-4 shadow-card">
@@ -266,7 +291,7 @@ export function PrepPage() {
 
       {/* Task cards by phase with sector labels */}
       {phases.map(phase => {
-        const phaseTasks = plan.tasks.filter(t => t.phase === phase);
+        const phaseTasks = mainTasks.filter(t => t.phase === phase);
         if (phaseTasks.length === 0) return null;
         const phaseLabel = phaseTasks[0]?.phaseLabel || `Фаза ${phase}`;
         const phaseCompleted = phaseTasks.filter(t => t.completed).length;
@@ -353,6 +378,11 @@ export function PrepPage() {
                               </span>
                             )}
                             <span className="text-[10px] font-mono text-accent-orange">{task.duration} мин</span>
+                            {task.nestingLevel && task.nestingLevel > 1 && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-plasma/20 text-plasma border border-plasma/30 rounded-full" title="Вложенность">
+                                {NESTING_LABELS[task.nestingLevel] ?? task.nestingLevel}
+                              </span>
+                            )}
                             <span className={`text-[10px] px-1.5 py-0.5 border rounded ${EQUIPMENT_COLORS[task.equipment] || 'bg-rift'} border-elevated text-text-secondary`}>
                               {EQUIPMENT_LABELS[task.equipment] || task.equipment}
                             </span>
@@ -377,6 +407,42 @@ export function PrepPage() {
           </div>
         );
       })}
+
+      {/* Orphan tasks (completed in old plan, not in new) — внизу списка с кнопкой Удалить */}
+      {orphanTasks.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-nebula">
+          <span className="text-[10px] font-mono text-portal-dim tracking-[1.5px] block mb-2">
+            ВЫПОЛНЕНО · НЕТ В НОВОМ ПЛАНЕ
+          </span>
+          <div className="space-y-2">
+            {orphanTasks.map(task => {
+              const taskRecipe = allRecipes.find(r => r.id === task.recipeId);
+              const requiresFreeze = taskRecipe?.tags.includes('freezable') || taskRecipe?.tags.includes('prep-day');
+              return (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-2 p-3 rounded-card border border-nebula bg-rift/50"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-portal flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-heading text-text-muted line-through">{task.step}</span>
+                    <span className="text-[10px] font-mono text-text-ghost ml-1.5">{task.recipeTitle}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeOrphanTask(task.id)}
+                    className="flex min-w-[44px] min-h-[44px] items-center justify-center rounded-[8px] border border-nebula bg-void text-ramen hover:bg-ramen/10 hover:border-ramen/50 transition-colors"
+                    title={requiresFreeze ? 'Удалить из плана (остаётся в морозилке)' : 'Удалить из списка'}
+                    aria-label="Удалить"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Freeze button */}
       {completedCount > 0 && (

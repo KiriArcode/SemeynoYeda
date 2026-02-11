@@ -169,7 +169,6 @@ function buildCrud<T extends { id: string }>(
 const recipesCrud = buildCrud<Recipe>(db.recipes, apiDataService.recipes, 'recipes', 'updatedAt');
 const menusCrud = buildCrud<WeekMenu>(db.menus, apiDataService.menus, 'menus', 'createdAt');
 const freezerCrud = buildCrud<FreezerItem>(db.freezer, apiDataService.freezer, 'freezer', 'frozenDate');
-// shopping использует ingredient как PK в IndexedDB (не id)
 const prepPlansCrud = buildCrud<PrepPlan>(db.prepPlans, apiDataService.prepPlans, 'prepPlans', 'date');
 const cookingSessionsCrud = buildCrud<CookingSession>(db.cookingSessions, apiDataService.cookingSessions, 'cookingSessions', 'date');
 
@@ -245,9 +244,22 @@ export const dataServiceWithSync = {
       }
     },
 
+    get: async (id: string): Promise<ShoppingItem | null> => {
+      try {
+        const row: WithSync<ShoppingItem> | undefined = await db.shopping.get(id);
+        if (!row) return null;
+        triggerSync();
+        return stripSync(row);
+      } catch (error) {
+        logger.error('[dataService.shopping.get]', error);
+        return null;
+      }
+    },
+
     create: async (item: ShoppingItem): Promise<ShoppingItem> => {
       const now = new Date().toISOString();
-      const row: WithSync<ShoppingItem> = { ...item, _sync: pendingSync(now) };
+      const withId = { ...item, id: item.id || crypto.randomUUID() };
+      const row: WithSync<ShoppingItem> = { ...withId, _sync: pendingSync(now) };
       try {
         await db.shopping.put(row);
         triggerSync();
@@ -258,16 +270,16 @@ export const dataServiceWithSync = {
       }
     },
 
-    update: async (ingredient: string, updates: Partial<ShoppingItem>): Promise<ShoppingItem> => {
+    update: async (id: string, updates: Partial<ShoppingItem>): Promise<ShoppingItem> => {
       try {
-        const existing: WithSync<ShoppingItem> | undefined = await db.shopping.get(ingredient);
-        if (!existing) throw new Error(`ShoppingItem ${ingredient} not found`);
+        const existing: WithSync<ShoppingItem> | undefined = await db.shopping.get(id);
+        if (!existing) throw new Error(`ShoppingItem ${id} not found`);
 
         const now = new Date().toISOString();
         const updated: WithSync<ShoppingItem> = {
           ...existing,
           ...updates,
-          ingredient,
+          id,
           _sync: pendingSync(now, existing._sync?.retryCount || 0),
         } as WithSync<ShoppingItem>;
 
@@ -280,11 +292,11 @@ export const dataServiceWithSync = {
       }
     },
 
-    delete: async (ingredient: string): Promise<void> => {
+    delete: async (id: string): Promise<void> => {
       try {
-        await db.shopping.delete(ingredient);
+        await db.shopping.delete(id);
         if (hasApi && navigator.onLine) {
-          apiDataService.shopping.delete(ingredient).catch((e) =>
+          apiDataService.shopping.delete(id).catch((e) =>
             logger.error('[dataService.shopping.delete] Neon:', e),
           );
         }
@@ -298,6 +310,7 @@ export const dataServiceWithSync = {
       const now = new Date().toISOString();
       const rows: WithSync<ShoppingItem>[] = items.map((item) => ({
         ...item,
+        id: item.id || crypto.randomUUID(),
         _sync: pendingSync(now),
       }));
 

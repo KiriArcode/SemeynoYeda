@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
-import { useShoppingList } from '../hooks/useShoppingList';
+import { useShoppingList, mergeGeneratedIntoList } from '../hooks/useShoppingList';
+import { applyMinWeightOrVolume } from '../lib/shoppingListUtils';
 import { ShoppingSettings } from '../components/shopping/ShoppingSettings';
 import { Modal } from '../components/ui/Modal';
 import { CheckCircle2, ShoppingCart, RefreshCw, Trash2, Plus } from 'lucide-react';
@@ -28,21 +29,16 @@ export function ShoppingPage() {
     }
   }, [loading]);
 
-  // Temporary debug: confirm modal state updates
-  useEffect(() => {
-    console.log('[ShoppingPage] showManualForm (temporary debug)', showManualForm);
-  }, [showManualForm]);
-
   async function autoGenerateList() {
     setGenerating(true);
     try {
       const menu = await dataService.menus.getCurrent().catch(() => null);
       if (menu) {
-        const newItems = await generateShoppingList(menu);
-        if (newItems.length > 0) {
-          await dataService.shopping.bulkPut(newItems);
-          await loadItems();
-        }
+        const existing = await dataService.shopping.list();
+        const generated = await generateShoppingList(menu);
+        const merged = mergeGeneratedIntoList(existing, generated);
+        await dataService.shopping.bulkPut(merged);
+        await loadItems();
       }
     } catch (error) {
       logger.error('Failed to auto-generate shopping list:', error);
@@ -56,11 +52,11 @@ export function ShoppingPage() {
     try {
       const menu = await dataService.menus.getCurrent().catch(() => null);
       if (menu) {
-        const newItems = await generateShoppingList(menu);
-        if (newItems.length > 0) {
-          await dataService.shopping.bulkPut(newItems);
-          await loadItems();
-        }
+        const existing = await dataService.shopping.list();
+        const generated = await generateShoppingList(menu);
+        const merged = mergeGeneratedIntoList(existing, generated);
+        await dataService.shopping.bulkPut(merged);
+        await loadItems();
       }
     } catch (error) {
       logger.error('Failed to regenerate shopping list:', error);
@@ -102,11 +98,11 @@ export function ShoppingPage() {
 
   async function handleManualAdd() {
     if (!formIngredient.trim()) return;
-    
+    const { totalAmount } = applyMinWeightOrVolume({ totalAmount: formAmount, unit: formUnit });
     try {
       await addItem({
         ingredient: formIngredient.trim(),
-        totalAmount: formAmount,
+        totalAmount,
         unit: formUnit,
         category: formCategory,
         recipeIds: [],
@@ -123,12 +119,12 @@ export function ShoppingPage() {
     }
   }
 
-  function toggleItemSelection(ingredient: string) {
+  function toggleItemSelection(id: string) {
     const newSelected = new Set(selectedItems);
-    if (newSelected.has(ingredient)) {
-      newSelected.delete(ingredient);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
     } else {
-      newSelected.add(ingredient);
+      newSelected.add(id);
     }
     setSelectedItems(newSelected);
   }
@@ -137,7 +133,7 @@ export function ShoppingPage() {
     if (selectedItems.size === filteredItems.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(filteredItems.map(item => item.ingredient)));
+      setSelectedItems(new Set(filteredItems.map((item) => item.id)));
     }
   }
 
@@ -303,25 +299,25 @@ export function ShoppingPage() {
                         ? 'border-nebula opacity-60'
                         : item.markedMissing
                         ? 'border-ramen bg-ramen/10'
-                        : selectionMode && selectedItems.has(item.ingredient)
+                        : selectionMode && selectedItems.has(item.id)
                         ? 'border-portal bg-portal/10'
                         : 'border-nebula hover:border-portal/30'
                     }`}
                   >
                     {selectionMode ? (
                       <button
-                        onClick={() => toggleItemSelection(item.ingredient)}
+                        onClick={() => toggleItemSelection(item.id)}
                         className={`flex-shrink-0 w-5 h-5 rounded-button border-2 flex items-center justify-center transition-colors ${
-                          selectedItems.has(item.ingredient)
+                          selectedItems.has(item.id)
                             ? 'bg-portal border-portal'
                             : 'border-nebula hover:border-portal'
                         }`}
                       >
-                        {selectedItems.has(item.ingredient) && <CheckCircle2 className="w-3 h-3 text-void" />}
+                        {selectedItems.has(item.id) && <CheckCircle2 className="w-3 h-3 text-void" />}
                       </button>
                     ) : (
                       <button
-                        onClick={() => toggleChecked(item.ingredient)}
+                        onClick={() => toggleChecked(item.id)}
                         className={`flex-shrink-0 w-5 h-5 rounded-button border-2 flex items-center justify-center transition-colors ${
                           item.checked
                             ? 'bg-portal border-portal'
@@ -348,7 +344,7 @@ export function ShoppingPage() {
                     )}
                     {!selectionMode && (
                       <button
-                        onClick={() => deleteItem(item.ingredient)}
+                        onClick={() => deleteItem(item.id)}
                         className="p-1 text-text-ghost hover:text-ramen transition-colors"
                         aria-label="Удалить"
                       >

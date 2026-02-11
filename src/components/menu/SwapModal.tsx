@@ -17,11 +17,13 @@ interface SwapModalProps {
   onClose: () => void;
   onSelect: (recipe: Recipe) => void;
   currentRecipeId?: string;
+  /** Показывать только рецепты той же категории (суп → суп, соус → соус) */
+  filterCategory?: Recipe['category'];
   filterForWhom?: FamilyMember;
   filterMealType?: MealType;
 }
 
-export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterForWhom }: SwapModalProps) {
+export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterCategory, filterForWhom }: SwapModalProps) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -44,9 +46,11 @@ export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterFo
     }
   }
 
-  const filtered = recipes.filter(r => {
+  const categoryToFilter = filterCategory ?? (currentRecipeId ? recipes.find((r) => r.id === currentRecipeId)?.category : undefined);
+  const filtered = recipes.filter((r) => {
     if (r.id === currentRecipeId) return false;
     if (r.excludedFromMenu) return false;
+    if (categoryToFilter && r.category !== categoryToFilter) return false;
     if (filterForWhom && filterForWhom !== 'both' && r.suitableFor !== filterForWhom && r.suitableFor !== 'both') return false;
     if (search) {
       const q = search.toLowerCase();

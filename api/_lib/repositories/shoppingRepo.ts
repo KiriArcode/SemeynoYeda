@@ -3,6 +3,7 @@ import { dbToApp, appToDb } from '../mappers.js';
 import type { ShoppingItem } from '../../../src/data/schema.js';
 
 interface ShoppingDbRow {
+  id: string;
   ingredient: string;
   total_amount: number;
   unit: string;
@@ -27,16 +28,14 @@ export async function getShoppingItems(): Promise<ShoppingItem[]> {
   }
 }
 
-export async function getShoppingItemByIngredient(
-  ingredient: string
-): Promise<ShoppingItem | null> {
+export async function getShoppingItemById(id: string): Promise<ShoppingItem | null> {
   try {
     const sql = getDb();
-    const rows = await sql`SELECT * FROM shopping WHERE ingredient = ${ingredient}`;
+    const rows = await sql`SELECT * FROM shopping WHERE id = ${id}`;
     const row = Array.isArray(rows) ? rows[0] : rows;
     return row ? (dbToApp(row as Record<string, unknown>) as ShoppingItem) : null;
   } catch (error) {
-    console.error('[shoppingRepo.getShoppingItemByIngredient] Error:', error);
+    console.error('[shoppingRepo.getShoppingItemById] Error:', error);
     throw error;
   }
 }
@@ -48,10 +47,11 @@ export async function createShoppingItem(item: ShoppingItem): Promise<ShoppingIt
 
     await sql`
       INSERT INTO shopping (
-        ingredient, total_amount, unit, category, checked, recipe_ids,
+        id, ingredient, total_amount, unit, category, checked, recipe_ids,
         marked_missing, marked_at, source, covered_by_freezer
       )
       VALUES (
+        ${db.id}::text,
         ${db.ingredient}::text,
         ${db.total_amount}::numeric,
         ${db.unit}::text,
@@ -79,10 +79,11 @@ export async function bulkPutShoppingItems(items: ShoppingItem[]): Promise<void>
       const db = appToDb(item as unknown as Record<string, unknown>) as unknown as ShoppingDbRow;
       await sql`
         INSERT INTO shopping (
-          ingredient, total_amount, unit, category, checked, recipe_ids,
+          id, ingredient, total_amount, unit, category, checked, recipe_ids,
           marked_missing, marked_at, source, covered_by_freezer
         )
         VALUES (
+          ${db.id}::text,
           ${db.ingredient}::text,
           ${db.total_amount}::numeric,
           ${db.unit}::text,
@@ -103,11 +104,11 @@ export async function bulkPutShoppingItems(items: ShoppingItem[]): Promise<void>
 }
 
 export async function updateShoppingItem(
-  ingredient: string,
+  id: string,
   updates: Partial<ShoppingItem>
 ): Promise<ShoppingItem | null> {
   try {
-    const existing = await getShoppingItemByIngredient(ingredient);
+    const existing = await getShoppingItemById(id);
     if (!existing) return null;
 
     const merged = { ...existing, ...updates };
@@ -116,6 +117,7 @@ export async function updateShoppingItem(
 
     await sql`
       UPDATE shopping SET
+        ingredient = ${db.ingredient}::text,
         total_amount = ${db.total_amount}::numeric,
         unit = ${db.unit}::text,
         category = ${db.category}::text,
@@ -125,7 +127,7 @@ export async function updateShoppingItem(
         marked_at = ${db.marked_at ?? null}::text,
         source = ${db.source ?? 'auto'}::text,
         covered_by_freezer = ${db.covered_by_freezer ?? false}::boolean
-      WHERE ingredient = ${ingredient}::text
+      WHERE id = ${id}::text
     `;
     return merged;
   } catch (error) {
@@ -134,10 +136,10 @@ export async function updateShoppingItem(
   }
 }
 
-export async function deleteShoppingItem(ingredient: string): Promise<boolean> {
+export async function deleteShoppingItem(id: string): Promise<boolean> {
   try {
     const sql = getDb();
-    await sql`DELETE FROM shopping WHERE ingredient = ${ingredient}`;
+    await sql`DELETE FROM shopping WHERE id = ${id}`;
     return true;
   } catch (error) {
     console.error('[shoppingRepo.deleteShoppingItem] Error:', error);

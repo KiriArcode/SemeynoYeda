@@ -110,17 +110,15 @@ export const apiDataService = {
         method: 'POST',
         body: JSON.stringify(item),
       }),
-    update: (ingredient: string, updates: Partial<ShoppingItem>) =>
-      fetchJson<ShoppingItem>(apiUrl(`/shopping/${encodeURIComponent(ingredient)}`), {
+    update: (id: string, updates: Partial<ShoppingItem>) =>
+      fetchJson<ShoppingItem>(apiUrl(`/shopping/${encodeURIComponent(id)}`), {
         method: 'PATCH',
         body: JSON.stringify(updates),
       }),
-    delete: (ingredient: string) =>
-      fetch(apiUrl(`/shopping/${encodeURIComponent(ingredient)}`), { method: 'DELETE' }).then(
-        (r) => {
-          if (!r.ok) throw new Error(`Failed to delete: ${r.status}`);
-        }
-      ),
+    delete: (id: string) =>
+      fetch(apiUrl(`/shopping/${encodeURIComponent(id)}`), { method: 'DELETE' }).then((r) => {
+        if (!r.ok) throw new Error(`Failed to delete: ${r.status}`);
+      }),
   },
 
   prepPlans: {
