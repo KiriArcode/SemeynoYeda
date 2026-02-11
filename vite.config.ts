@@ -10,10 +10,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['icons/icon.svg'],
-      // Ensure icon is copied to dist
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Не кэшируем index.html в precache — документ отдаём через NetworkFirst в sw.ts,
+        // иначе после деплоя старый SW отдаёт старый HTML со старыми хешами CSS/JS → 404.
+        globPatterns: ['**/*.{js,css,ico,png,svg,json,woff2}'],
       },
       manifest: {
         name: 'SemeynoYeda — Семейная еда',
@@ -30,30 +34,10 @@ export default defineConfig({
             type: 'image/svg+xml', 
             purpose: 'any maskable' 
           },
-          // TODO: Create PNG versions (192x192 and 512x512) for better browser compatibility
-          // Use: convert -background "#0B0E14" -size 192x192 public/icons/icon.svg public/icons/icon-192.png
         ],
       },
       workbox: {
-        // Отключаем минификацию SW (terser), чтобы сборка не падала с "Unexpected early exit"
-        // на Vercel и в CI (race между rollup и workbox-build).
         mode: 'development',
-        // Включаем index.html в precache — иначе createHandlerBoundToURL('index.html') падает.
-        // Раньше исключали index.html, чтобы после деплоя не отдавать старый HTML, но тогда
-        // SW ломается с "non-precached-url". С autoUpdate новый SW активируется при следующей загрузке.
-        globPatterns: ['**/*.html', '**/*.{js,css,ico,png,svg,json,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 365 * 24 * 60 * 60 } },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'gstatic-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 365 * 24 * 60 * 60 } },
-          },
-        ],
       },
     }),
   ],
