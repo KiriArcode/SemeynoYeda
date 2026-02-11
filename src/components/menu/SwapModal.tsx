@@ -46,6 +46,7 @@ export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterFo
 
   const filtered = recipes.filter(r => {
     if (r.id === currentRecipeId) return false;
+    if (r.excludedFromMenu) return false;
     if (filterForWhom && filterForWhom !== 'both' && r.suitableFor !== filterForWhom && r.suitableFor !== 'both') return false;
     if (search) {
       const q = search.toLowerCase();

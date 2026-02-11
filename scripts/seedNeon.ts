@@ -113,6 +113,8 @@ function recipeToRow(r: Recipe): Record<string, unknown> {
     image_url: db.image_url ?? null,
     created_at: db.created_at,
     updated_at: db.updated_at,
+    wabba_ratings: db.wabba_ratings ? JSON.stringify(db.wabba_ratings) : null,
+    excluded_from_menu: db.excluded_from_menu ?? false,
   };
 }
 
@@ -148,7 +150,8 @@ async function seed() {
         id, slug, title, subtitle, category, tags, suitable_for,
         prep_time, cook_time, total_time, servings,
         ingredients, steps, equipment, notes, storage, reheating,
-        version, source, image_url, created_at, updated_at
+        version, source, image_url, created_at, updated_at,
+        wabba_ratings, excluded_from_menu
       )
       VALUES (
         ${row.id}::text,
@@ -172,7 +175,9 @@ async function seed() {
         ${row.source}::text,
         ${row.image_url}::text,
         ${row.created_at}::timestamptz,
-        ${row.updated_at}::timestamptz
+        ${row.updated_at}::timestamptz,
+        ${row.wabba_ratings as string | null}::jsonb,
+        ${row.excluded_from_menu as boolean}::boolean
       )
       ON CONFLICT (id) DO UPDATE SET
         slug = EXCLUDED.slug,
@@ -194,7 +199,9 @@ async function seed() {
         version = EXCLUDED.version,
         source = EXCLUDED.source,
         image_url = EXCLUDED.image_url,
-        updated_at = EXCLUDED.updated_at
+        updated_at = EXCLUDED.updated_at,
+        wabba_ratings = EXCLUDED.wabba_ratings,
+        excluded_from_menu = EXCLUDED.excluded_from_menu
     `;
   }
 

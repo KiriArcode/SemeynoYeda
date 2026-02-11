@@ -9,7 +9,7 @@ import { WeekOverview } from '../components/menu/WeekOverview';
 import { WeekStats } from '../components/menu/WeekStats';
 import { AlertBanner } from '../components/ui/AlertBanner';
 import { useFreezerAlerts } from '../hooks/useFreezerAlerts';
-import { Copy, CheckCircle2 } from 'lucide-react';
+import { Copy, CheckCircle2, Heart } from 'lucide-react';
 
 const DAY_SHORT_CODES: Record<string, string> = {
   'Понедельник': 'MON',
@@ -160,6 +160,13 @@ export function MenuPage() {
               Начните с просмотра рецептов или создайте меню на неделю
             </p>
             <div className="flex flex-col gap-3 items-center">
+              <Link
+                to="/wabba"
+                className="px-6 py-3 bg-rift border border-portal/50 text-portal font-heading font-semibold rounded-button hover:bg-portal/10 transition-colors flex items-center gap-2"
+              >
+                <Heart className="w-4 h-4" />
+                Wabba — оценить рецепты
+              </Link>
               <button
                 type="button"
                 onClick={createMenuFromTemplate}
@@ -195,6 +202,14 @@ export function MenuPage() {
               <CheckCircle2 className="w-4 h-4" /> Готово!
             </span>
           )}
+          <Link
+            to="/wabba"
+            className="flex min-w-[44px] min-h-[44px] items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors"
+            aria-label="Wabba — оценить рецепты"
+          >
+            <Heart className="w-3.5 h-3.5" />
+            Wabba
+          </Link>
           <button
             type="button"
             onClick={createMenuFromTemplate}

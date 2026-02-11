@@ -64,7 +64,8 @@ export async function createRecipe(recipe: Recipe): Promise<Recipe> {
         id, slug, title, subtitle, category, tags, suitable_for,
         prep_time, cook_time, total_time, servings,
         ingredients, steps, equipment, notes, storage, reheating,
-        version, source, image_url, created_at, updated_at
+        version, source, image_url, created_at, updated_at,
+        wabba_ratings, excluded_from_menu
       )
       VALUES (
         ${db.id}::text,
@@ -88,7 +89,9 @@ export async function createRecipe(recipe: Recipe): Promise<Recipe> {
         ${db.source ?? null}::text,
         ${db.image_url ?? null}::text,
         ${db.created_at}::timestamptz,
-        ${db.updated_at}::timestamptz
+        ${db.updated_at}::timestamptz,
+        ${db.wabba_ratings ? JSON.stringify(db.wabba_ratings) : null}::jsonb,
+        ${db.excluded_from_menu ?? false}::boolean
       )
     `;
     return recipe;
@@ -128,7 +131,9 @@ export async function updateRecipe(id: string, recipe: Partial<Recipe>): Promise
         version = ${db.version ?? null}::integer,
         source = ${db.source ?? null}::text,
         image_url = ${db.image_url ?? null}::text,
-        updated_at = ${db.updated_at}::timestamptz
+        updated_at = ${db.updated_at}::timestamptz,
+        wabba_ratings = ${db.wabba_ratings ? JSON.stringify(db.wabba_ratings) : null}::jsonb,
+        excluded_from_menu = ${db.excluded_from_menu ?? false}::boolean
       WHERE id = ${id}::text
     `;
     return merged;

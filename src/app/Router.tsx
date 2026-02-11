@@ -48,6 +48,7 @@ const ShoppingPage = lazy(() => import('../pages/ShoppingPage'));
 const PrepPage = lazy(() => import('../pages/PrepPage'));
 const CookingPage = lazy(() => import('../pages/CookingPage'));
 const ChefSettingsPage = lazy(() => import('../pages/ChefSettingsPage'));
+const WabbaPage = lazy(() => import('../pages/WabbaPage'));
 
 function LoadingFallback() {
   return <PortalLoading text="Загружаем портал..." />;
@@ -81,6 +82,7 @@ const router = createBrowserRouter([
       { path: '/prep', element: <Suspense fallback={<LoadingFallback />}><PrepPage /></Suspense> },
       { path: '/cooking', element: <Suspense fallback={<LoadingFallback />}><CookingPage /></Suspense> },
       { path: '/settings/chef', element: <Suspense fallback={<LoadingFallback />}><ChefSettingsPage /></Suspense> },
+      { path: '/wabba', element: <Suspense fallback={<LoadingFallback />}><WabbaPage /></Suspense> },
     ],
   },
 ], {

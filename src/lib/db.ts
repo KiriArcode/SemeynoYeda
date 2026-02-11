@@ -109,8 +109,7 @@ db.version(5).stores({
   chefSettings: 'id',
 });
 
-// Версия 6: shopping — оставляем ingredient как PK (IndexedDB не поддерживает смену key path).
-// Добавляем индекс id, upgrade задаёт id существующим записям.
+// Версия 6: shopping — оставляем ingredient как PK. Добавляем индекс id.
 db.version(6)
   .stores({
     recipes: 'id, slug, category, *tags, suitableFor',
@@ -132,5 +131,17 @@ db.version(6)
         }
       });
   });
+
+// Версия 7: recipes — индекс createdAt для Wabba (фильтр «последние 2 недели»)
+db.version(7).stores({
+  recipes: 'id, slug, category, *tags, suitableFor, createdAt',
+  menus: 'id, weekStart, shoppingDay, createdAt',
+  freezer: 'id, recipeId, expiryDate, batchId',
+  shopping: 'ingredient, id, category, checked, markedMissing',
+  prepPlans: 'id, date',
+  batchPlans: 'id, date',
+  cookingSessions: 'id, date, mealType',
+  chefSettings: 'id',
+});
 
 export { db };

@@ -76,6 +76,15 @@ export interface RecipeStep {
   tip?: string;                 // подсказка ("пока варится — формуйте котлеты")
 }
 
+/** Оценка Wabba (свайп вправо/влево) */
+export type WabbaRating = 'like' | 'dislike';
+
+/** Оценки Wabba по участникам */
+export interface WabbaRatings {
+  kolya?: WabbaRating;
+  kristina?: WabbaRating;
+}
+
 /** Инструкция разогрева для конкретного члена семьи */
 export interface ReheatingInstruction {
   forWhom: FamilyMember;
@@ -113,6 +122,8 @@ export interface Recipe {
   imageUrl?: string;
   createdAt: string;          // ISO date
   updatedAt: string;
+  wabbaRatings?: WabbaRatings; // оценки Wabba (Коля/Кристина)
+  excludedFromMenu?: boolean;  // оба свайпнули влево — не участвует в меню
 }
 
 /** Использование компонента из морозилки */

@@ -15,6 +15,8 @@
 | `category` | `'main'` \| `'sauce'` \| `'side'` \| `'breakfast'` \| `'snack'` \| `'soup'` \| `'dessert'` |
 | `tags` | массив из: `'gastritis-safe'` \| `'soft-texture'` \| `'rich-feel'` \| `'freezable'` \| `'quick'` \| `'prep-day'` \| `'batch-cooking'` \| `'overnight'` \| `'packable'` \| `'low-calorie'` \| `'blanch-before-freeze'` |
 | `suitableFor` | `'kolya'` \| `'kristina'` \| `'both'` |
+| `wabbaRatings` | `null` или объект `{ "kolya"?: "like" | "dislike", "kristina"?: "like" | "dislike" }` |
+| `excludedFromMenu` | `false` (по умолчанию) или `true` (оба участника свайпнули влево) |
 | `unit` (в ингредиентах) | `'г'` \| `'кг'` \| `'мл'` \| `'л'` \| `'шт'` \| `'ст.л.'` \| `'ч.л.'` \| `'стакан'` \| `'щепотка'` \| `'по вкусу'` |
 | `equipment` (id в шагах и массив) | `'stove'` \| `'oven'` \| `'air-grill'` \| `'e-grill'` \| `'steamer'` \| `'blender'` \| `'mixer'` \| `'grinder'` \| `'vacuum'` \| `'bowls'` |
 
@@ -62,7 +64,9 @@
   "reheating": [],
   "notes": "опционально",
   "source": "опционально",
-  "imageUrl": "опционально"
+  "imageUrl": "опционально",
+  "wabbaRatings": null,
+  "excludedFromMenu": false
 }
 ```
 
@@ -164,3 +168,5 @@
 3. **Заготовки** — использовать тот же шаблон рецепта (п. 1) с подсказкой по тегам и полям из п. 3.
 
 Дальнейшее добавление в базу: либо ручная вставка в `getSeedRecipes()` в [seedRecipes.ts](../src/data/seedRecipes.ts) с вызовом `seedRecipe({...})` и добавлением id в `SEED_RECIPE_IDS`, либо импорт JSON и запись в Dexie (таблица `recipes`) с подстановкой `createdAt`/`updatedAt` и при необходимости генерацией `id` через `nanoid()`.
+
+**Примечание:** Поля `wabbaRatings` и `excludedFromMenu` добавляются автоматически через интерфейс Wabba (`/wabba`) и обычно не указываются вручную при создании рецептов.
