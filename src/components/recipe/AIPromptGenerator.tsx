@@ -175,10 +175,12 @@ export function AIPromptGenerator({ isOpen, onClose, recipeNames = [] }: AIPromp
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-text-primary font-heading font-semibold text-sm mb-2">
+          <label htmlFor="ai-prompt-recipe-names" className="block text-text-primary font-heading font-semibold text-sm mb-2">
             Список названий рецептов (по одному на строку):
           </label>
           <textarea
+            id="ai-prompt-recipe-names"
+            name="ai-prompt-recipe-names"
             value={recipeNamesInput}
             onChange={(e) => setRecipeNamesInput(e.target.value)}
             placeholder="Кабачковый соус&#10;Морковно-тыквенный соус&#10;Рыбные биточки"
@@ -195,7 +197,7 @@ export function AIPromptGenerator({ isOpen, onClose, recipeNames = [] }: AIPromp
         {generatedPrompt && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-text-primary font-heading font-semibold text-sm">
+              <label htmlFor="ai-prompt-generated" className="block text-text-primary font-heading font-semibold text-sm">
                 Сгенерированный промпт:
               </label>
               <div className="flex gap-2">
@@ -218,6 +220,8 @@ export function AIPromptGenerator({ isOpen, onClose, recipeNames = [] }: AIPromp
               </div>
             </div>
             <textarea
+              id="ai-prompt-generated"
+              name="ai-prompt-generated"
               value={generatedPrompt}
               readOnly
               className="w-full h-64 px-3 py-2 bg-rift border border-nebula rounded-card text-text-primary font-mono text-xs focus:outline-none focus:border-portal/50 resize-none"

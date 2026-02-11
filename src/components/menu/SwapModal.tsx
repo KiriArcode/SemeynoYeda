@@ -65,8 +65,11 @@ export function SwapModal({ isOpen, onClose, onSelect, currentRecipeId, filterFo
     <Modal isOpen={isOpen} onClose={onClose} title="Заменить блюдо">
       <div className="space-y-3">
         <div className="relative">
+          <label htmlFor="swap-search" className="sr-only">Поиск рецептов</label>
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-dim" />
           <input
+            id="swap-search"
+            name="swap-search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Поиск рецептов..."

@@ -504,9 +504,11 @@ export function RecipeImportModal({ isOpen, onClose, onImportComplete }: RecipeI
                 Перетащите JSON файл сюда
               </p>
               <p className="text-text-muted text-sm mb-4">или</p>
-              <label className="inline-block px-4 py-2 bg-portal text-void font-heading font-semibold rounded-button cursor-pointer hover:bg-portal-dim transition-colors">
+              <label htmlFor="recipe-import-file" className="inline-block px-4 py-2 bg-portal text-void font-heading font-semibold rounded-button cursor-pointer hover:bg-portal-dim transition-colors">
                 Выбрать файл
                 <input
+                  id="recipe-import-file"
+                  name="recipe-import-file"
                   type="file"
                   accept=".json,application/json"
                   onChange={handleFileInput}

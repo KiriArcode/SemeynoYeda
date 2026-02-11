@@ -397,10 +397,12 @@ export function ShoppingPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-heading font-semibold text-text-light mb-2">
+            <label htmlFor="shopping-ingredient" className="block text-sm font-heading font-semibold text-text-light mb-2">
               Название продукта *
             </label>
             <input
+              id="shopping-ingredient"
+              name="shopping-ingredient"
               type="text"
               value={formIngredient}
               onChange={(e) => setFormIngredient(e.target.value)}
@@ -412,10 +414,12 @@ export function ShoppingPage() {
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-heading font-semibold text-text-light mb-2">
+              <label htmlFor="shopping-amount" className="block text-sm font-heading font-semibold text-text-light mb-2">
                 Количество
               </label>
               <input
+                id="shopping-amount"
+                name="shopping-amount"
                 type="number"
                 min={0.1}
                 step={0.1}
@@ -426,10 +430,12 @@ export function ShoppingPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-heading font-semibold text-text-light mb-2">
+              <label htmlFor="shopping-unit" className="block text-sm font-heading font-semibold text-text-light mb-2">
                 Единица измерения
               </label>
               <select
+                id="shopping-unit"
+                name="shopping-unit"
                 value={formUnit}
                 onChange={(e) => setFormUnit(e.target.value as Unit)}
                 className="w-full bg-rift border border-nebula rounded-button px-4 py-2 text-text-light font-body focus:outline-none focus:border-portal focus:ring-2 focus:ring-portal-glow"
@@ -444,10 +450,12 @@ export function ShoppingPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-heading font-semibold text-text-light mb-2">
+            <label htmlFor="shopping-category" className="block text-sm font-heading font-semibold text-text-light mb-2">
               Категория
             </label>
             <select
+              id="shopping-category"
+              name="shopping-category"
               value={formCategory}
               onChange={(e) => setFormCategory(e.target.value as typeof formCategory)}
               className="w-full bg-rift border border-nebula rounded-button px-4 py-2 text-text-light font-body focus:outline-none focus:border-portal focus:ring-2 focus:ring-portal-glow"

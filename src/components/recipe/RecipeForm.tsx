@@ -156,39 +156,39 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
       {/* Основные поля */}
       <div className="bg-dimension border border-nebula rounded-card p-4 shadow-card space-y-3">
         <div>
-          <label className={labelClass}>Название *</label>
-          <input value={title} onChange={e => setTitle(e.target.value)} className={inputClass} placeholder="Куриные котлеты" required />
+          <label htmlFor="recipe-title" className={labelClass}>Название *</label>
+          <input id="recipe-title" name="recipe-title" value={title} onChange={e => setTitle(e.target.value)} className={inputClass} placeholder="Куриные котлеты" required />
         </div>
         <div>
-          <label className={labelClass}>Подзаголовок</label>
-          <input value={subtitle} onChange={e => setSubtitle(e.target.value)} className={inputClass} placeholder="база для Коли" />
+          <label htmlFor="recipe-subtitle" className={labelClass}>Подзаголовок</label>
+          <input id="recipe-subtitle" name="recipe-subtitle" value={subtitle} onChange={e => setSubtitle(e.target.value)} className={inputClass} placeholder="база для Коли" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>Категория</label>
-            <select value={category} onChange={e => setCategory(e.target.value as Recipe['category'])} className={inputClass}>
+            <label htmlFor="recipe-category" className={labelClass}>Категория</label>
+            <select id="recipe-category" name="recipe-category" value={category} onChange={e => setCategory(e.target.value as Recipe['category'])} className={inputClass}>
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelClass}>Для кого</label>
-            <select value={suitableFor} onChange={e => setSuitableFor(e.target.value as FamilyMember)} className={inputClass}>
+            <label htmlFor="recipe-suitable-for" className={labelClass}>Для кого</label>
+            <select id="recipe-suitable-for" name="recipe-suitable-for" value={suitableFor} onChange={e => setSuitableFor(e.target.value as FamilyMember)} className={inputClass}>
               {MEMBER_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className={labelClass}>Подготовка (мин)</label>
-            <input type="number" min={0} value={prepTime} onChange={e => setPrepTime(+e.target.value)} className={inputClass} />
+            <label htmlFor="recipe-prep-time" className={labelClass}>Подготовка (мин)</label>
+            <input id="recipe-prep-time" name="recipe-prep-time" type="number" min={0} value={prepTime} onChange={e => setPrepTime(+e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Готовка (мин)</label>
-            <input type="number" min={0} value={cookTime} onChange={e => setCookTime(+e.target.value)} className={inputClass} />
+            <label htmlFor="recipe-cook-time" className={labelClass}>Готовка (мин)</label>
+            <input id="recipe-cook-time" name="recipe-cook-time" type="number" min={0} value={cookTime} onChange={e => setCookTime(+e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Порций</label>
-            <input type="number" min={1} value={servings} onChange={e => setServings(+e.target.value)} className={inputClass} />
+            <label htmlFor="recipe-servings" className={labelClass}>Порций</label>
+            <input id="recipe-servings" name="recipe-servings" type="number" min={1} value={servings} onChange={e => setServings(+e.target.value)} className={inputClass} />
           </div>
         </div>
       </div>
@@ -216,9 +216,9 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
         <div className="space-y-2">
           {ingredients.map((ing, idx) => (
             <div key={idx} className="flex items-center gap-2">
-              <input value={ing.name} onChange={e => updateIngredient(idx, 'name', e.target.value)} className={`${inputClass} flex-1`} placeholder="Название" />
-              <input type="number" min={0} step="any" value={ing.amount || ''} onChange={e => updateIngredient(idx, 'amount', +e.target.value)} className={`${inputClass} w-20`} placeholder="Кол-во" />
-              <select value={ing.unit} onChange={e => updateIngredient(idx, 'unit', e.target.value)} className={`${inputClass} w-24`}>
+              <input id={`recipe-ing-name-${idx}`} name={`recipe-ing-name-${idx}`} value={ing.name} onChange={e => updateIngredient(idx, 'name', e.target.value)} className={`${inputClass} flex-1`} placeholder="Название" aria-label={`Ингредиент ${idx + 1} название`} />
+              <input id={`recipe-ing-amount-${idx}`} name={`recipe-ing-amount-${idx}`} type="number" min={0} step="any" value={ing.amount || ''} onChange={e => updateIngredient(idx, 'amount', +e.target.value)} className={`${inputClass} w-20`} placeholder="Кол-во" aria-label={`Ингредиент ${idx + 1} количество`} />
+              <select id={`recipe-ing-unit-${idx}`} name={`recipe-ing-unit-${idx}`} value={ing.unit} onChange={e => updateIngredient(idx, 'unit', e.target.value)} className={`${inputClass} w-24`} aria-label={`Ингредиент ${idx + 1} единица`}>
                 {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
               <button type="button" onClick={() => removeIngredient(idx)} className="text-text-ghost hover:text-ramen transition-colors p-1">
@@ -242,13 +242,13 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
                 {step.order}
               </span>
               <div className="flex-1 space-y-1">
-                <textarea value={step.text} onChange={e => updateStep(idx, 'text', e.target.value)}
-                  className={`${inputClass} min-h-[60px] resize-y`} placeholder="Описание шага..." rows={2} />
+                <textarea id={`recipe-step-text-${idx}`} name={`recipe-step-text-${idx}`} value={step.text} onChange={e => updateStep(idx, 'text', e.target.value)}
+                  className={`${inputClass} min-h-[60px] resize-y`} placeholder="Описание шага..." rows={2} aria-label={`Шаг ${idx + 1} описание`} />
                 <div className="flex gap-2">
-                  <input type="number" min={0} value={step.duration || ''} onChange={e => updateStep(idx, 'duration', +e.target.value || undefined)}
-                    className={`${inputClass} w-24`} placeholder="Мин" />
+                  <input id={`recipe-step-duration-${idx}`} name={`recipe-step-duration-${idx}`} type="number" min={0} value={step.duration || ''} onChange={e => updateStep(idx, 'duration', +e.target.value || undefined)}
+                    className={`${inputClass} w-24`} placeholder="Мин" aria-label={`Шаг ${idx + 1} минуты`} />
                   <label className="flex items-center gap-1 text-xs text-text-dim font-body">
-                    <input type="checkbox" checked={step.parallel || false} onChange={e => updateStep(idx, 'parallel', e.target.checked)} className="accent-portal" />
+                    <input id={`recipe-step-parallel-${idx}`} name={`recipe-step-parallel-${idx}`} type="checkbox" checked={step.parallel || false} onChange={e => updateStep(idx, 'parallel', e.target.checked)} className="accent-portal" />
                     Параллельно
                   </label>
                 </div>
@@ -286,16 +286,16 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
         <label className={labelClass}>Хранение</label>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className={labelClass}>Холодильник (дней)</label>
-            <input type="number" min={0} value={fridgeDays || ''} onChange={e => setFridgeDays(+e.target.value)} className={inputClass} />
+            <label htmlFor="recipe-fridge-days" className={labelClass}>Холодильник (дней)</label>
+            <input id="recipe-fridge-days" name="recipe-fridge-days" type="number" min={0} value={fridgeDays || ''} onChange={e => setFridgeDays(+e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Морозилка (мес.)</label>
-            <input type="number" min={0} value={freezerMonths || ''} onChange={e => setFreezerMonths(+e.target.value)} className={inputClass} />
+            <label htmlFor="recipe-freezer-months" className={labelClass}>Морозилка (мес.)</label>
+            <input id="recipe-freezer-months" name="recipe-freezer-months" type="number" min={0} value={freezerMonths || ''} onChange={e => setFreezerMonths(+e.target.value)} className={inputClass} />
           </div>
           <div className="flex items-end">
-            <label className="flex items-center gap-1.5 text-xs text-text-dim font-body">
-              <input type="checkbox" checked={vacuumSealed} onChange={e => setVacuumSealed(e.target.checked)} className="accent-portal" />
+            <label htmlFor="recipe-vacuum-sealed" className="flex items-center gap-1.5 text-xs text-text-dim font-body">
+              <input id="recipe-vacuum-sealed" name="recipe-vacuum-sealed" type="checkbox" checked={vacuumSealed} onChange={e => setVacuumSealed(e.target.checked)} className="accent-portal" />
               Вакуум
             </label>
           </div>
@@ -304,8 +304,8 @@ export function RecipeForm({ initial, onSave, onCancel }: RecipeFormProps) {
 
       {/* Заметки */}
       <div className="bg-dimension border border-nebula rounded-card p-4 shadow-card">
-        <label className={labelClass}>Заметки</label>
-        <textarea value={notes} onChange={e => setNotes(e.target.value)} className={`${inputClass} min-h-[80px] resize-y`} placeholder="Советы, вариации..." rows={3} />
+        <label htmlFor="recipe-notes" className={labelClass}>Заметки</label>
+        <textarea id="recipe-notes" name="recipe-notes" value={notes} onChange={e => setNotes(e.target.value)} className={`${inputClass} min-h-[80px] resize-y`} placeholder="Советы, вариации..." rows={3} />
       </div>
 
       {/* Кнопки */}

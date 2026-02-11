@@ -161,8 +161,8 @@ export function FreezerPage() {
           </div>
           <div className="space-y-3">
             <div>
-              <label className={labelClass}>Рецепт (необязательно)</label>
-              <select value={formRecipeId} onChange={e => {
+              <label htmlFor="freezer-recipe" className={labelClass}>Рецепт (необязательно)</label>
+              <select id="freezer-recipe" name="freezer-recipe" value={formRecipeId} onChange={e => {
                 setFormRecipeId(e.target.value);
                 const r = recipes.find(r => r.id === e.target.value);
                 if (r) setFormName(r.title);
@@ -174,12 +174,12 @@ export function FreezerPage() {
               </select>
             </div>
             <div>
-              <label className={labelClass}>Название *</label>
-              <input value={formName} onChange={e => setFormName(e.target.value)} className={inputClass} placeholder="Котлеты куриные" />
+              <label htmlFor="freezer-name" className={labelClass}>Название *</label>
+              <input id="freezer-name" name="freezer-name" value={formName} onChange={e => setFormName(e.target.value)} className={inputClass} placeholder="Котлеты куриные" />
             </div>
             <div>
-              <label className={labelClass}>Для кого</label>
-              <select value={formForWhom} onChange={e => setFormForWhom(e.target.value as 'kolya' | 'kristina' | 'both')} className={inputClass}>
+              <label htmlFor="freezer-for-whom" className={labelClass}>Для кого</label>
+              <select id="freezer-for-whom" name="freezer-for-whom" value={formForWhom} onChange={e => setFormForWhom(e.target.value as 'kolya' | 'kristina' | 'both')} className={inputClass}>
                 <option value="both">Оба</option>
                 <option value="kolya">Коля</option>
                 <option value="kristina">Кристина</option>
@@ -187,12 +187,12 @@ export function FreezerPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Порции</label>
-                <input type="number" min={1} value={formPortions} onChange={e => setFormPortions(+e.target.value)} className={inputClass} />
+                <label htmlFor="freezer-portions" className={labelClass}>Порции</label>
+                <input id="freezer-portions" name="freezer-portions" type="number" min={1} value={formPortions} onChange={e => setFormPortions(+e.target.value)} className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Место</label>
-                <input value={formLocation} onChange={e => setFormLocation(e.target.value)} className={inputClass} placeholder="Ящик 1" />
+                <label htmlFor="freezer-location" className={labelClass}>Место</label>
+                <input id="freezer-location" name="freezer-location" value={formLocation} onChange={e => setFormLocation(e.target.value)} className={inputClass} placeholder="Ящик 1" />
               </div>
             </div>
             <button onClick={handleAdd} disabled={!formName.trim()}
