@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
 import type { WeekMenu, MealSlot as MealSlotType, MealType } from '../data/schema';
+import type { Recipe } from '../data/schema';
 import { getSeedWeekMenu } from '../data/seedMenu';
 import { MealSlot } from '../components/menu/MealSlot';
+import { SwapModal } from '../components/menu/SwapModal';
 import { WeekOverview } from '../components/menu/WeekOverview';
 import { WeekStats } from '../components/menu/WeekStats';
 import { AlertBanner } from '../components/ui/AlertBanner';
@@ -40,6 +42,12 @@ export function MenuPage() {
   const [mealFilter, setMealFilter] = useState<MealType | 'all'>('all');
   // Accordion: track which meal is expanded per day (dayDate -> mealIndex)
   const [expandedMeals, setExpandedMeals] = useState<Record<string, number>>({});
+  // Swap modal: one at page level (dayDate, mealIndex, recipeIndexInSlot)
+  const [swapTarget, setSwapTarget] = useState<{
+    dayDate: string;
+    mealIndex: number;
+    recipeIndexInSlot: number;
+  } | null>(null);
   const { alerts } = useFreezerAlerts(weekMenu);
 
   useEffect(() => {
@@ -116,6 +124,22 @@ export function MenuPage() {
       [dayDate]: prev[dayDate] === mealIndex ? -1 : mealIndex,
     }));
   }, []);
+
+  function handleSwapSelect(newRecipe: Recipe) {
+    if (!weekMenu || !swapTarget) return;
+    const day = weekMenu.days.find((d) => d.date === swapTarget.dayDate);
+    if (!day) return;
+    const slot = day.meals[swapTarget.mealIndex];
+    if (!slot) return;
+    const updatedSlot: MealSlotType = {
+      ...slot,
+      recipes: slot.recipes.map((r, i) =>
+        i === swapTarget.recipeIndexInSlot ? { ...r, recipeId: newRecipe.id } : r
+      ),
+    };
+    handleMealSlotUpdate(swapTarget.dayDate, swapTarget.mealIndex, updatedSlot);
+    setSwapTarget(null);
+  }
 
   // Filtered days
   const filteredDays = useMemo(() => {
@@ -285,6 +309,8 @@ export function MenuPage() {
               <div className="mx-3 mb-3 bg-card border border-elevated rounded-card overflow-hidden">
                 {day.meals.map((meal, index) => {
                   const mealTypeLabel = MEAL_FILTERS.find(f => f.value === meal.mealType)?.label || meal.mealType;
+                  const fullDay = weekMenu.days.find((d) => d.date === day.date);
+                  const realMealIndex = fullDay?.meals.findIndex((m) => m.mealType === meal.mealType) ?? index;
                   return (
                     <div key={`${day.date}-${meal.mealType}-${index}`}>
                       {mealFilter === 'all' && (
@@ -297,9 +323,12 @@ export function MenuPage() {
                       <MealSlot
                         slot={meal}
                         date={day.date}
-                        onUpdate={(updated) => handleMealSlotUpdate(day.date, index, updated)}
-                        isExpanded={expandedMeals[day.date] === index}
-                        onToggle={() => handleToggleMeal(day.date, index)}
+                        onUpdate={(updated) => handleMealSlotUpdate(day.date, realMealIndex, updated)}
+                        onRequestSwap={(recipeIndexInSlot) =>
+                          setSwapTarget({ dayDate: day.date, mealIndex: realMealIndex, recipeIndexInSlot })
+                        }
+                        isExpanded={expandedMeals[day.date] === realMealIndex}
+                        onToggle={() => handleToggleMeal(day.date, realMealIndex)}
                       />
                     </div>
                   );
@@ -315,6 +344,23 @@ export function MenuPage() {
           </div>
         )}
       </div>
+
+      {/* Single swap modal at page level — avoids click/stacking issues inside accordion */}
+      {swapTarget && weekMenu && (() => {
+        const day = weekMenu.days.find((d) => d.date === swapTarget.dayDate);
+        const slot = day?.meals[swapTarget.mealIndex];
+        const entry = slot?.recipes[swapTarget.recipeIndexInSlot];
+        return (
+          <SwapModal
+            isOpen={true}
+            onClose={() => setSwapTarget(null)}
+            onSelect={handleSwapSelect}
+            currentRecipeId={entry?.recipeId}
+            filterForWhom={entry?.forWhom}
+            filterMealType={slot?.mealType}
+          />
+        );
+      })()}
     </div>
   );
 }

@@ -5,13 +5,14 @@ import { logger } from '../../lib/logger';
 import type { MealSlot as MealSlotType, Recipe } from '../../data/schema';
 import { useIngredientAvailability } from '../../hooks/useIngredientAvailability';
 import { IngredientCheck } from '../cooking/IngredientCheck';
-import { SwapModal } from './SwapModal';
 import { AlertTriangle, X, Snowflake, ArrowLeftRight, Coffee, ChevronDown } from 'lucide-react';
 
 interface MealSlotProps {
   slot: MealSlotType;
   date: string;
   onUpdate?: (updatedSlot: MealSlotType) => void;
+  /** Called when user clicks swap — parent opens modal and applies change */
+  onRequestSwap?: (recipeIndexInSlot: number) => void;
   isExpanded?: boolean;
   onToggle?: () => void;
 }
@@ -39,14 +40,13 @@ const MEMBER_BADGE_STYLES: Record<string, React.CSSProperties> = {
 };
 
 
-export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSlotProps) {
+export function MealSlot({ slot, onUpdate, onRequestSwap, isExpanded = true, onToggle }: MealSlotProps) {
   const [showIngredientCheck, setShowIngredientCheck] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipesLoading, setRecipesLoading] = useState(false);
   const [recipesError, setRecipesError] = useState<string | null>(null);
   const { getMissingIngredients } = useIngredientAvailability();
   const [missingIngredients, setMissingIngredients] = useState<string[]>([]);
-  const [swapIndex, setSwapIndex] = useState<number | null>(null);
 
   const recipeIds = slot.recipes.map((r) => r.recipeId);
   const meal = MEAL_LABELS[slot.mealType] || { label: slot.mealType, icon: '🍴' };
@@ -94,19 +94,8 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
   function handleSwapRecipe(e: React.MouseEvent, index: number) {
     e.stopPropagation();
     e.preventDefault();
-    logger.log(`[MealSlot:${slot.mealType}] Opening swap for index ${index}`);
-    setSwapIndex(index);
-  }
-
-  function handleSwapSelect(newRecipe: Recipe) {
-    if (swapIndex === null || !onUpdate) return;
-    logger.log(`[MealSlot:${slot.mealType}] Swapping recipe at index ${swapIndex} to ${newRecipe.title}`);
-    const updatedSlot: MealSlotType = {
-      ...slot,
-      recipes: slot.recipes.map((r, i) => i === swapIndex ? { ...r, recipeId: newRecipe.id } : r),
-    };
-    onUpdate(updatedSlot);
-    setSwapIndex(null);
+    logger.log(`[MealSlot:${slot.mealType}] Requesting swap for index ${index}`);
+    onRequestSwap?.(index);
   }
 
   function handleIngredientCheckComplete(missing: string[]) {
@@ -248,12 +237,13 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
                       <span className="text-[10px] text-miso flex-shrink-0" title="Можно взять с собой">🥡</span>
                     )}
 
-                    {/* Swap button — clearly visible with explicit styles (default: text-mid, hover: portal) */}
-                    {onUpdate && (
+                    {/* Swap button — opens modal at page level via onRequestSwap */}
+                    {onRequestSwap && (
                       <button
                         onClick={(e) => handleSwapRecipe(e, index)}
-                        className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-[8px] border border-nebula bg-void text-text-muted hover:border-portal/30 hover:text-portal transition-colors"
+                        className="flex-shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] w-7 h-7 rounded-[8px] border border-nebula bg-void text-text-muted hover:border-portal/30 hover:text-portal transition-colors"
                         title="Заменить блюдо"
+                        aria-label="Заменить блюдо"
                         type="button"
                       >
                         <ArrowLeftRight className="w-3.5 h-3.5" />
@@ -301,18 +291,6 @@ export function MealSlot({ slot, onUpdate, isExpanded = true, onToggle }: MealSl
             </div>
           )}
         </div>
-      )}
-
-      {/* Swap modal — rendered at component root (outside expandedContent) so portal is always stable */}
-      {swapIndex !== null && (
-        <SwapModal
-          isOpen={true}
-          onClose={() => setSwapIndex(null)}
-          onSelect={handleSwapSelect}
-          currentRecipeId={slot.recipes[swapIndex]?.recipeId}
-          filterForWhom={slot.recipes[swapIndex]?.forWhom}
-          filterMealType={slot.mealType}
-        />
       )}
     </div>
   );
