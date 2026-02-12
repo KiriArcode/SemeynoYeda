@@ -35,10 +35,14 @@ const MEAL_ORDER: MealSlot['mealType'][] = [
   'late_snack',
 ];
 
+/** Пустые слоты приёмов на один день (все 6 типов, recipes: []) */
+function emptyMeals(): MealSlot[] {
+  return MEAL_ORDER.map((mt) => ({ mealType: mt, recipes: [] }));
+}
+
 /**
- * Создаёт начальное недельное меню по документу (Пн–Вс).
- * Поддерживает 6 приёмов: second_breakfast и late_snack для режима 5–6 (Коля).
- * Пн–Пт заполнены; Сб–Вс — пустые слоты (повторы + разморозка).
+ * Создаёт недельное меню по документу (Пн–Вс).
+ * Поддерживает 6 приёмов. Все 7 дней заполнены, включая субботу и воскресенье.
  */
 export function getSeedWeekMenu(): WeekMenu {
   const today = new Date();
@@ -243,8 +247,66 @@ export function getSeedWeekMenu(): WeekMenu {
           { mealType: 'late_snack', recipes: [] },
         ];
         break;
-      default: // Суббота, Воскресенье — пустые слоты (повторы + разморозка)
-        meals = MEAL_ORDER.map((mt) => ({ mealType: mt, recipes: [] }));
+      case 5: // Суббота
+        meals = [
+          {
+            mealType: 'breakfast',
+            recipes: [
+              { recipeId: ids.overnightOvsjanka, forWhom: 'both' },
+            ],
+          },
+          { mealType: 'second_breakfast', recipes: [{ recipeId: ids.bananJogurt, forWhom: 'kolya' }] },
+          {
+            mealType: 'lunch',
+            recipes: [
+              { recipeId: ids.ovoshhnojKremSup, forWhom: 'both' },
+              { recipeId: ids.gorjachijButerbrod, forWhom: 'both', variation: 'тост' },
+            ],
+          },
+          { mealType: 'snack', recipes: [{ recipeId: ids.tvorozhnyjKrem, forWhom: 'both' }] },
+          {
+            mealType: 'dinner',
+            recipes: [
+              { recipeId: ids.kurinyeKotlety, forWhom: 'both' },
+              { recipeId: ids.kabachkovoePure, forWhom: 'both' },
+              { recipeId: ids.syrnyjSous, forWhom: 'both' },
+            ],
+          },
+          { mealType: 'late_snack', recipes: [] },
+        ];
+        break;
+      case 6: // Воскресенье
+        meals = [
+          {
+            mealType: 'breakfast',
+            recipes: [
+              { recipeId: ids.gorjachijButerbrod, forWhom: 'kristina' },
+              { recipeId: ids.parovojOmlet, forWhom: 'kolya' },
+            ],
+          },
+          { mealType: 'second_breakfast', recipes: [] },
+          {
+            mealType: 'lunch',
+            recipes: [
+              { recipeId: ids.frikadelki, forWhom: 'both' },
+              { recipeId: ids.kartofelnoePure, forWhom: 'both' },
+              { recipeId: ids.kabachkovyjSous, forWhom: 'both', variation: 'кабачковый соус' },
+            ],
+          },
+          { mealType: 'snack', recipes: [{ recipeId: ids.syrJogurt, forWhom: 'both' }] },
+          {
+            mealType: 'dinner',
+            recipes: [
+              { recipeId: ids.rybnoeSufle, forWhom: 'both' },
+              { recipeId: ids.morkovnoTykvennoePure, forWhom: 'both' },
+              { recipeId: ids.jogurtovyjSous, forWhom: 'both' },
+            ],
+          },
+          { mealType: 'late_snack', recipes: [] },
+        ];
+        break;
+      default:
+        meals = emptyMeals();
     }
 
     days.push({
@@ -264,3 +326,15 @@ export function getSeedWeekMenu(): WeekMenu {
 
   return menu;
 }
+
+/** Лёгкая неделя: тот же набор на 7 дней, акцент на супы и лёгкие блюда (сейчас совпадает с классической; можно расширить отличия). */
+export function getSeedWeekMenuLight(): WeekMenu {
+  return getSeedWeekMenu();
+}
+
+export type MenuTemplateId = 'classic' | 'light';
+
+export const MENU_TEMPLATES: { id: MenuTemplateId; label: string; getMenu: () => WeekMenu }[] = [
+  { id: 'classic', label: 'Классическая неделя', getMenu: getSeedWeekMenu },
+  { id: 'light', label: 'Лёгкая неделя', getMenu: getSeedWeekMenuLight },
+];

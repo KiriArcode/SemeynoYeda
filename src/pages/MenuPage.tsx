@@ -4,7 +4,8 @@ import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
 import type { WeekMenu, MealSlot as MealSlotType, MealType } from '../data/schema';
 import type { Recipe } from '../data/schema';
-import { getSeedWeekMenu } from '../data/seedMenu';
+import { MENU_TEMPLATES, type MenuTemplateId } from '../data/seedMenu';
+import { buildWeekMenuFromRecipes } from '../lib/menuFromRecipes';
 import { MealSlot } from '../components/menu/MealSlot';
 import { SwapModal } from '../components/menu/SwapModal';
 import { WeekOverview } from '../components/menu/WeekOverview';
@@ -37,6 +38,7 @@ export function MenuPage() {
   const [weekMenu, setWeekMenu] = useState<WeekMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [creatingFromTemplate, setCreatingFromTemplate] = useState(false);
+  const [creatingFromDb, setCreatingFromDb] = useState(false);
   const [templateSuccess, setTemplateSuccess] = useState(false);
   const [dayFilter, setDayFilter] = useState<string>('');
   const [mealFilter, setMealFilter] = useState<MealType | 'all'>('all');
@@ -49,9 +51,22 @@ export function MenuPage() {
     recipeIndexInSlot: number;
   } | null>(null);
   const { alerts } = useFreezerAlerts(weekMenu);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<MenuTemplateId>('classic');
 
   useEffect(() => {
     loadWeekMenu();
+  }, []);
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
   }, []);
 
   // Initialize accordion: first meal of each day expanded
@@ -87,12 +102,13 @@ export function MenuPage() {
   }
 
   async function createMenuFromTemplate() {
-    logger.log('[MenuPage] Creating menu from template...');
-    console.log('[MenuPage] createMenuFromTemplate: start');
+    const template = MENU_TEMPLATES.find((t) => t.id === selectedTemplateId) ?? MENU_TEMPLATES[0];
+    logger.log('[MenuPage] Creating menu from template:', template.label);
+    console.log('[MenuPage] createMenuFromTemplate: start', { templateId: template.id });
     setCreatingFromTemplate(true);
     setTemplateSuccess(false);
     try {
-      const menu = getSeedWeekMenu();
+      const menu = template.getMenu();
       await dataService.menus.create(menu);
       console.log('[MenuPage] createMenuFromTemplate: menu created', { id: menu.id, weekStart: menu.weekStart });
       await loadWeekMenu();
@@ -103,6 +119,27 @@ export function MenuPage() {
       console.error('[MenuPage] createMenuFromTemplate: failed', error);
     } finally {
       setCreatingFromTemplate(false);
+    }
+  }
+
+  async function createMenuFromDb() {
+    console.log('[MenuPage] createMenuFromDb: start');
+    logger.log('[MenuPage] Creating menu from database...');
+    setCreatingFromDb(true);
+    setTemplateSuccess(false);
+    try {
+      const recipes = await dataService.recipes.list();
+      console.log('[MenuPage] createMenuFromDb: recipes count', recipes.length);
+      const menu = buildWeekMenuFromRecipes(recipes);
+      await dataService.menus.create(menu);
+      console.log('[MenuPage] createMenuFromDb: menu created', { id: menu.id, weekStart: menu.weekStart });
+      await loadWeekMenu();
+      setTemplateSuccess(true);
+      setTimeout(() => setTemplateSuccess(false), 3000);
+    } catch (error) {
+      logger.error('[MenuPage] Failed to create menu from DB:', error);
+    } finally {
+      setCreatingFromDb(false);
     }
   }
 
@@ -189,6 +226,25 @@ export function MenuPage() {
               Начните с просмотра рецептов или создайте меню на неделю
             </p>
             <div className="flex flex-col gap-3 items-center">
+              <p className="text-xs text-text-muted font-body">
+                Генерация меню доступна только при наличии интернета
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {MENU_TEMPLATES.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setSelectedTemplateId(t.id)}
+                    className={`px-3 py-1.5 text-xs font-heading font-semibold rounded-full border transition-colors ${
+                      selectedTemplateId === t.id
+                        ? 'bg-portal/20 text-portal border-portal/50'
+                        : 'bg-rift text-text-muted border-nebula hover:border-portal/30'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
               <Link
                 to="/wabba"
                 className="px-6 py-3 bg-rift border border-portal/50 text-portal font-heading font-semibold rounded-button hover:bg-portal/10 transition-colors flex items-center gap-2"
@@ -199,12 +255,21 @@ export function MenuPage() {
               <button
                 type="button"
                 onClick={createMenuFromTemplate}
-                disabled={creatingFromTemplate}
+                disabled={creatingFromTemplate || creatingFromDb || !isOnline}
                 className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all hover:scale-105 disabled:opacity-60 flex items-center gap-2"
-                aria-label="Создать меню (創建列表)"
+                aria-label="Создать меню из шаблона"
               >
                 <Copy className="w-4 h-4" />
-                {creatingFromTemplate ? 'Создаём...' : '創建列表'}
+                {creatingFromTemplate ? 'Создаём...' : 'Из шаблона'}
+              </button>
+              <button
+                type="button"
+                onClick={createMenuFromDb}
+                disabled={creatingFromTemplate || creatingFromDb || !isOnline}
+                className="px-6 py-3 bg-rift border border-portal/50 text-portal font-heading font-semibold rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60 flex items-center gap-2"
+                aria-label="Сгенерировать меню из базы рецептов"
+              >
+                {creatingFromDb ? 'Создаём...' : 'Из базы'}
               </button>
               <Link
                 to="/recipes"
@@ -228,8 +293,12 @@ export function MenuPage() {
         </h1>
         <div className="flex items-center gap-2">
           {templateSuccess && (
-            <span className="flex items-center gap-1 text-xs text-portal font-body animate-fade-in">
-              <CheckCircle2 className="w-4 h-4" /> Готово!
+            <span className="flex flex-wrap items-center gap-2 text-xs text-portal font-body animate-fade-in">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Меню создано.</span>
+              <Link to="/shopping" className="text-portal underline hover:no-underline">Список покупок</Link>
+              <span className="text-text-muted">и</span>
+              <Link to="/prep" className="text-portal underline hover:no-underline">план заготовок</Link>
             </span>
           )}
           <Link
@@ -243,13 +312,44 @@ export function MenuPage() {
           <button
             type="button"
             onClick={createMenuFromTemplate}
-            disabled={creatingFromTemplate}
+            disabled={creatingFromTemplate || creatingFromDb || !isOnline}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
-            aria-label="Создать меню (創建列表)"
+            aria-label="Создать меню из шаблона"
           >
             <Copy className="w-3.5 h-3.5" />
-            {creatingFromTemplate ? 'Создаём...' : '創建列表'}
+            {creatingFromTemplate ? 'Создаём...' : 'Из шаблона'}
           </button>
+          <button
+            type="button"
+            onClick={createMenuFromDb}
+            disabled={creatingFromTemplate || creatingFromDb || !isOnline}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
+            aria-label="Сгенерировать меню из базы"
+          >
+            {creatingFromDb ? 'Создаём...' : 'Из базы'}
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <p className="text-xs text-text-muted font-body">
+          Генерация меню доступна только при наличии интернета
+        </p>
+        <span className="text-text-ghost">·</span>
+        <div className="flex gap-1">
+          {MENU_TEMPLATES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSelectedTemplateId(t.id)}
+              className={`px-2 py-0.5 text-[11px] font-heading font-medium rounded border transition-colors ${
+                selectedTemplateId === t.id
+                  ? 'bg-portal/15 text-portal border-portal/40'
+                  : 'bg-rift text-text-muted border-nebula hover:border-portal/20'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -304,7 +404,7 @@ export function MenuPage() {
           const sectorNum = dayIdx + 1;
 
           return (
-            <div key={day.date} className="bg-panel border border-elevated rounded-card shadow-card animate-card-appear overflow-hidden">
+            <div key={`${weekMenu.id}-${day.date}`} className="bg-panel border border-elevated rounded-card shadow-card animate-card-appear overflow-hidden">
               {/* Day header with sector label */}
               <div className="px-4 pt-3 pb-2">
                 <div className="flex items-center justify-between">

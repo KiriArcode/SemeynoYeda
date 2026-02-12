@@ -5,6 +5,7 @@ import { db } from '../lib/db';
 import type { WeekMenu, Recipe, BatchTask, BatchPlan, EquipmentId, NestingLevel } from '../data/schema';
 import { nanoid } from 'nanoid';
 import { findRecipeByIngredientName } from '../lib/recipeNesting';
+import { getPortionsPerRecipeFromMenu } from '../lib/shoppingListUtils';
 
 /** Phase labels for batch cooking workflow */
 const PHASE_LABELS: Record<number, string> = {
@@ -146,14 +147,16 @@ export function useBatchCooking() {
         }
       }
 
-      // 5. Calculate needed portions and portions by member (for personalized packets)
-      const recipeUsageCount = new Map<string, number>();
+      // 5. Portions by forWhom (kolya/kristina = 1, both = 2) and by member for packets
+      const portionsByRecipe = getPortionsPerRecipeFromMenu(weekMenu);
+      console.log('[useBatchCooking] portionsByRecipe', Object.fromEntries(portionsByRecipe));
+      logger.log('[useBatchCooking] portionsByRecipe', Object.fromEntries(portionsByRecipe));
+
       const recipeUsageByMember = new Map<string, { kolya: number; kristina: number }>();
       for (const day of weekMenu.days) {
         for (const meal of day.meals) {
           for (const entry of meal.recipes) {
             const rid = entry.recipeId;
-            recipeUsageCount.set(rid, (recipeUsageCount.get(rid) || 0) + 1);
             const byMember = recipeUsageByMember.get(rid) || { kolya: 0, kristina: 0 };
             if (entry.forWhom === 'kolya') byMember.kolya += 1;
             else if (entry.forWhom === 'kristina') byMember.kristina += 1;
@@ -165,13 +168,29 @@ export function useBatchCooking() {
           }
         }
       }
+      console.log('[useBatchCooking] recipeUsageByMember (slots)', Array.from(recipeUsageByMember.entries()).map(([id, m]) => ({ id, ...m })));
+      logger.log('[useBatchCooking] recipeUsageByMember (slots)', Array.from(recipeUsageByMember.entries()).map(([id, m]) => ({ id, ...m })));
 
       // 6. Generate tasks
       const tasks: BatchTask[] = [];
       for (const recipe of prepRecipesArray) {
-        const usageCount = recipeUsageCount.get(recipe.id) || 1;
+        const menuPortions = portionsByRecipe.get(recipe.id) ?? 0;
         const stockPortions = freezerStock.get(recipe.id) || 0;
-        const neededPortions = Math.max(0, recipe.servings * usageCount - stockPortions);
+        const neededPortions = Math.max(0, menuPortions - stockPortions);
+        console.log('[useBatchCooking] portions', {
+          recipeId: recipe.id,
+          title: recipe.title,
+          menuPortions,
+          stockPortions,
+          neededPortions,
+        });
+        logger.log('[useBatchCooking] portions', {
+          recipeId: recipe.id,
+          title: recipe.title,
+          menuPortions,
+          stockPortions,
+          neededPortions,
+        });
 
         if (neededPortions <= 0) {
           logger.log(`[useBatchCooking] ${recipe.title}: stock covers needed portions`);
@@ -231,6 +250,33 @@ export function useBatchCooking() {
       // Sort by phase, then by equipment
       tasks.sort((a, b) => a.phase - b.phase || a.equipment.localeCompare(b.equipment));
 
+      // Бульоны: всегда добавляем задачу на 1 л каждого типа бульона
+      const brothRecipes = allRecipes.filter(
+        (r) => r.category === 'soup' || r.title.toLowerCase().includes('бульон')
+      );
+      for (const recipe of brothRecipes) {
+        const alreadyHasBrothTask = tasks.some(
+          (t) => t.recipeId === recipe.id && t.step.toLowerCase().includes('1 л')
+        );
+        if (alreadyHasBrothTask) continue;
+        tasks.push({
+          id: nanoid(),
+          recipeId: recipe.id,
+          recipeTitle: recipe.title,
+          phase: 2,
+          phaseLabel: PHASE_LABELS[2],
+          equipment: 'stove',
+          step: `Сварить 1 л ${recipe.title}`,
+          duration: 60,
+          portions: 1,
+          completed: false,
+          nestingLevel: 1,
+        });
+        console.log('[useBatchCooking] Added 1L broth task:', recipe.title);
+        logger.log(`[useBatchCooking] Added 1L broth task: ${recipe.title}`);
+      }
+      tasks.sort((a, b) => a.phase - b.phase || a.equipment.localeCompare(b.equipment));
+
       const newRecipeIds = new Set(tasks.map(t => t.recipeId));
       const completedTasks: string[] = [];
       const orphanTasks: BatchTask[] = [];
@@ -274,6 +320,7 @@ export function useBatchCooking() {
       const newPlan: BatchPlan = {
         id: nanoid(),
         date: new Date().toISOString().split('T')[0],
+        weekStart: weekMenu.weekStart,
         tasks: finalTasks,
         totalTime,
         completedTasks: dedupCompleted,

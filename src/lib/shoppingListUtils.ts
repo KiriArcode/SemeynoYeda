@@ -3,6 +3,8 @@
  * Используется в generateShoppingList и при ручном добавлении.
  */
 
+import type { WeekMenu } from '../data/schema';
+
 export const MIN_WEIGHT_G = 500;
 export const MIN_VOLUME_ML = 500;
 
@@ -29,4 +31,32 @@ export function applyMinWeightOrVolume(item: {
     return { totalAmount: minMl / 1000 };
   }
   return { totalAmount: item.totalAmount };
+}
+
+/**
+ * Считает суммарные порции по рецептам из меню по правилу forWhom:
+ * kolya / kristina → 1 порция, both → 2 порции.
+ */
+export function getPortionsPerRecipeFromMenu(weekMenu: WeekMenu): Map<string, number> {
+  const map = new Map<string, number>();
+  console.log('[getPortionsPerRecipeFromMenu] start', { daysCount: weekMenu.days?.length ?? 0 });
+  weekMenu.days.forEach((day) => {
+    day.meals.forEach((meal) => {
+      meal.recipes.forEach((entry) => {
+        const add = entry.forWhom === 'both' ? 2 : 1;
+        const prev = map.get(entry.recipeId) ?? 0;
+        map.set(entry.recipeId, prev + add);
+        console.log('[getPortionsPerRecipeFromMenu] slot', {
+          day: day.date,
+          meal: meal.mealType,
+          recipeId: entry.recipeId,
+          forWhom: entry.forWhom,
+          add,
+          total: prev + add,
+        });
+      });
+    });
+  });
+  console.log('[getPortionsPerRecipeFromMenu] result', Object.fromEntries(map));
+  return map;
 }

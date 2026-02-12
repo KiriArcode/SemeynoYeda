@@ -242,6 +242,7 @@ export interface BatchTask {
 export interface BatchPlan {
   id: string;
   date: string;
+  weekStart?: string;          // ISO date понедельника меню, для которого создан план
   tasks: BatchTask[];
   totalTime: number;            // минуты
   completedTasks: string[];

@@ -223,14 +223,31 @@ export function PrepPage() {
   }
   const maxEquipmentTime = Math.max(...Array.from(equipmentUsage.values()).map(e => e.totalMinutes));
 
+  const menuNewerThanPlan =
+    plan.weekStart != null && weekMenu != null && plan.weekStart !== weekMenu.weekStart;
+
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
       <h1 className="font-heading text-2xl font-bold text-text-primary mb-4 flex items-center gap-2">
         <ChefHat className="w-6 h-6 text-portal" /> Заготовки выходного дня
       </h1>
 
+      {/* Баннер: меню на другую неделю — предложить пересоздать план */}
+      {menuNewerThanPlan && (
+        <div className="mb-4 p-3 bg-portal/10 border border-portal/30 rounded-card flex flex-wrap items-center gap-2">
+          <span className="text-sm text-portal font-body">Меню изменилось.</span>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            className="text-sm font-heading font-semibold text-portal underline hover:no-underline"
+          >
+            Пересоздать план заготовок
+          </button>
+        </div>
+      )}
+
       {/* Hint: меню изменилось — пересоздать план */}
-      {hasPlanRecipesNotInMenu && (
+      {hasPlanRecipesNotInMenu && !menuNewerThanPlan && (
         <div className="bg-accent-orange/10 border border-accent-orange/30 rounded-card p-3 mb-4 flex items-center justify-between gap-3">
           <span className="text-sm font-body text-text-light">Меню изменилось — пересоздать план?</span>
           <button

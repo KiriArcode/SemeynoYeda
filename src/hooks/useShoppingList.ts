@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { dataService } from '../lib/dataService';
 import { logger } from '../lib/logger';
-import { applyMinWeightOrVolume } from '../lib/shoppingListUtils';
+import { applyMinWeightOrVolume, getPortionsPerRecipeFromMenu } from '../lib/shoppingListUtils';
 import type { ShoppingItem, WeekMenu, Recipe } from '../data/schema';
 
 /** Добавляет из generated только те позиции, которых ещё нет в existing (по паре ingredient + unit). Ручные и missing из existing сохраняются. */
@@ -55,27 +55,52 @@ export function useShoppingList() {
         });
       });
     });
+    console.log('[generateShoppingList] recipeIds from menu', Array.from(recipeIds));
+    logger.log('[generateShoppingList] recipeIds from menu', Array.from(recipeIds));
+
+    const portionsByRecipe = getPortionsPerRecipeFromMenu(weekMenu);
 
     const allRecipes = await dataService.recipes.list();
     allRecipes.forEach((recipe) => {
       if (recipeIds.has(recipe.id)) recipesMap.set(recipe.id, recipe);
     });
+    console.log('[generateShoppingList] recipesMap size', recipesMap.size);
+    logger.log('[generateShoppingList] recipesMap size', recipesMap.size);
 
     recipesMap.forEach((recipe) => {
+      const totalPortions = portionsByRecipe.get(recipe.id) ?? 1;
+      const multiplier = totalPortions / recipe.servings;
+      console.log('[generateShoppingList] recipe portions', {
+        recipeId: recipe.id,
+        title: recipe.title,
+        servings: recipe.servings,
+        totalPortions,
+        multiplier,
+      });
+      logger.log('[generateShoppingList] recipe portions', {
+        recipeId: recipe.id,
+        title: recipe.title,
+        servings: recipe.servings,
+        totalPortions,
+        multiplier,
+      });
       recipe.ingredients.forEach((ingredient) => {
         const key = `${ingredient.name}_${ingredient.unit}`;
+        const amount = ingredient.amount * multiplier;
         const existing = ingredientMap.get(key);
 
         if (existing) {
-          existing.totalAmount += ingredient.amount;
+          existing.totalAmount += amount;
           if (!existing.recipeIds.includes(recipe.id)) {
             existing.recipeIds.push(recipe.id);
           }
+          console.log('[generateShoppingList] merge ingredient', { key, amount, newTotal: existing.totalAmount });
+          logger.log('[generateShoppingList] merge ingredient', { key, amount, newTotal: existing.totalAmount });
         } else {
           ingredientMap.set(key, {
             id: crypto.randomUUID(),
             ingredient: ingredient.name,
-            totalAmount: ingredient.amount,
+            totalAmount: amount,
             unit: ingredient.unit,
             category: categorizeIngredient(ingredient.name),
             checked: false,
@@ -83,6 +108,8 @@ export function useShoppingList() {
             markedMissing: false,
             source: 'auto',
           });
+          console.log('[generateShoppingList] new ingredient', { key, amount });
+          logger.log('[generateShoppingList] new ingredient', { key, amount });
         }
       });
     });
