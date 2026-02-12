@@ -8,6 +8,18 @@ function apiUrl(path: string): string {
   return `${API}/api${path}`;
 }
 
+/** Ошибка API с полем status и опциональным body (например existingId при 409) */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public body?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...options,
@@ -18,7 +30,9 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`);
+    const body = err as Record<string, unknown>;
+    const message = (body.error as string) ?? `HTTP ${res.status}`;
+    throw new ApiError(message, res.status, body);
   }
   if (res.status === 204) return undefined as T;
   return res.json();

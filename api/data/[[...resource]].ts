@@ -250,13 +250,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const item = await handler.create(body);
         return sendResponse(201, item);
       } catch (error) {
-        // Check if it's a duplicate error
+        // Check if it's a duplicate error (recipe already in Neon under same title/slug, possibly different id)
         const errorMessage = error instanceof Error ? error.message : String(error);
         if (errorMessage.includes('already exists')) {
+          const existingIdMatch = errorMessage.match(/\(id:\s*([^)]+)\)/);
+          const existingId = existingIdMatch ? existingIdMatch[1].trim() : undefined;
           return sendResponse(409, {
             error: 'Duplicate recipe',
             message: errorMessage,
             code: 'DUPLICATE_RECIPE',
+            ...(existingId && { existingId }),
           });
         }
         throw error;

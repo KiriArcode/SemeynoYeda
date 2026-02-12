@@ -12,7 +12,7 @@ import { WeekOverview } from '../components/menu/WeekOverview';
 import { WeekStats } from '../components/menu/WeekStats';
 import { AlertBanner } from '../components/ui/AlertBanner';
 import { useFreezerAlerts } from '../hooks/useFreezerAlerts';
-import { Copy, CheckCircle2, Heart } from 'lucide-react';
+import { Copy, CheckCircle2, Heart, Loader2 } from 'lucide-react';
 
 const DAY_SHORT_CODES: Record<string, string> = {
   'Понедельник': 'MON',
@@ -256,20 +256,29 @@ export function MenuPage() {
                 type="button"
                 onClick={createMenuFromTemplate}
                 disabled={creatingFromTemplate || creatingFromDb || !isOnline}
-                className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all hover:scale-105 disabled:opacity-60 flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-portal to-portal-dim text-void font-heading font-semibold rounded-button shadow-glow hover:shadow-glow/80 transition-all hover:scale-105 disabled:opacity-60 disabled:pointer-events-none flex items-center gap-2"
                 aria-label="Создать меню из шаблона"
+                aria-busy={creatingFromTemplate}
               >
-                <Copy className="w-4 h-4" />
-                {creatingFromTemplate ? 'Создаём...' : 'Из шаблона'}
+                {(creatingFromTemplate || creatingFromDb) ? (
+                  <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+                {creatingFromTemplate ? 'Создаём...' : creatingFromDb ? 'Подождите...' : 'Из шаблона'}
               </button>
               <button
                 type="button"
                 onClick={createMenuFromDb}
                 disabled={creatingFromTemplate || creatingFromDb || !isOnline}
-                className="px-6 py-3 bg-rift border border-portal/50 text-portal font-heading font-semibold rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60 flex items-center gap-2"
+                className="px-6 py-3 bg-rift border border-portal/50 text-portal font-heading font-semibold rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60 disabled:pointer-events-none flex items-center gap-2"
                 aria-label="Сгенерировать меню из базы рецептов"
+                aria-busy={creatingFromDb}
               >
-                {creatingFromDb ? 'Создаём...' : 'Из базы'}
+                {(creatingFromTemplate || creatingFromDb) ? (
+                  <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden />
+                ) : null}
+                {creatingFromDb ? 'Создаём...' : creatingFromTemplate ? 'Подождите...' : 'Из базы'}
               </button>
               <Link
                 to="/recipes"
@@ -313,20 +322,29 @@ export function MenuPage() {
             type="button"
             onClick={createMenuFromTemplate}
             disabled={creatingFromTemplate || creatingFromDb || !isOnline}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60 disabled:pointer-events-none min-w-[44px] min-h-[44px] justify-center"
             aria-label="Создать меню из шаблона"
+            aria-busy={creatingFromTemplate}
           >
-            <Copy className="w-3.5 h-3.5" />
-            {creatingFromTemplate ? 'Создаём...' : 'Из шаблона'}
+            {(creatingFromTemplate || creatingFromDb) ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" aria-hidden />
+            ) : (
+              <Copy className="w-3.5 h-3.5 shrink-0" />
+            )}
+            {creatingFromTemplate ? 'Создаём...' : creatingFromDb ? '…' : 'Из шаблона'}
           </button>
           <button
             type="button"
             onClick={createMenuFromDb}
             disabled={creatingFromTemplate || creatingFromDb || !isOnline}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-semibold text-portal border border-portal/50 rounded-button hover:bg-portal/10 transition-colors disabled:opacity-60 disabled:pointer-events-none min-w-[44px] min-h-[44px] justify-center"
             aria-label="Сгенерировать меню из базы"
+            aria-busy={creatingFromDb}
           >
-            {creatingFromDb ? 'Создаём...' : 'Из базы'}
+            {(creatingFromTemplate || creatingFromDb) ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" aria-hidden />
+            ) : null}
+            {creatingFromDb ? 'Создаём...' : creatingFromTemplate ? '…' : 'Из базы'}
           </button>
         </div>
       </div>

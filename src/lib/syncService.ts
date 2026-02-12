@@ -8,7 +8,7 @@
  */
 
 import { db } from './db';
-import { apiDataService } from './dataServiceApi';
+import { apiDataService, ApiError } from './dataServiceApi';
 import { logger } from './logger';
 import type {
   Recipe,
@@ -217,19 +217,51 @@ class SyncService {
             try {
               await this.createInNeon(tableName, itemWithoutSync);
             } catch (createError) {
-              // Рецепты из seed уже могут быть в Neon → 409 Duplicate recipe
+              // Рецепты из seed уже могут быть в Neon под тем же title/slug → 409; сервер возвращает existingId
               const isConflict =
                 tableName === 'recipes' &&
-                createError instanceof Error &&
-                (createError.message.includes('Duplicate') || createError.message.includes('Conflict'));
+                (createError instanceof ApiError
+                  ? createError.status === 409
+                  : createError instanceof Error &&
+                    (createError.message.includes('Duplicate') ||
+                      createError.message.includes('Conflict')));
               if (isConflict) {
-                await this.updateInNeon(tableName, dbKey, itemWithoutSync);
+                const existingId =
+                  createError instanceof ApiError
+                    ? (createError.body?.existingId as string | undefined)
+                    : undefined;
+                const updateId = typeof existingId === 'string' ? existingId : dbKey;
+                await this.updateInNeon(tableName, updateId, itemWithoutSync);
               } else {
                 throw createError;
               }
             }
           } else {
-            await this.updateInNeon(tableName, dbKey, itemWithoutSync);
+            try {
+              await this.updateInNeon(tableName, dbKey, itemWithoutSync);
+            } catch (updateError) {
+              // PUT 404: рецепт в Neon под другим id (например после другого seed) — помечаем synced, чтобы не спамить
+              const isNotFound =
+                tableName === 'recipes' &&
+                updateError instanceof ApiError &&
+                updateError.status === 404;
+              if (isNotFound) {
+                logger.log(
+                  `[SyncService] Рецепт ${dbKey} не найден в Neon (404), помечаем как synced`
+                );
+                const syncUpdate: { _sync: SyncMetadata } = {
+                  _sync: {
+                    syncStatus: 'synced',
+                    lastSyncedAt: new Date().toISOString(),
+                    localUpdatedAt: item._sync?.localUpdatedAt || new Date().toISOString(),
+                    retryCount: 0,
+                  },
+                };
+                await this.getTable(tableName).update(dbKey, syncUpdate);
+              } else {
+                throw updateError;
+              }
+            }
           }
 
           // Обновляем метаданные синхронизации
